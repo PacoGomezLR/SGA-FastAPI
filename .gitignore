@@ -1,0 +1,22 @@
+# Python
+venv/
+backend/venv/
+__pycache__/
+*.pyc
+
+# Variables sensibles
+.env
+backend/.env
+
+# Editor
+.vscode/
+
+# Sistema
+.DS_Store
+
+# Logs
+*.log
+
+# Node (ya que tienes frontend)
+node_modules/
+dist/
