@@ -1,14 +1,22 @@
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class ProductBase(BaseModel):
-    nombre: str
+    nombre: str = Field(..., min_length=1)
     descripcion: Optional[str] = None
-    sku: str
+    sku: str = Field(..., min_length=1)
     categoria_id: int
-    unidad_medida: str
+    unidad_medida: str = Field(..., min_length=1)
     activo: bool = True
+
+    @field_validator("nombre", "sku", "unidad_medida")
+    @classmethod
+    def no_vacio(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Este campo no puede estar vacío")
+        return value
 
 
 class ProductCreate(ProductBase):
@@ -22,6 +30,13 @@ class ProductUpdate(BaseModel):
     categoria_id: Optional[int] = None
     unidad_medida: Optional[str] = None
     activo: Optional[bool] = None
+
+    @field_validator("nombre", "sku", "unidad_medida")
+    @classmethod
+    def no_vacio_update(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and not value.strip():
+            raise ValueError("Este campo no puede estar vacío")
+        return value
 
 
 class ProductResponse(ProductBase):

@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.reception import Reception
 from app.models.reception_line import ReceptionLine
-from app.schemas.reception import ReceptionCreate
+from app.schemas.reception import ReceptionCreate, ReceptionUpdate
 
 
 class ReceptionRepository:
@@ -12,18 +12,14 @@ class ReceptionRepository:
     def get_all(self):
         return (
             self.db.query(Reception)
-            .options(
-                joinedload(Reception.lineas)
-            )
+            .options(joinedload(Reception.lineas))
             .all()
         )
 
     def get_by_id(self, reception_id: int):
         return (
             self.db.query(Reception)
-            .options(
-                joinedload(Reception.lineas)
-            )
+            .options(joinedload(Reception.lineas))
             .filter(Reception.id == reception_id)
             .first()
         )
@@ -49,21 +45,36 @@ class ReceptionRepository:
             )
             self.db.add(nueva_linea)
 
-        self.db.commit()
-        self.db.refresh(nueva_recepcion)
+        self.db.flush()
         return nueva_recepcion
 
-    def update_status(self, reception_id: int, nuevo_estado: str):
-        recepcion = self.get_by_id(reception_id)
-        if recepcion:
-            recepcion.estado = nuevo_estado
-            self.db.commit()
-            self.db.refresh(recepcion)
+    def update(self, recepcion: Reception, reception_data: ReceptionUpdate):
+        recepcion.almacen_id = reception_data.almacen_id
+        recepcion.observaciones = reception_data.observaciones
+
+        for linea in recepcion.lineas:
+            self.db.delete(linea)
+
+        self.db.flush()
+
+        for linea in reception_data.lineas:
+            nueva_linea = ReceptionLine(
+                recepcion_id=recepcion.id,
+                producto_id=linea.producto_id,
+                cantidad=linea.cantidad,
+                ubicacion_destino_id=linea.ubicacion_destino_id,
+                observaciones=linea.observaciones
+            )
+            self.db.add(nueva_linea)
+
+        self.db.flush()
         return recepcion
 
-    def delete(self, reception_id: int):
-        recepcion = self.get_by_id(reception_id)
-        if recepcion:
-            self.db.delete(recepcion)
-            self.db.commit()
+    def update_status(self, recepcion: Reception, nuevo_estado: str):
+        recepcion.estado = nuevo_estado
+        self.db.flush()
         return recepcion
+
+    def delete(self, recepcion: Reception):
+        self.db.delete(recepcion)
+        self.db.flush()

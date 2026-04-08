@@ -24,15 +24,13 @@ class ShipmentRepository:
 
     def create(self, shipment: Shipment):
         self.db.add(shipment)
-        self.db.commit()
-        self.db.refresh(shipment)
+        self.db.flush()
         return shipment
 
     def update(self, shipment: Shipment):
-        self.db.commit()
-        self.db.refresh(shipment)
+        self.db.flush()
         return shipment
 
     def delete(self, shipment: Shipment):
         self.db.delete(shipment)
-        self.db.commit()
+        self.db.flush()

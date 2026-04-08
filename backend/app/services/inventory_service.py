@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.models.inventory import Inventory
 from app.models.inventory_line import InventoryLine
 from app.models.location import Location
+from app.models.movement import Movement
 from app.models.product import Product
 from app.models.user import User
 from app.models.warehouse import Warehouse
@@ -113,12 +114,6 @@ class InventoryService:
                         detail="Estado de inventario no válido"
                     )
 
-                if inventario.estado == "ajustado" and inventory_data.estado != "ajustado":
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="No se puede cambiar el estado de un inventario ajustado"
-                    )
-
                 inventario.estado = inventory_data.estado
 
             self.repository.update(inventario)
@@ -217,16 +212,11 @@ class InventoryService:
     def apply_inventory_adjustment(self, inventory_id: int):
         inventario = self.get_inventory_by_id(inventory_id)
 
-        if inventario.estado == "anulado":
+        # REGLA ENDURECIDA: solo se ajusta desde contado
+        if inventario.estado != "contado":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No se puede ajustar un inventario anulado"
-            )
-
-        if inventario.estado == "ajustado":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="El inventario ya ha sido ajustado"
+                detail="Solo se puede ajustar un inventario en estado 'contado'"
             )
 
         if not inventario.lineas:
@@ -268,6 +258,10 @@ class InventoryService:
                         linea.ubicacion_id,
                         cantidad_a_restar
                     )
+
+                # Crear movement solo si realmente hay diferencia
+                if diferencia_calculada != 0:
+                    self._create_adjustment_movement(inventario, linea, diferencia_calculada)
 
                 linea.ajuste_aplicado = True
                 self.repository.update_line(linea)
@@ -315,6 +309,12 @@ class InventoryService:
                 detail="No se puede ajustar un inventario anulado"
             )
 
+        if inventario.estado == "ajustado":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El inventario ya ha sido ajustado"
+            )
+
         linea = self.repository.get_line_by_id(line_id)
 
         if not linea or linea.inventario_id != inventory_id:
@@ -354,6 +354,9 @@ class InventoryService:
                     linea.ubicacion_id,
                     cantidad_a_restar
                 )
+
+            if diferencia_calculada != 0:
+                self._create_adjustment_movement(inventario, linea, diferencia_calculada)
 
             linea.ajuste_aplicado = True
             self.repository.update_line(linea)
@@ -488,6 +491,44 @@ class InventoryService:
 
         self.repository.add_line(linea)
         return linea
+
+    def _create_adjustment_movement(self, inventario: Inventory, linea: InventoryLine, diferencia: int):
+        cantidad_movimiento = abs(diferencia)
+
+        if cantidad_movimiento == 0:
+            return
+
+        if diferencia > 0:
+            ubicacion_origen_id = None
+            ubicacion_destino_id = linea.ubicacion_id
+            detalle = (
+                f"Ajuste positivo generado por inventario {inventario.id}. "
+                f"Se suman {cantidad_movimiento} unidades al producto {linea.producto_id} "
+                f"en la ubicación {linea.ubicacion_id}"
+            )
+        else:
+            ubicacion_origen_id = linea.ubicacion_id
+            ubicacion_destino_id = None
+            detalle = (
+                f"Ajuste negativo generado por inventario {inventario.id}. "
+                f"Se restan {cantidad_movimiento} unidades al producto {linea.producto_id} "
+                f"en la ubicación {linea.ubicacion_id}"
+            )
+
+        movimiento = Movement(
+            producto_id=linea.producto_id,
+            ubicacion_origen_id=ubicacion_origen_id,
+            ubicacion_destino_id=ubicacion_destino_id,
+            cantidad=cantidad_movimiento,
+            tipo_movimiento="ajuste",
+            origen_tipo="inventario",
+            origen_id=inventario.id,
+            usuario_id=inventario.usuario_id,
+            observaciones=detalle
+        )
+
+        self.db.add(movimiento)
+        self.db.flush()
 
     def _validate_user(self, usuario_id: int):
         usuario = self.db.query(User).filter(User.id == usuario_id).first()

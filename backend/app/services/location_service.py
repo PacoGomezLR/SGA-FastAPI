@@ -1,12 +1,14 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.models.zone import Zone
 from app.repositories.location_repository import LocationRepository
 from app.schemas.location import LocationCreate, LocationUpdate
 
 
 class LocationService:
     def __init__(self, db: Session):
+        self.db = db
         self.repository = LocationRepository(db)
 
     def get_all_locations(self):
@@ -22,6 +24,13 @@ class LocationService:
         return location
 
     def create_location(self, location_data: LocationCreate):
+        zona = self.db.query(Zone).filter(Zone.id == location_data.zona_id).first()
+        if not zona:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="La zona no existe"
+            )
+
         existing = self.repository.get_by_zone_and_code(
             location_data.zona_id, location_data.codigo
         )
@@ -30,6 +39,7 @@ class LocationService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Ya existe una ubicación con ese código en esa zona"
             )
+
         return self.repository.create(location_data)
 
     def update_location(self, location_id: int, location_data: LocationUpdate):
@@ -40,8 +50,19 @@ class LocationService:
                 detail="Ubicación no encontrada"
             )
 
-        nueva_zona_id = location_data.zona_id if location_data.zona_id is not None else location.zona_id
-        nuevo_codigo = location_data.codigo if location_data.codigo is not None else location.codigo
+        nueva_zona_id = (
+            location_data.zona_id if location_data.zona_id is not None else location.zona_id
+        )
+        nuevo_codigo = (
+            location_data.codigo if location_data.codigo is not None else location.codigo
+        )
+
+        zona = self.db.query(Zone).filter(Zone.id == nueva_zona_id).first()
+        if not zona:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="La zona no existe"
+            )
 
         existing = self.repository.get_by_zone_and_code(nueva_zona_id, nuevo_codigo)
         if existing and existing.id != location_id:

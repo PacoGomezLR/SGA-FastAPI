@@ -1,12 +1,20 @@
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class ZoneBase(BaseModel):
     almacen_id: int
-    nombre: str
+    nombre: str = Field(..., min_length=1)
     descripcion: Optional[str] = None
     activo: bool = True
+
+    @field_validator("nombre")
+    @classmethod
+    def nombre_no_vacio(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("El nombre no puede estar vacío")
+        return value
 
 
 class ZoneCreate(ZoneBase):
@@ -18,6 +26,13 @@ class ZoneUpdate(BaseModel):
     nombre: Optional[str] = None
     descripcion: Optional[str] = None
     activo: Optional[bool] = None
+
+    @field_validator("nombre")
+    @classmethod
+    def nombre_no_vacio_update(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and not value.strip():
+            raise ValueError("El nombre no puede estar vacío")
+        return value
 
 
 class ZoneResponse(ZoneBase):

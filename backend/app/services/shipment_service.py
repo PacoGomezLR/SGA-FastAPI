@@ -79,19 +79,32 @@ class ShipmentService:
             lineas=lineas_modelo
         )
 
-        salida_creada = self.repository.create(nueva_salida)
+        try:
+            salida_creada = self.repository.create(nueva_salida)
 
-        audit_service = AuditService(self.db)
-        audit_service.log_action(
-            usuario_id=usuario_id,
-            modulo="shipments",
-            accion="create",
-            entidad="salida",
-            entidad_id=salida_creada.id,
-            detalle=f"Salida creada en almacén {salida_creada.almacen_id} con {len(salida_creada.lineas)} líneas"
-        )
+            audit_service = AuditService(self.db)
+            audit_service.log_action(
+                usuario_id=usuario_id,
+                modulo="shipments",
+                accion="create",
+                entidad="salida",
+                entidad_id=salida_creada.id,
+                detalle=f"Salida creada en almacén {salida_creada.almacen_id} con {len(salida_creada.lineas)} líneas"
+            )
 
-        return salida_creada
+            self.db.commit()
+            self.db.refresh(salida_creada)
+            return salida_creada
+
+        except HTTPException:
+            self.db.rollback()
+            raise
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error al crear la salida: {str(e)}"
+            )
 
     def confirm_shipment(self, shipment_id: int):
         salida = self.repository.get_by_id(shipment_id)
@@ -115,8 +128,6 @@ class ShipmentService:
             )
 
         try:
-            stocks_por_linea = []
-
             for linea in salida.lineas:
                 producto = self.product_repository.get_by_id(linea.producto_id)
                 if not producto:
@@ -132,33 +143,11 @@ class ShipmentService:
                         detail=f"Ubicación con id {linea.ubicacion_origen_id} no encontrada"
                     )
 
-                stock = self.stock_repository.get_by_product_and_location(
-                    linea.producto_id,
-                    linea.ubicacion_origen_id
+                self.stock_repository.remove_stock(
+                    producto_id=linea.producto_id,
+                    ubicacion_id=linea.ubicacion_origen_id,
+                    cantidad=linea.cantidad
                 )
-
-                if not stock:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=(
-                            f"No existe stock para el producto {linea.producto_id} "
-                            f"en la ubicación {linea.ubicacion_origen_id}"
-                        )
-                    )
-
-                if stock.cantidad < linea.cantidad:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=(
-                            f"Stock insuficiente para el producto {linea.producto_id} "
-                            f"en la ubicación {linea.ubicacion_origen_id}"
-                        )
-                    )
-
-                stocks_por_linea.append((linea, stock))
-
-            for linea, stock in stocks_por_linea:
-                stock.cantidad -= linea.cantidad
 
                 nuevo_movimiento = Movement(
                     producto_id=linea.producto_id,
@@ -166,15 +155,15 @@ class ShipmentService:
                     ubicacion_destino_id=None,
                     cantidad=linea.cantidad,
                     tipo_movimiento="salida",
+                    origen_tipo="salida",
+                    origen_id=salida.id,
                     usuario_id=salida.usuario_id,
                     observaciones=f"Movimiento generado automáticamente al confirmar la salida {salida.id}"
                 )
                 self.db.add(nuevo_movimiento)
 
             salida.estado = "confirmada"
-
-            self.db.commit()
-            self.db.refresh(salida)
+            self.db.flush()
 
             audit_service = AuditService(self.db)
             audit_service.log_action(
@@ -185,6 +174,9 @@ class ShipmentService:
                 entidad_id=salida.id,
                 detalle=f"Salida confirmada con {len(salida.lineas)} líneas en almacén {salida.almacen_id}"
             )
+
+            self.db.commit()
+            self.db.refresh(salida)
 
             return salida
 

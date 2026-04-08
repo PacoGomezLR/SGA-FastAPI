@@ -1,12 +1,14 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.models.warehouse import Warehouse
 from app.repositories.zone_repository import ZoneRepository
 from app.schemas.zone import ZoneCreate, ZoneUpdate
 
 
 class ZoneService:
     def __init__(self, db: Session):
+        self.db = db
         self.repository = ZoneRepository(db)
 
     def get_all_zones(self):
@@ -22,6 +24,13 @@ class ZoneService:
         return zone
 
     def create_zone(self, zone_data: ZoneCreate):
+        almacen = self.db.query(Warehouse).filter(Warehouse.id == zone_data.almacen_id).first()
+        if not almacen:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="El almacén no existe"
+            )
+
         existing = self.repository.get_by_warehouse_and_name(
             zone_data.almacen_id, zone_data.nombre
         )
@@ -30,6 +39,7 @@ class ZoneService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Ya existe una zona con ese nombre en ese almacén"
             )
+
         return self.repository.create(zone_data)
 
     def update_zone(self, zone_id: int, zone_data: ZoneUpdate):
@@ -40,10 +50,23 @@ class ZoneService:
                 detail="Zona no encontrada"
             )
 
-        nuevo_almacen_id = zone_data.almacen_id if zone_data.almacen_id is not None else zone.almacen_id
-        nuevo_nombre = zone_data.nombre if zone_data.nombre is not None else zone.nombre
+        nuevo_almacen_id = (
+            zone_data.almacen_id if zone_data.almacen_id is not None else zone.almacen_id
+        )
+        nuevo_nombre = (
+            zone_data.nombre if zone_data.nombre is not None else zone.nombre
+        )
 
-        existing = self.repository.get_by_warehouse_and_name(nuevo_almacen_id, nuevo_nombre)
+        almacen = self.db.query(Warehouse).filter(Warehouse.id == nuevo_almacen_id).first()
+        if not almacen:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="El almacén no existe"
+            )
+
+        existing = self.repository.get_by_warehouse_and_name(
+            nuevo_almacen_id, nuevo_nombre
+        )
         if existing and existing.id != zone_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

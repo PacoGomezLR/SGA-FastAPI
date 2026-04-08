@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 from sqlalchemy import text
 
-from app.db.base import Base
-from app.db.session import engine, SessionLocal
+from app.db.session import SessionLocal
 from app.routes.category_routes import router as category_router
 from app.routes.product_routes import router as product_router
 from app.routes.warehouse_routes import router as warehouse_router
@@ -14,17 +13,8 @@ from app.routes.movement_routes import router as movement_router
 from app.routes.shipment_routes import router as shipment_router
 from app.routes.inventory_routes import router as inventory_router
 from app.routes.audit_routes import router as audit_router
+from app.routes import auth_routes
 
-from app.models import (
-    Role,
-    User,
-    Category,
-    Product,
-    Warehouse,
-    Zone,
-    Location,
-    Stock,
-)
 
 app = FastAPI(title="SGA API")
 
@@ -39,11 +29,7 @@ app.include_router(movement_router)
 app.include_router(shipment_router)
 app.include_router(inventory_router)
 app.include_router(audit_router)
-
-
-@app.on_event("startup")
-def on_startup():
-    Base.metadata.create_all(bind=engine)
+app.include_router(auth_routes.router)
 
 
 @app.get("/")

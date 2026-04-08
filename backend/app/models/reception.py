@@ -17,9 +17,9 @@ class Reception(Base):
     estado: Mapped[str] = mapped_column(String(20), default="borrador", nullable=False)
     creado_en: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
-    usuario = relationship("User", back_populates="recepciones")
-    almacen = relationship("Warehouse", back_populates="recepciones")
-    lineas = relationship(
+    usuario: Mapped["User"] = relationship("User", back_populates="recepciones")
+    almacen: Mapped["Warehouse"] = relationship("Warehouse", back_populates="recepciones")
+    lineas: Mapped[list["ReceptionLine"]] = relationship(
         "ReceptionLine",
         back_populates="recepcion",
         cascade="all, delete-orphan"

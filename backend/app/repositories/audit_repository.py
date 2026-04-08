@@ -18,8 +18,7 @@ class AuditRepository:
             detalle=audit_data.detalle,
         )
         self.db.add(audit)
-        self.db.commit()
-        self.db.refresh(audit)
+        self.db.flush()
         return audit
 
     def get_all(self) -> list[AuditLog]:

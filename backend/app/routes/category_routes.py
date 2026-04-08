@@ -1,31 +1,32 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.db.session import SessionLocal
+from app.db.session import get_db
+from app.models.user import User
 from app.repositories.category_repository import CategoryRepository
 from app.schemas.category import CategoryCreate, CategoryResponse, CategoryUpdate
+from app.security.dependencies import get_current_user, require_role
 from app.services.category_service import CategoryService
 
 router = APIRouter(prefix="/categories", tags=["Categories"])
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 @router.get("/", response_model=list[CategoryResponse])
-def get_categories(db: Session = Depends(get_db)):
+def get_categories(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     repository = CategoryRepository(db)
     service = CategoryService(repository)
     return service.get_categories()
 
 
 @router.get("/{category_id}", response_model=CategoryResponse)
-def get_category(category_id: int, db: Session = Depends(get_db)):
+def get_category(
+    category_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     repository = CategoryRepository(db)
     service = CategoryService(repository)
 
@@ -36,7 +37,11 @@ def get_category(category_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=CategoryResponse, status_code=201)
-def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
+def create_category(
+    data: CategoryCreate,
+    current_user: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db)
+):
     repository = CategoryRepository(db)
     service = CategoryService(repository)
 
@@ -47,7 +52,12 @@ def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{category_id}", response_model=CategoryResponse)
-def update_category(category_id: int, data: CategoryUpdate, db: Session = Depends(get_db)):
+def update_category(
+    category_id: int,
+    data: CategoryUpdate,
+    current_user: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db)
+):
     repository = CategoryRepository(db)
     service = CategoryService(repository)
 
@@ -60,7 +70,11 @@ def update_category(category_id: int, data: CategoryUpdate, db: Session = Depend
 
 
 @router.delete("/{category_id}", status_code=204)
-def delete_category(category_id: int, db: Session = Depends(get_db)):
+def delete_category(
+    category_id: int,
+    current_user: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db)
+):
     repository = CategoryRepository(db)
     service = CategoryService(repository)
 

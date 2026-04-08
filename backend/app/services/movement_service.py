@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.movement import Movement
+from app.models.user import User
 from app.repositories.location_repository import LocationRepository
 from app.repositories.movement_repository import MovementRepository
 from app.repositories.product_repository import ProductRepository
@@ -14,9 +15,10 @@ class MovementService:
     def __init__(self, db: Session):
         self.db = db
         self.repository = MovementRepository(db)
-        self.stock_repository = StockRepository(db)
         self.product_repository = ProductRepository(db)
         self.location_repository = LocationRepository(db)
+        self.stock_repository = StockRepository(db)
+        self.audit_service = AuditService(db)
 
     def get_all_movements(self):
         return self.repository.get_all()
@@ -33,109 +35,70 @@ class MovementService:
     def get_movements_by_product(self, producto_id: int):
         return self.repository.get_by_product(producto_id)
 
-    def create_movement(self, movement_data: MovementCreate, usuario_id: int):
+    def create_movement(self, movement_data: MovementCreate, current_user: User):
         producto = self.product_repository.get_by_id(movement_data.producto_id)
         if not producto:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Producto con id {movement_data.producto_id} no encontrado"
+                detail="Producto no encontrado"
             )
 
-        ubicacion_origen = self.location_repository.get_by_id(movement_data.ubicacion_origen_id)
-        if not ubicacion_origen:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Ubicación de origen con id {movement_data.ubicacion_origen_id} no encontrada"
+        if movement_data.ubicacion_origen_id is not None:
+            ubicacion_origen = self.location_repository.get_by_id(
+                movement_data.ubicacion_origen_id
             )
+            if not ubicacion_origen:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Ubicación de origen no encontrada"
+                )
 
-        if movement_data.ubicacion_destino_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="El movimiento interno requiere ubicación de destino"
+        if movement_data.ubicacion_destino_id is not None:
+            ubicacion_destino = self.location_repository.get_by_id(
+                movement_data.ubicacion_destino_id
             )
+            if not ubicacion_destino:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Ubicación de destino no encontrada"
+                )
 
-        ubicacion_destino = self.location_repository.get_by_id(movement_data.ubicacion_destino_id)
-        if not ubicacion_destino:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Ubicación de destino con id {movement_data.ubicacion_destino_id} no encontrada"
-            )
-
-        if movement_data.ubicacion_origen_id == movement_data.ubicacion_destino_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="La ubicación de origen y destino no pueden ser la misma"
-            )
-
-        if movement_data.cantidad <= 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="La cantidad debe ser mayor que 0"
-            )
-
-        stock_origen = self.stock_repository.get_by_product_and_location(
-            movement_data.producto_id,
-            movement_data.ubicacion_origen_id
-        )
-
-        if not stock_origen:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No existe stock del producto en la ubicación de origen"
-            )
-
-        if stock_origen.cantidad < movement_data.cantidad:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Stock insuficiente en la ubicación de origen"
-            )
-
-        stock_destino = self.stock_repository.get_by_product_and_location(
-            movement_data.producto_id,
-            movement_data.ubicacion_destino_id
-        )
+        self._validate_movement_rules(movement_data)
 
         try:
-            stock_origen.cantidad -= movement_data.cantidad
-
-            if stock_destino:
-                stock_destino.cantidad += movement_data.cantidad
-            else:
-                self.stock_repository.create_from_movement(
-                    producto_id=movement_data.producto_id,
-                    ubicacion_id=movement_data.ubicacion_destino_id,
-                    cantidad=movement_data.cantidad
-                )
+            self._apply_stock_operation(movement_data)
 
             movement = Movement(
                 producto_id=movement_data.producto_id,
                 ubicacion_origen_id=movement_data.ubicacion_origen_id,
                 ubicacion_destino_id=movement_data.ubicacion_destino_id,
                 cantidad=movement_data.cantidad,
-                tipo_movimiento="traslado",
-                usuario_id=usuario_id,
-                observaciones=movement_data.observaciones
+                tipo_movimiento=movement_data.tipo_movimiento,
+                origen_tipo=movement_data.origen_tipo,
+                origen_id=movement_data.origen_id,
+                usuario_id=current_user.id,
+                observaciones=movement_data.observaciones,
             )
 
-            self.db.add(movement)
-            self.db.commit()
-            self.db.refresh(movement)
+            movement = self.repository.create(movement)
 
-            audit_service = AuditService(self.db)
-            audit_service.log_action(
-                usuario_id=usuario_id,
+            self.audit_service.log_action(
+                usuario_id=current_user.id,
                 modulo="movements",
                 accion="create",
                 entidad="movimiento",
                 entidad_id=movement.id,
                 detalle=(
-                    f"Movimiento interno del producto {movement.producto_id} "
-                    f"desde ubicación {movement.ubicacion_origen_id} "
-                    f"hacia ubicación {movement.ubicacion_destino_id} "
-                    f"por cantidad {movement.cantidad}"
+                    f"Movimiento registrado. "
+                    f"Tipo: {movement_data.tipo_movimiento}. "
+                    f"Producto: {movement_data.producto_id}. "
+                    f"Origen: {movement_data.ubicacion_origen_id}. "
+                    f"Destino: {movement_data.ubicacion_destino_id}. "
+                    f"Cantidad: {movement_data.cantidad}."
                 ),
             )
 
+            self.db.commit()
             return movement
 
         except HTTPException:
@@ -143,7 +106,104 @@ class MovementService:
             raise
         except Exception as e:
             self.db.rollback()
+            raise e
+
+    def _validate_movement_rules(self, movement_data: MovementCreate):
+        if movement_data.cantidad <= 0:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error al registrar el movimiento interno: {str(e)}"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La cantidad debe ser mayor que 0"
             )
+
+        if movement_data.tipo_movimiento == "traslado":
+            if movement_data.ubicacion_origen_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El traslado requiere ubicación de origen"
+                )
+
+            if movement_data.ubicacion_destino_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El traslado requiere ubicación de destino"
+                )
+
+            if movement_data.ubicacion_origen_id == movement_data.ubicacion_destino_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="La ubicación de origen y destino no pueden ser la misma"
+                )
+
+        elif movement_data.tipo_movimiento == "entrada":
+            if movement_data.ubicacion_destino_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="La entrada requiere ubicación de destino"
+                )
+
+        elif movement_data.tipo_movimiento == "salida":
+            if movement_data.ubicacion_origen_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="La salida requiere ubicación de origen"
+                )
+
+        elif movement_data.tipo_movimiento == "ajuste":
+            if (
+                movement_data.ubicacion_origen_id is None
+                and movement_data.ubicacion_destino_id is None
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El ajuste requiere al menos una ubicación"
+                )
+
+            if (
+                movement_data.ubicacion_origen_id is not None
+                and movement_data.ubicacion_destino_id is not None
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El ajuste debe indicar solo una ubicación: origen para ajuste negativo o destino para ajuste positivo"
+                )
+
+    def _apply_stock_operation(self, movement_data: MovementCreate):
+        if movement_data.tipo_movimiento == "traslado":
+            self.stock_repository.remove_stock(
+                producto_id=movement_data.producto_id,
+                ubicacion_id=movement_data.ubicacion_origen_id,
+                cantidad=movement_data.cantidad
+            )
+            self.stock_repository.add_stock(
+                producto_id=movement_data.producto_id,
+                ubicacion_id=movement_data.ubicacion_destino_id,
+                cantidad=movement_data.cantidad
+            )
+
+        elif movement_data.tipo_movimiento == "entrada":
+            self.stock_repository.add_stock(
+                producto_id=movement_data.producto_id,
+                ubicacion_id=movement_data.ubicacion_destino_id,
+                cantidad=movement_data.cantidad
+            )
+
+        elif movement_data.tipo_movimiento == "salida":
+            self.stock_repository.remove_stock(
+                producto_id=movement_data.producto_id,
+                ubicacion_id=movement_data.ubicacion_origen_id,
+                cantidad=movement_data.cantidad
+            )
+
+        elif movement_data.tipo_movimiento == "ajuste":
+            if movement_data.ubicacion_origen_id is not None:
+                self.stock_repository.remove_stock(
+                    producto_id=movement_data.producto_id,
+                    ubicacion_id=movement_data.ubicacion_origen_id,
+                    cantidad=movement_data.cantidad
+                )
+            else:
+                self.stock_repository.add_stock(
+                    producto_id=movement_data.producto_id,
+                    ubicacion_id=movement_data.ubicacion_destino_id,
+                    cantidad=movement_data.cantidad
+                )

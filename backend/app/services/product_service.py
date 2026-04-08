@@ -1,12 +1,14 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.models.category import Category
 from app.repositories.product_repository import ProductRepository
 from app.schemas.product import ProductCreate, ProductUpdate
 
 
 class ProductService:
     def __init__(self, db: Session):
+        self.db = db
         self.repository = ProductRepository(db)
 
     def get_all_products(self):
@@ -28,6 +30,14 @@ class ProductService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Ya existe un producto con ese SKU"
             )
+
+        categoria = self.db.query(Category).filter(Category.id == product_data.categoria_id).first()
+        if not categoria:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="La categoría no existe"
+            )
+
         return self.repository.create(product_data)
 
     def update_product(self, product_id: int, product_data: ProductUpdate):
@@ -44,6 +54,14 @@ class ProductService:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Ya existe otro producto con ese SKU"
+                )
+
+        if product_data.categoria_id is not None:
+            categoria = self.db.query(Category).filter(Category.id == product_data.categoria_id).first()
+            if not categoria:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="La categoría no existe"
                 )
 
         return self.repository.update(product, product_data)
