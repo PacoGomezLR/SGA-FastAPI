@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.models.location import Location
 from app.models.movement import Movement
 from app.models.product import Product
+from app.models.warehouse import Warehouse  # 👈 AÑADIDO
 from app.repositories.reception_repository import ReceptionRepository
 from app.repositories.stock_repository import StockRepository
 from app.schemas.reception import ReceptionCreate, ReceptionUpdate
@@ -34,6 +35,9 @@ class ReceptionService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="La recepción debe tener al menos una línea"
             )
+
+        # 👇 VALIDACIÓN NUEVA
+        self._validate_almacen(reception_data.almacen_id)
 
         for linea in reception_data.lineas:
             self._validate_line(linea, reception_data.almacen_id)
@@ -85,6 +89,9 @@ class ReceptionService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="La recepción debe tener al menos una línea"
             )
+
+        # 👇 VALIDACIÓN NUEVA
+        self._validate_almacen(reception_data.almacen_id)
 
         for linea in reception_data.lineas:
             self._validate_line(linea, reception_data.almacen_id)
@@ -143,6 +150,9 @@ class ReceptionService:
                 detail="La recepción no tiene líneas"
             )
 
+        # 👇 VALIDACIÓN NUEVA
+        self._validate_almacen(recepcion.almacen_id)
+
         try:
             for linea in recepcion.lineas:
                 self._validate_line(linea, recepcion.almacen_id)
@@ -191,6 +201,26 @@ class ReceptionService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Error al confirmar la recepción: {str(e)}"
+            )
+
+    # 👇 NUEVO MÉTODO
+    def _validate_almacen(self, almacen_id: int):
+        almacen = (
+            self.db.query(Warehouse)
+            .filter(Warehouse.id == almacen_id)
+            .first()
+        )
+
+        if not almacen:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"El almacén {almacen_id} no existe"
+            )
+
+        if not almacen.activo:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El almacén {almacen_id} está inactivo"
             )
 
     def _validate_line(self, linea, almacen_id: int):

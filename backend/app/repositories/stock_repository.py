@@ -49,21 +49,9 @@ class StockRepository:
         return stock
 
     def create_from_movement(self, producto_id: int, ubicacion_id: int, cantidad: int):
-        """
-        Mantengo este método por compatibilidad con tu código actual,
-        pero internamente delega en add_stock() para no duplicar lógica.
-        """
         return self.add_stock(producto_id, ubicacion_id, cantidad)
 
     def add_stock(self, producto_id: int, ubicacion_id: int, cantidad: int):
-        """
-        Suma stock de forma segura.
-        Si no existe el registro producto+ubicacion, lo crea.
-        Si existe, incrementa la cantidad.
-
-        Usa UPSERT de PostgreSQL para evitar problemas de concurrencia
-        al crear o actualizar stock en destino.
-        """
         if cantidad <= 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -87,19 +75,6 @@ class StockRepository:
         return self.get_by_product_and_location(producto_id, ubicacion_id)
 
     def remove_stock(self, producto_id: int, ubicacion_id: int, cantidad: int):
-        """
-        Resta stock de forma atómica y segura ante concurrencia.
-
-        En lugar de:
-        - leer stock
-        - comprobar en Python
-        - restar en Python
-
-        hace un UPDATE directo con condición:
-        cantidad >= cantidad_solicitada
-
-        Así evitamos que dos procesos lean el mismo stock y ambos resten.
-        """
         if cantidad <= 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -114,11 +89,18 @@ class StockRepository:
                 Stock.cantidad >= cantidad
             )
             .values(cantidad=Stock.cantidad - cantidad)
+            .returning(
+                Stock.id,
+                Stock.producto_id,
+                Stock.ubicacion_id,
+                Stock.cantidad
+            )
         )
 
         result = self.db.execute(stmt)
+        row = result.fetchone()
 
-        if result.rowcount != 1:
+        if not row:
             stock = self.get_by_product_and_location(producto_id, ubicacion_id)
 
             if not stock:
@@ -133,6 +115,8 @@ class StockRepository:
             )
 
         self.db.flush()
+
+        # Mantengo compatibilidad devolviendo objeto estilo Stock
         return self.get_by_product_and_location(producto_id, ubicacion_id)
 
     def delete(self, stock: Stock):

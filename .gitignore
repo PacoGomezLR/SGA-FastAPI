@@ -1,15 +1,24 @@
 # Python
 venv/
+.venv/
+env/
 backend/venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
 # Variables sensibles
 .env
 backend/.env
 
+# Bases de datos
+*.sqlite3
+*.db
+
 # Editor
 .vscode/
+.idea/
 
 # Sistema
 .DS_Store
@@ -17,6 +26,6 @@ backend/.env
 # Logs
 *.log
 
-# Node (ya que tienes frontend)
+# Node / Frontend
 node_modules/
 dist/
