@@ -58,20 +58,21 @@ class InventoryService:
             for line_data in inventory_data.lineas:
                 self._create_inventory_line(inventario.id, line_data)
 
-            self.db.commit()
-            inventario_creado = self.repository.get_by_id(inventario.id)
-
             audit_service = AuditService(self.db)
             audit_service.log_action(
                 usuario_id=usuario_id,
                 modulo="inventories",
                 accion="create",
                 entidad="inventario",
-                entidad_id=inventario_creado.id,
-                detalle=f"Inventario creado en almacén {inventario_creado.almacen_id} con estado {inventario_creado.estado}"
+                entidad_id=inventario.id,
+                detalle=(
+                    f"Inventario creado en almacén {inventario.almacen_id} "
+                    f"con estado {inventario.estado}"
+                )
             )
 
-            return inventario_creado
+            self.db.commit()
+            return self.repository.get_by_id(inventario.id)
 
         except HTTPException:
             self.db.rollback()
@@ -182,21 +183,19 @@ class InventoryService:
         try:
             inventario.estado = "contado"
             self.repository.update(inventario)
-            self.db.commit()
-
-            inventario_actualizado = self.repository.get_by_id(inventory_id)
 
             audit_service = AuditService(self.db)
             audit_service.log_action(
-                usuario_id=inventario_actualizado.usuario_id,
+                usuario_id=inventario.usuario_id,
                 modulo="inventories",
                 accion="count",
                 entidad="inventario",
-                entidad_id=inventario_actualizado.id,
+                entidad_id=inventario.id,
                 detalle="Inventario marcado como contado"
             )
 
-            return inventario_actualizado
+            self.db.commit()
+            return self.repository.get_by_id(inventory_id)
 
         except Exception:
             self.db.rollback()
@@ -212,7 +211,6 @@ class InventoryService:
     def apply_inventory_adjustment(self, inventory_id: int):
         inventario = self.get_inventory_by_id(inventory_id)
 
-        # REGLA ENDURECIDA: solo se ajusta desde contado
         if inventario.estado != "contado":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -227,6 +225,7 @@ class InventoryService:
 
         try:
             hay_lineas_pendientes = False
+            audit_service = AuditService(self.db)
 
             for linea in inventario.lineas:
                 if linea.ajuste_aplicado:
@@ -259,12 +258,31 @@ class InventoryService:
                         cantidad_a_restar
                     )
 
-                # Crear movement solo si realmente hay diferencia
                 if diferencia_calculada != 0:
-                    self._create_adjustment_movement(inventario, linea, diferencia_calculada)
+                    self._create_adjustment_movement(
+                        inventario,
+                        linea,
+                        diferencia_calculada
+                    )
 
                 linea.ajuste_aplicado = True
                 self.repository.update_line(linea)
+
+                audit_service.log_action(
+                    usuario_id=inventario.usuario_id,
+                    modulo="inventories",
+                    accion="adjust_line_auto",
+                    entidad="linea_inventario",
+                    entidad_id=linea.id,
+                    detalle=(
+                        f"Ajuste automático en línea {linea.id}. "
+                        f"Producto: {linea.producto_id}. "
+                        f"Ubicación: {linea.ubicacion_id}. "
+                        f"Cantidad sistema: {linea.cantidad_sistema}. "
+                        f"Cantidad real: {linea.cantidad_real}. "
+                        f"Diferencia: {linea.diferencia}."
+                    )
+                )
 
             if not hay_lineas_pendientes:
                 raise HTTPException(
@@ -275,20 +293,17 @@ class InventoryService:
             inventario.estado = "ajustado"
             self.repository.update(inventario)
 
-            self.db.commit()
-            inventario_ajustado = self.repository.get_by_id(inventory_id)
-
-            audit_service = AuditService(self.db)
             audit_service.log_action(
-                usuario_id=inventario_ajustado.usuario_id,
+                usuario_id=inventario.usuario_id,
                 modulo="inventories",
                 accion="adjust",
                 entidad="inventario",
-                entidad_id=inventario_ajustado.id,
+                entidad_id=inventario.id,
                 detalle="Inventario ajustado completamente"
             )
 
-            return inventario_ajustado
+            self.db.commit()
+            return self.repository.get_by_id(inventory_id)
 
         except HTTPException:
             self.db.rollback()
@@ -356,7 +371,11 @@ class InventoryService:
                 )
 
             if diferencia_calculada != 0:
-                self._create_adjustment_movement(inventario, linea, diferencia_calculada)
+                self._create_adjustment_movement(
+                    inventario,
+                    linea,
+                    diferencia_calculada
+                )
 
             linea.ajuste_aplicado = True
             self.repository.update_line(linea)
@@ -369,12 +388,9 @@ class InventoryService:
 
             self.repository.update(inventario)
 
-            self.db.commit()
-            inventario_actualizado = self.repository.get_by_id(inventory_id)
-
             audit_service = AuditService(self.db)
             audit_service.log_action(
-                usuario_id=inventario_actualizado.usuario_id,
+                usuario_id=inventario.usuario_id,
                 modulo="inventories",
                 accion="adjust_line",
                 entidad="linea_inventario",
@@ -387,7 +403,8 @@ class InventoryService:
                 ),
             )
 
-            return inventario_actualizado
+            self.db.commit()
+            return self.repository.get_by_id(inventory_id)
 
         except HTTPException:
             self.db.rollback()
@@ -421,21 +438,19 @@ class InventoryService:
         try:
             inventario.estado = "anulado"
             self.repository.update(inventario)
-            self.db.commit()
-
-            inventario_anulado = self.repository.get_by_id(inventory_id)
 
             audit_service = AuditService(self.db)
             audit_service.log_action(
-                usuario_id=inventario_anulado.usuario_id,
+                usuario_id=inventario.usuario_id,
                 modulo="inventories",
                 accion="cancel",
                 entidad="inventario",
-                entidad_id=inventario_anulado.id,
+                entidad_id=inventario.id,
                 detalle="Inventario anulado"
             )
 
-            return inventario_anulado
+            self.db.commit()
+            return self.repository.get_by_id(inventory_id)
 
         except Exception:
             self.db.rollback()
@@ -492,7 +507,12 @@ class InventoryService:
         self.repository.add_line(linea)
         return linea
 
-    def _create_adjustment_movement(self, inventario: Inventory, linea: InventoryLine, diferencia: int):
+    def _create_adjustment_movement(
+        self,
+        inventario: Inventory,
+        linea: InventoryLine,
+        diferencia: int
+    ):
         cantidad_movimiento = abs(diferencia)
 
         if cantidad_movimiento == 0:
@@ -547,7 +567,7 @@ class InventoryService:
             )
 
     def _validate_product(self, producto_id: int):
-        producto = self.db.query(Product).filter(Product.id == producto_id).first()
+        producto = self.db.query(Product).filter(User.id == producto_id).first()
         if not producto:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

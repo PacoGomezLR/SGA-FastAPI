@@ -10,6 +10,7 @@ class ProductBase(BaseModel):
     categoria_id: int
     unidad_medida: str = Field(..., min_length=1)
     activo: bool = True
+    stock_minimo: int = Field(default=0, ge=0)
 
     @field_validator("nombre", "sku", "unidad_medida")
     @classmethod
@@ -30,6 +31,7 @@ class ProductUpdate(BaseModel):
     categoria_id: Optional[int] = None
     unidad_medida: Optional[str] = None
     activo: Optional[bool] = None
+    stock_minimo: Optional[int] = Field(default=None, ge=0)
 
     @field_validator("nombre", "sku", "unidad_medida")
     @classmethod

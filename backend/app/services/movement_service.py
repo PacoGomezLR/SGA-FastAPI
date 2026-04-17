@@ -36,6 +36,10 @@ class MovementService:
         return self.repository.get_by_product(producto_id)
 
     def create_movement(self, movement_data: MovementCreate, current_user: User):
+        tipo_movimiento = self._normalize_tipo_movimiento(
+            movement_data.tipo_movimiento
+        )
+
         producto = self.product_repository.get_by_id(movement_data.producto_id)
         if not producto:
             raise HTTPException(
@@ -63,17 +67,17 @@ class MovementService:
                     detail="Ubicación de destino no encontrada"
                 )
 
-        self._validate_movement_rules(movement_data)
+        self._validate_movement_rules(movement_data, tipo_movimiento)
 
         try:
-            self._apply_stock_operation(movement_data)
+            self._apply_stock_operation(movement_data, tipo_movimiento)
 
             movement = Movement(
                 producto_id=movement_data.producto_id,
                 ubicacion_origen_id=movement_data.ubicacion_origen_id,
                 ubicacion_destino_id=movement_data.ubicacion_destino_id,
                 cantidad=movement_data.cantidad,
-                tipo_movimiento=movement_data.tipo_movimiento,
+                tipo_movimiento=tipo_movimiento,
                 origen_tipo=movement_data.origen_tipo,
                 origen_id=movement_data.origen_id,
                 usuario_id=current_user.id,
@@ -90,7 +94,7 @@ class MovementService:
                 entidad_id=movement.id,
                 detalle=(
                     f"Movimiento registrado. "
-                    f"Tipo: {movement_data.tipo_movimiento}. "
+                    f"Tipo: {tipo_movimiento}. "
                     f"Producto: {movement_data.producto_id}. "
                     f"Origen: {movement_data.ubicacion_origen_id}. "
                     f"Destino: {movement_data.ubicacion_destino_id}. "
@@ -104,18 +108,34 @@ class MovementService:
         except HTTPException:
             self.db.rollback()
             raise
-        except Exception as e:
+        except Exception:
             self.db.rollback()
-            raise e
+            raise
 
-    def _validate_movement_rules(self, movement_data: MovementCreate):
+    def _normalize_tipo_movimiento(self, tipo_movimiento: str) -> str:
+        tipo = tipo_movimiento.strip().lower()
+
+        tipos_validos = {"traslado", "entrada", "salida", "ajuste"}
+        if tipo not in tipos_validos:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Tipo de movimiento no válido"
+            )
+
+        return tipo
+
+    def _validate_movement_rules(
+        self,
+        movement_data: MovementCreate,
+        tipo_movimiento: str
+    ):
         if movement_data.cantidad <= 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="La cantidad debe ser mayor que 0"
             )
 
-        if movement_data.tipo_movimiento == "traslado":
+        if tipo_movimiento == "traslado":
             if movement_data.ubicacion_origen_id is None:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -134,21 +154,21 @@ class MovementService:
                     detail="La ubicación de origen y destino no pueden ser la misma"
                 )
 
-        elif movement_data.tipo_movimiento == "entrada":
+        elif tipo_movimiento == "entrada":
             if movement_data.ubicacion_destino_id is None:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="La entrada requiere ubicación de destino"
                 )
 
-        elif movement_data.tipo_movimiento == "salida":
+        elif tipo_movimiento == "salida":
             if movement_data.ubicacion_origen_id is None:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="La salida requiere ubicación de origen"
                 )
 
-        elif movement_data.tipo_movimiento == "ajuste":
+        elif tipo_movimiento == "ajuste":
             if (
                 movement_data.ubicacion_origen_id is None
                 and movement_data.ubicacion_destino_id is None
@@ -167,8 +187,12 @@ class MovementService:
                     detail="El ajuste debe indicar solo una ubicación: origen para ajuste negativo o destino para ajuste positivo"
                 )
 
-    def _apply_stock_operation(self, movement_data: MovementCreate):
-        if movement_data.tipo_movimiento == "traslado":
+    def _apply_stock_operation(
+        self,
+        movement_data: MovementCreate,
+        tipo_movimiento: str
+    ):
+        if tipo_movimiento == "traslado":
             self.stock_repository.remove_stock(
                 producto_id=movement_data.producto_id,
                 ubicacion_id=movement_data.ubicacion_origen_id,
@@ -180,21 +204,21 @@ class MovementService:
                 cantidad=movement_data.cantidad
             )
 
-        elif movement_data.tipo_movimiento == "entrada":
+        elif tipo_movimiento == "entrada":
             self.stock_repository.add_stock(
                 producto_id=movement_data.producto_id,
                 ubicacion_id=movement_data.ubicacion_destino_id,
                 cantidad=movement_data.cantidad
             )
 
-        elif movement_data.tipo_movimiento == "salida":
+        elif tipo_movimiento == "salida":
             self.stock_repository.remove_stock(
                 producto_id=movement_data.producto_id,
                 ubicacion_id=movement_data.ubicacion_origen_id,
                 cantidad=movement_data.cantidad
             )
 
-        elif movement_data.tipo_movimiento == "ajuste":
+        elif tipo_movimiento == "ajuste":
             if movement_data.ubicacion_origen_id is not None:
                 self.stock_repository.remove_stock(
                     producto_id=movement_data.producto_id,

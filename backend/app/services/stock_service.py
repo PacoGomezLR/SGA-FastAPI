@@ -17,6 +17,23 @@ class StockService:
     def get_all_stock(self):
         return self.repository.get_all()
 
+    def get_all_stock_detailed(self, low: bool = False):
+        data = self.repository.get_all_with_details(low=low)
+
+        return [
+            {
+                "id": item.id,
+                "producto_id": item.producto_id,
+                "producto_nombre": item.producto_nombre,
+                "ubicacion_id": item.ubicacion_id,
+                "ubicacion_nombre": item.ubicacion_nombre,
+                "cantidad": item.cantidad,
+                "stock_minimo": item.stock_minimo,
+                "bajo_stock": item.bajo_stock
+            }
+            for item in data
+        ]
+
     def get_stock_by_id(self, stock_id: int):
         stock = self.repository.get_by_id(stock_id)
         if not stock:
@@ -33,7 +50,6 @@ class StockService:
         return self.repository.get_by_location(ubicacion_id)
 
     def create_stock(self, stock_data: StockCreate):
-        # Validar que producto y ubicación existen
         self.validar_producto_y_ubicacion_existentes(
             stock_data.producto_id,
             stock_data.ubicacion_id
@@ -70,7 +86,6 @@ class StockService:
             else stock.ubicacion_id
         )
 
-        # Validar que producto y ubicación existen
         self.validar_producto_y_ubicacion_existentes(
             nuevo_producto_id,
             nueva_ubicacion_id
@@ -99,10 +114,6 @@ class StockService:
         self.repository.delete(stock)
         return {"message": "Registro de stock eliminado correctamente"}
 
-    # ==========================================================
-    # VALIDACIÓN DE EXISTENCIA
-    # ==========================================================
-
     def validar_producto_y_ubicacion_existentes(self, producto_id: int, ubicacion_id: int):
         producto = self.product_repository.get_by_id(producto_id)
         if not producto:
@@ -117,10 +128,6 @@ class StockService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="La ubicación indicada no existe"
             )
-
-    # ==========================================================
-    # LÓGICA CENTRAL DEL NÚCLEO DE STOCK
-    # ==========================================================
 
     def validar_stock_suficiente(self, producto_id: int, ubicacion_id: int, cantidad: int):
         if cantidad <= 0:

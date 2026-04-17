@@ -4,10 +4,6 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
-# ------------------------
-# LINEA DE RECEPCIÓN
-# ------------------------
-
 class ReceptionLineBase(BaseModel):
     producto_id: int
     cantidad: int = Field(gt=0)
@@ -29,10 +25,6 @@ class ReceptionLineResponse(ReceptionLineBase):
     class Config:
         from_attributes = True
 
-
-# ------------------------
-# RECEPCIÓN
-# ------------------------
 
 class ReceptionBase(BaseModel):
     almacen_id: int

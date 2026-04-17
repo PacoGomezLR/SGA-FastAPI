@@ -1,18 +1,93 @@
-# React + Vite
+# SGA — Sistema de Gestión de Almacén
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sistema web para la gestión integral de un almacén: control de stock, ubicaciones, movimientos, salidas, recepciones e inventarios.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Tecnologías
 
-## React Compiler
+### Frontend
+- React
+- Vite
+- JavaScript
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+### Backend
+- FastAPI
+- Python
 
-Note: This will impact Vite dev & build performances.
+### Base de datos
+- PostgreSQL
 
-## Expanding the ESLint configuration
+### Comunicación
+- API REST (JSON)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## Funcionalidades principales
+
+El sistema permite:
+
+- Gestión de productos y categorías
+- Gestión de almacenes, zonas y ubicaciones
+- Control de stock por producto y ubicación
+- Registro de recepciones
+- Movimientos internos entre ubicaciones
+- Registro de salidas (expediciones)
+- Inventarios y ajustes de stock
+- Auditoría básica de operaciones
+- Sistema de autenticación con roles
+
+---
+
+## Flujo del sistema
+
+Recepción → Ubicación → Stock → Movimiento → Salida → Inventario
+
+Este flujo representa el ciclo completo de la mercancía dentro del almacén :contentReference[oaicite:0]{index=0}
+
+---
+
+## Principios del sistema
+
+- El stock se controla por **producto + ubicación**
+- El stock **nunca puede ser negativo**
+- Toda operación queda registrada
+- La lógica del negocio vive en el backend
+- El frontend solo consume la API
+- Las operaciones críticas son transaccionales
+
+Estos principios vienen definidos en el diseño del núcleo de stock :contentReference[oaicite:1]{index=1}
+
+---
+
+## Estructura del proyecto
+
+```bash
+proyecto-sga/
+
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── core/
+│   │   ├── db/
+│   │   ├── models/
+│   │   ├── schemas/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── repositories/
+│   │   ├── security/
+│   │   ├── audit/
+│   │   └── utils/
+│   ├── alembic/
+│   ├── requirements.txt
+│   └── .env
+│
+├── src/
+│   ├── api/
+│   ├── components/
+│   ├── layouts/
+│   ├── pages/
+│   ├── routes/
+│   └── context/
+│
+└── docs/   (pendiente de completar en paso 19)

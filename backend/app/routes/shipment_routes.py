@@ -59,4 +59,4 @@ def confirm_shipment(
     current_user=Depends(require_role("administrador", "supervisor"))
 ):
     service = ShipmentService(db)
-    return service.confirm_shipment(shipment_id)
+    return service.confirm_shipment(shipment_id, current_user.id)

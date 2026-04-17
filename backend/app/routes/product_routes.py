@@ -14,7 +14,7 @@ router = APIRouter(prefix="/products", tags=["Products"])
     response_model=list[ProductResponse],
     dependencies=[Depends(require_role("administrador", "supervisor", "operario"))]
 )
-def get_products(db: Session = Depends(get_db)):
+def get_all_products(db: Session = Depends(get_db)):
     service = ProductService(db)
     return service.get_all_products()
 

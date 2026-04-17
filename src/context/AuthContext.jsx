@@ -1,26 +1,84 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext();
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 function AuthProvider({ children }) {
-  const [usuarioAutenticado, setUsuarioAutenticado] = useState(() => {
-    const authGuardada = localStorage.getItem("usuarioAutenticado");
-    return authGuardada === "true";
+  const [token, setToken] = useState(() => {
+    return localStorage.getItem("token") || null;
   });
 
-  function login() {
-    setUsuarioAutenticado(true);
-    localStorage.setItem("usuarioAutenticado", "true");
+  const usuarioAutenticado = !!token;
+
+  async function login({ username, password }) {
+    const formData = new URLSearchParams();
+    formData.append("username", username);
+    formData.append("password", password);
+
+    let response;
+    let data = null;
+
+    try {
+      response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: formData
+      });
+
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data?.detail || data?.message || "Credenciales incorrectas"
+        );
+      }
+
+      const accessToken = data?.access_token;
+
+      if (!accessToken) {
+        throw new Error("Token no recibido");
+      }
+
+      setToken(accessToken);
+      localStorage.setItem("token", accessToken);
+    } catch (error) {
+      throw error instanceof Error
+        ? error
+        : new Error("Error al iniciar sesión");
+    }
   }
 
   function logout() {
-    setUsuarioAutenticado(false);
-    localStorage.removeItem("usuarioAutenticado");
+    setToken(null);
+    localStorage.removeItem("token");
   }
+
+  useEffect(() => {
+    function handleUnauthorized(event) {
+      if (event.detail === 401) {
+        logout();
+      }
+    }
+
+    window.addEventListener("unauthorized", handleUnauthorized);
+
+    return () => {
+      window.removeEventListener("unauthorized", handleUnauthorized);
+    };
+  }, []);
 
   return (
     <AuthContext.Provider
       value={{
+        token,
         usuarioAutenticado,
         login,
         logout

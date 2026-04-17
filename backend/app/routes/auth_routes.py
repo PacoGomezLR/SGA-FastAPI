@@ -36,7 +36,12 @@ def login(
             detail="Usuario o contraseña incorrectos"
         )
 
-    access_token = create_access_token(data={"sub": user.username})
+    access_token = create_access_token(
+        data={
+            "sub": user.username,
+            "rol": user.rol.nombre if user.rol else None
+        }
+    )
 
     return {
         "access_token": access_token,
@@ -44,9 +49,10 @@ def login(
     }
 
 
-@router.get("/debug-role")
-def debug_role(current_user: User = Depends(get_current_user)):
+@router.get("/me")
+def get_me(current_user: User = Depends(get_current_user)):
     return {
         "username": current_user.username,
-        "rol": current_user.rol.nombre if current_user.rol else None
+        "rol": current_user.rol.nombre if current_user.rol else None,
+        "activo": current_user.activo
     }

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from sqlalchemy import text
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.db.session import SessionLocal
 from app.routes.category_routes import router as category_router
@@ -15,8 +16,16 @@ from app.routes.inventory_routes import router as inventory_router
 from app.routes.audit_routes import router as audit_router
 from app.routes import auth_routes
 
-
 app = FastAPI(title="SGA API")
+
+# 🔐 CORS (temporalmente abierto, restringir en producción)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(category_router)
 app.include_router(product_router)

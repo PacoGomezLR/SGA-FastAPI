@@ -4,6 +4,9 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from app.models.stock import Stock
+from app.models.product import Product
+from app.models.location import Location
+
 from app.schemas.stock import StockCreate, StockUpdate
 
 
@@ -13,6 +16,33 @@ class StockRepository:
 
     def get_all(self):
         return self.db.query(Stock).all()
+
+    def get_all_with_details(self, low: bool = False):
+        query = (
+            self.db.query(
+                Stock.id,
+                Stock.producto_id,
+                Product.nombre.label("producto_nombre"),
+                Product.stock_minimo,
+                Stock.ubicacion_id,
+                Location.codigo.label("ubicacion_nombre"),
+                Stock.cantidad,
+                (Stock.cantidad <= Product.stock_minimo).label("bajo_stock")
+            )
+            .join(Product, Product.id == Stock.producto_id)
+            .join(Location, Location.id == Stock.ubicacion_id)
+        )
+
+        if low:
+            query = query.filter(Stock.cantidad <= Product.stock_minimo)
+
+        return (
+            query.order_by(
+                (Stock.cantidad <= Product.stock_minimo).desc(),
+                Stock.cantidad.asc()
+            )
+            .all()
+        )
 
     def get_by_id(self, stock_id: int):
         return self.db.query(Stock).filter(Stock.id == stock_id).first()
@@ -116,7 +146,6 @@ class StockRepository:
 
         self.db.flush()
 
-        # Mantengo compatibilidad devolviendo objeto estilo Stock
         return self.get_by_product_and_location(producto_id, ubicacion_id)
 
     def delete(self, stock: Stock):

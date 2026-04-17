@@ -6,15 +6,12 @@ import CrudPage from "../components/CrudPage";
 const initialForm = {
   nombre: "",
   descripcion: "",
-  sku: "",
-  categoria_id: "",
-  unidad_medida: "",
-  stock_minimo: 0,
+  direccion: "",
   activo: true
 };
 
-function Productos() {
-  const [productos, setProductos] = useState([]);
+function Almacenes() {
+  const [almacenes, setAlmacenes] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
@@ -26,22 +23,22 @@ function Productos() {
 
   const { confirm } = useConfirm();
 
-  async function cargarProductos() {
+  async function cargarAlmacenes() {
     try {
       setCargando(true);
       setError("");
 
-      const data = await apiFetch("/products/");
-      setProductos(Array.isArray(data) ? data : []);
+      const data = await apiFetch("/warehouses/");
+      setAlmacenes(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err.message || "Error al cargar productos");
+      setError(err.message || "Error al cargar almacenes");
     } finally {
       setCargando(false);
     }
   }
 
   useEffect(() => {
-    cargarProductos();
+    cargarAlmacenes();
   }, []);
 
   function handleChange(e) {
@@ -60,25 +57,16 @@ function Productos() {
     setMensaje("");
   }
 
-  function editarProducto(producto) {
-    setEditingId(producto.id);
+  function editarAlmacen(almacen) {
+    setEditingId(almacen.id);
     setMensaje("");
     setError("");
 
     setForm({
-      nombre: producto.nombre ?? "",
-      descripcion: producto.descripcion ?? "",
-      sku: producto.sku ?? "",
-      categoria_id:
-        producto.categoria_id !== null && producto.categoria_id !== undefined
-          ? String(producto.categoria_id)
-          : "",
-      unidad_medida: producto.unidad_medida ?? "",
-      stock_minimo:
-        producto.stock_minimo !== null && producto.stock_minimo !== undefined
-          ? producto.stock_minimo
-          : 0,
-      activo: producto.activo ?? true
+      nombre: almacen.nombre ?? "",
+      descripcion: almacen.descripcion ?? "",
+      direccion: almacen.direccion ?? "",
+      activo: almacen.activo ?? true
     });
   }
 
@@ -93,106 +81,103 @@ function Productos() {
       const payload = {
         nombre: form.nombre.trim(),
         descripcion: form.descripcion.trim(),
-        sku: form.sku.trim(),
-        categoria_id: form.categoria_id === "" ? null : Number(form.categoria_id),
-        unidad_medida: form.unidad_medida.trim(),
-        stock_minimo: Number(form.stock_minimo),
+        direccion: form.direccion.trim(),
         activo: form.activo
       };
 
-      await apiFetch(editingId ? `/products/${editingId}` : "/products/", {
+      await apiFetch(editingId ? `/warehouses/${editingId}` : "/warehouses/", {
         method: editingId ? "PUT" : "POST",
         body: payload
       });
 
       setMensaje(
         editingId
-          ? "Producto actualizado correctamente"
-          : "Producto creado correctamente"
+          ? "Almacén actualizado correctamente"
+          : "Almacén creado correctamente"
       );
 
       limpiarFormulario();
-      await cargarProductos();
+      await cargarAlmacenes();
     } catch (err) {
-      setError(err.message || "Error al guardar el producto");
+      setError(err.message || "Error al guardar el almacén");
     } finally {
       setGuardando(false);
     }
   }
 
-  async function eliminarProducto(producto) {
+  async function eliminarAlmacen(almacen) {
     try {
       setError("");
       setMensaje("");
 
-      await apiFetch(`/products/${producto.id}`, {
+      await apiFetch(`/warehouses/${almacen.id}`, {
         method: "DELETE"
       });
 
-      if (editingId === producto.id) {
+      if (editingId === almacen.id) {
         limpiarFormulario();
       }
 
-      setMensaje("Producto eliminado correctamente");
-      await cargarProductos();
+      setMensaje("Almacén eliminado correctamente");
+      await cargarAlmacenes();
     } catch (err) {
-      setError(err.message || "Error al eliminar el producto");
+      setError(err.message || "Error al eliminar el almacén");
     }
   }
 
-  function solicitarEliminacion(producto) {
+  function solicitarEliminacion(almacen) {
     setError("");
     setMensaje("");
 
     confirm({
-      title: "Eliminar producto",
-      message: `¿Seguro que quieres eliminar el producto "${producto.nombre}"?`,
+      title: "Eliminar almacén",
+      message: `¿Seguro que quieres eliminar el almacén "${almacen.nombre}"? Esta acción no se puede deshacer.`,
       confirmText: "Eliminar",
       cancelText: "Cancelar",
-      onConfirm: () => eliminarProducto(producto)
+      onConfirm: () => eliminarAlmacen(almacen)
     });
   }
 
-  const productosFiltrados = productos.filter((p) => {
+  const almacenesFiltrados = almacenes.filter((a) => {
     const texto = busqueda.toLowerCase().trim();
     if (!texto) return true;
 
     return (
-      String(p.nombre ?? "").toLowerCase().includes(texto) ||
-      String(p.sku ?? "").toLowerCase().includes(texto) ||
-      String(p.descripcion ?? "").toLowerCase().includes(texto)
+      String(a.nombre ?? "").toLowerCase().includes(texto) ||
+      String(a.descripcion ?? "").toLowerCase().includes(texto) ||
+      String(a.direccion ?? "").toLowerCase().includes(texto)
     );
   });
 
-  const tablaProductos =
-    productosFiltrados.length === 0 ? null : (
+  const tablaAlmacenes =
+    almacenesFiltrados.length === 0 ? null : (
       <table style={table}>
         <thead>
           <tr>
             <th style={th}>ID</th>
             <th style={th}>Nombre</th>
-            <th style={th}>SKU</th>
-            <th style={th}>Stock mínimo</th>
+            <th style={th}>Descripción</th>
+            <th style={th}>Dirección</th>
             <th style={th}>Activo</th>
             <th style={th}>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {productosFiltrados.map((p) => (
-            <tr key={p.id}>
-              <td style={td}>{p.id}</td>
-              <td style={td}>{p.nombre}</td>
-              <td style={td}>{p.sku}</td>
-              <td style={td}>{p.stock_minimo ?? 0}</td>
-              <td style={td}>{p.activo ? "Sí" : "No"}</td>
+          {almacenesFiltrados.map((a) => (
+            <tr key={a.id}>
+              <td style={td}>{a.id}</td>
+              <td style={td}>{a.nombre}</td>
+              <td style={td}>{a.descripcion || "-"}</td>
+              <td style={td}>{a.direccion || "-"}</td>
+              <td style={td}>{a.activo ? "Sí" : "No"}</td>
               <td style={td}>
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                  <button type="button" onClick={() => editarProducto(p)}>
+                  <button type="button" onClick={() => editarAlmacen(a)}>
                     Editar
                   </button>
                   <button
                     type="button"
-                    onClick={() => solicitarEliminacion(p)}
+                    onClick={() => solicitarEliminacion(a)}
                   >
                     Eliminar
                   </button>
@@ -206,29 +191,21 @@ function Productos() {
 
   return (
     <CrudPage
-      title="Productos"
+      title="Almacenes"
       message={mensaje}
       error={error}
-      cardTitle={editingId ? "Editar producto" : "Nuevo producto"}
+      cardTitle={editingId ? "Editar almacén" : "Nuevo almacén"}
       onSubmit={handleSubmit}
       searchValue={busqueda}
       onSearchChange={(e) => setBusqueda(e.target.value)}
       loading={cargando}
-      emptyMessage="No hay productos"
+      emptyMessage="No hay almacenes"
       formContent={
         <>
           <input
             name="nombre"
             placeholder="Nombre"
             value={form.nombre}
-            onChange={handleChange}
-            required
-          />
-
-          <input
-            name="sku"
-            placeholder="SKU"
-            value={form.sku}
             onChange={handleChange}
             required
           />
@@ -242,29 +219,10 @@ function Productos() {
           />
 
           <input
-            type="number"
-            name="categoria_id"
-            placeholder="ID categoría"
-            value={form.categoria_id}
+            name="direccion"
+            placeholder="Dirección"
+            value={form.direccion}
             onChange={handleChange}
-            min="1"
-          />
-
-          <input
-            name="unidad_medida"
-            placeholder="Unidad de medida"
-            value={form.unidad_medida}
-            onChange={handleChange}
-          />
-
-          <input
-            type="number"
-            name="stock_minimo"
-            placeholder="Stock mínimo"
-            value={form.stock_minimo}
-            onChange={handleChange}
-            min="0"
-            required
           />
 
           <label style={{ display: "flex", gap: "8px" }}>
@@ -290,7 +248,7 @@ function Productos() {
           </div>
         </>
       }
-      tableContent={tablaProductos}
+      tableContent={tablaAlmacenes}
     />
   );
 }
@@ -308,7 +266,8 @@ const th = {
 
 const td = {
   padding: "10px",
-  borderBottom: "1px solid #eee"
+  borderBottom: "1px solid #eee",
+  verticalAlign: "top"
 };
 
-export default Productos;
+export default Almacenes;

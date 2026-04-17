@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.schemas.stock import StockCreate, StockUpdate, StockResponse
+from app.schemas.stock import StockCreate, StockUpdate, StockResponse, StockDetailedResponse
 from app.security.dependencies import get_current_user, require_role
 from app.services.stock_service import StockService
 
@@ -11,12 +11,15 @@ router = APIRouter(prefix="/stock", tags=["Stock"])
 
 @router.get(
     "/",
-    response_model=list[StockResponse],
+    response_model=list[StockDetailedResponse],
     dependencies=[Depends(require_role("administrador", "supervisor", "operario"))]
 )
-def get_all_stock(db: Session = Depends(get_db)):
+def get_stock(
+    low: bool = Query(False, description="Filtrar solo stock bajo"),
+    db: Session = Depends(get_db)
+):
     service = StockService(db)
-    return service.get_all_stock()
+    return service.get_all_stock_detailed(low=low)
 
 
 @router.get(
@@ -50,7 +53,7 @@ def get_stock_by_location(
     response_model=StockResponse,
     dependencies=[Depends(require_role("administrador", "supervisor", "operario"))]
 )
-def get_stock(stock_id: int, db: Session = Depends(get_db)):
+def get_stock_by_id(stock_id: int, db: Session = Depends(get_db)):
     service = StockService(db)
     return service.get_stock_by_id(stock_id)
 

@@ -8,6 +8,7 @@ from app.repositories.location_repository import LocationRepository
 from app.repositories.product_repository import ProductRepository
 from app.repositories.shipment_repository import ShipmentRepository
 from app.repositories.stock_repository import StockRepository
+from app.repositories.warehouse_repository import WarehouseRepository
 from app.schemas.shipment import ShipmentCreate
 from app.services.audit_service import AuditService
 
@@ -19,6 +20,7 @@ class ShipmentService:
         self.product_repository = ProductRepository(db)
         self.location_repository = LocationRepository(db)
         self.stock_repository = StockRepository(db)
+        self.warehouse_repository = WarehouseRepository(db)
 
     def get_all_shipments(self):
         return self.repository.get_all()
@@ -37,6 +39,13 @@ class ShipmentService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="La salida debe contener al menos una línea"
+            )
+
+        almacen = self.warehouse_repository.get_by_id(shipment_data.almacen_id)
+        if not almacen:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Almacén con id {shipment_data.almacen_id} no encontrado"
             )
 
         lineas_modelo = []
@@ -60,6 +69,15 @@ class ShipmentService:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="La cantidad de cada línea debe ser mayor que 0"
+                )
+
+            if ubicacion.zona.almacen_id != shipment_data.almacen_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        f"La ubicación {linea.ubicacion_origen_id} no pertenece "
+                        f"al almacén {shipment_data.almacen_id}"
+                    )
                 )
 
             lineas_modelo.append(
@@ -99,14 +117,14 @@ class ShipmentService:
         except HTTPException:
             self.db.rollback()
             raise
-        except Exception as e:
+        except Exception:
             self.db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error al crear la salida: {str(e)}"
+                detail="Error interno al crear la salida"
             )
 
-    def confirm_shipment(self, shipment_id: int):
+    def confirm_shipment(self, shipment_id: int, usuario_id: int):
         salida = self.repository.get_by_id(shipment_id)
 
         if not salida:
@@ -143,6 +161,15 @@ class ShipmentService:
                         detail=f"Ubicación con id {linea.ubicacion_origen_id} no encontrada"
                     )
 
+                if ubicacion.zona.almacen_id != salida.almacen_id:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=(
+                            f"La ubicación {linea.ubicacion_origen_id} no pertenece "
+                            f"al almacén {salida.almacen_id}"
+                        )
+                    )
+
                 self.stock_repository.remove_stock(
                     producto_id=linea.producto_id,
                     ubicacion_id=linea.ubicacion_origen_id,
@@ -157,7 +184,7 @@ class ShipmentService:
                     tipo_movimiento="salida",
                     origen_tipo="salida",
                     origen_id=salida.id,
-                    usuario_id=salida.usuario_id,
+                    usuario_id=usuario_id,
                     observaciones=f"Movimiento generado automáticamente al confirmar la salida {salida.id}"
                 )
                 self.db.add(nuevo_movimiento)
@@ -167,7 +194,7 @@ class ShipmentService:
 
             audit_service = AuditService(self.db)
             audit_service.log_action(
-                usuario_id=salida.usuario_id,
+                usuario_id=usuario_id,
                 modulo="shipments",
                 accion="confirm",
                 entidad="salida",
@@ -183,9 +210,9 @@ class ShipmentService:
         except HTTPException:
             self.db.rollback()
             raise
-        except Exception as e:
+        except Exception:
             self.db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error al confirmar la salida: {str(e)}"
+                detail="Error interno al confirmar la salida"
             )

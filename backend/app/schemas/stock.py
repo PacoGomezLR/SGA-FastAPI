@@ -23,3 +23,17 @@ class StockResponse(StockBase):
 
     class Config:
         from_attributes = True
+
+
+class StockDetailedResponse(BaseModel):
+    id: int
+    producto_id: int
+    producto_nombre: Optional[str] = None
+    ubicacion_id: int
+    ubicacion_nombre: Optional[str] = None
+    cantidad: int
+    stock_minimo: Optional[int] = None
+    bajo_stock: bool
+
+    class Config:
+        from_attributes = True

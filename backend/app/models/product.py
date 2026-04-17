@@ -19,12 +19,16 @@ class Product(Base):
 
     unidad_medida: Mapped[str] = mapped_column(String(30), nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    # NUEVO CAMPO
+    stock_minimo: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     creado_en: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relación: cada producto pertenece a una categoría
     categoria = relationship("Category", back_populates="productos")
 
-    # Relación futura con stock
+    # Relación con stock
     stock_items = relationship("Stock", back_populates="producto")
     lineas_recepcion = relationship("ReceptionLine", back_populates="producto")
     lineas_salida = relationship("ShipmentLine", back_populates="producto")
