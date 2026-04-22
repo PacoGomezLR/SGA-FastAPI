@@ -1,20 +1,14 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8000";
-
 function Movimientos() {
-  const { token } = useAuth();
+  const { token, authFetch } = useAuth();
 
   const [form, setForm] = useState({
     producto_id: "",
     ubicacion_origen_id: "",
     ubicacion_destino_id: "",
     cantidad: "",
-    tipo_movimiento: "traslado",
-    origen_tipo: "manual",
-    origen_id: "1",
     observaciones: ""
   });
 
@@ -32,6 +26,11 @@ function Movimientos() {
   async function handleSubmit(e) {
     e.preventDefault();
 
+    if (!token) {
+      setError("Sesión no válida. Vuelve a iniciar sesión.");
+      return;
+    }
+
     setMensaje("");
     setError("");
     setCargando(true);
@@ -45,18 +44,17 @@ function Movimientos() {
         ? Number(form.ubicacion_destino_id)
         : null,
       cantidad: Number(form.cantidad),
-      tipo_movimiento: form.tipo_movimiento,
-      origen_tipo: form.origen_tipo,
-      origen_id: Number(form.origen_id),
+      tipo_movimiento: "traslado",
+      origen_tipo: "manual",
+      origen_id: 1,
       observaciones: form.observaciones || null
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}/movements/`, {
+      const response = await authFetch("/movements/", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify(payload)
       });
@@ -74,9 +72,6 @@ function Movimientos() {
         ubicacion_origen_id: "",
         ubicacion_destino_id: "",
         cantidad: "",
-        tipo_movimiento: "traslado",
-        origen_tipo: "manual",
-        origen_id: "1",
         observaciones: ""
       });
     } catch (err) {
@@ -144,41 +139,6 @@ function Movimientos() {
           name="cantidad"
           placeholder="Cantidad"
           value={form.cantidad}
-          onChange={handleChange}
-          required
-        />
-
-        <select
-          name="tipo_movimiento"
-          value={form.tipo_movimiento}
-          onChange={handleChange}
-          required
-        >
-          <option value="traslado">traslado</option>
-          <option value="entrada">entrada</option>
-          <option value="salida">salida</option>
-          <option value="ajuste">ajuste</option>
-        </select>
-
-        <select
-          name="origen_tipo"
-          value={form.origen_tipo}
-          onChange={handleChange}
-          required
-        >
-          <option value="manual">manual</option>
-          <option value="recepcion">recepcion</option>
-          <option value="salida">salida</option>
-          <option value="movimiento">movimiento</option>
-          <option value="inventario">inventario</option>
-          <option value="legacy">legacy</option>
-        </select>
-
-        <input
-          type="number"
-          name="origen_id"
-          placeholder="Origen ID"
-          value={form.origen_id}
           onChange={handleChange}
           required
         />

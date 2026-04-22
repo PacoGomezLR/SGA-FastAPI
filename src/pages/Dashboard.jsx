@@ -73,7 +73,7 @@ function Dashboard() {
 
   return (
     <div>
-      <h1 style={{ marginBottom: "20px" }}>Dashboard</h1>
+      <h1 style={{ marginBottom: "20px" }}>Resumen Almacén</h1>
 
       {error && (
         <div

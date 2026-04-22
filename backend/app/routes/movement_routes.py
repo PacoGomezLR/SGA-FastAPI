@@ -36,6 +36,19 @@ def get_movements(
     return service.get_all_movements()
 
 
+# 🔥 NUEVO → AUDITORÍA REAL
+@router.get(
+    "/audit",
+    response_model=list[MovementResponse]
+)
+def get_audit(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("administrador", "supervisor")),
+):
+    service = MovementService(db)
+    return service.get_all_movements()
+
+
 @router.get(
     "/product/{producto_id}",
     response_model=list[MovementResponse]

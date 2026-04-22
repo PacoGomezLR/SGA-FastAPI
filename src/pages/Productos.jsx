@@ -92,8 +92,8 @@ function Productos() {
 
       const payload = {
         nombre: form.nombre.trim(),
-        descripcion: form.descripcion.trim(),
-        sku: form.sku.trim(),
+        descripcion: form.descripcion.trim() || null,
+        sku: form.sku.trim() || null,
         categoria_id: form.categoria_id === "" ? null : Number(form.categoria_id),
         unidad_medida: form.unidad_medida.trim(),
         stock_minimo: Number(form.stock_minimo),
@@ -227,10 +227,9 @@ function Productos() {
 
           <input
             name="sku"
-            placeholder="SKU"
+            placeholder="SKU automático si lo dejas vacío"
             value={form.sku}
             onChange={handleChange}
-            required
           />
 
           <textarea
@@ -252,15 +251,16 @@ function Productos() {
 
           <input
             name="unidad_medida"
-            placeholder="Unidad de medida"
+            placeholder="Ej: unidad, kg, caja..."
             value={form.unidad_medida}
             onChange={handleChange}
+            required
           />
 
           <input
             type="number"
             name="stock_minimo"
-            placeholder="Stock mínimo"
+            placeholder="Stock mínimo (alerta)"
             value={form.stock_minimo}
             onChange={handleChange}
             min="0"

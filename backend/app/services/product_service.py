@@ -1,3 +1,5 @@
+import re
+
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -24,19 +26,28 @@ class ProductService:
         return product
 
     def create_product(self, product_data: ProductCreate):
-        existing_product = self.repository.get_by_sku(product_data.sku)
+        sku = (product_data.sku or "").strip()
+
+        if not sku:
+            sku = self._generate_sku()
+
+        existing_product = self.repository.get_by_sku(sku)
         if existing_product:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Ya existe un producto con ese SKU"
             )
 
-        categoria = self.db.query(Category).filter(Category.id == product_data.categoria_id).first()
+        categoria = self.db.query(Category).filter(
+            Category.id == product_data.categoria_id
+        ).first()
         if not categoria:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="La categoría no existe"
             )
+
+        product_data = product_data.model_copy(update={"sku": sku})
 
         return self.repository.create(product_data)
 
@@ -57,7 +68,9 @@ class ProductService:
                 )
 
         if product_data.categoria_id is not None:
-            categoria = self.db.query(Category).filter(Category.id == product_data.categoria_id).first()
+            categoria = self.db.query(Category).filter(
+                Category.id == product_data.categoria_id
+            ).first()
             if not categoria:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -76,3 +89,22 @@ class ProductService:
 
         self.repository.delete(product)
         return {"message": "Producto eliminado correctamente"}
+
+    def _generate_sku(self):
+        products = self.repository.get_all()
+        pattern = re.compile(r"^PROD-(\d{4})$")
+
+        max_number = 0
+
+        for product in products:
+            if not product.sku:
+                continue
+
+            match = pattern.match(product.sku)
+            if match:
+                number = int(match.group(1))
+                if number > max_number:
+                    max_number = number
+
+        next_number = max_number + 1
+        return f"PROD-{next_number:04d}"

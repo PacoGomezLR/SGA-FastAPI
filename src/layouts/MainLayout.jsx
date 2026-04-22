@@ -85,7 +85,7 @@ function MainLayout() {
             }}
           >
             <NavLink to="/dashboard" style={getLinkStyle}>
-              Dashboard
+              Resumen Almacén
             </NavLink>
 
             <NavLink to="/productos" style={getLinkStyle}>

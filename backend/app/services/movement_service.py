@@ -21,7 +21,8 @@ class MovementService:
         self.audit_service = AuditService(db)
 
     def get_all_movements(self):
-        return self.repository.get_all()
+        movements = self.db.query(Movement).order_by(Movement.fecha.desc()).all()
+        return [self._enrich_movement(movement) for movement in movements]
 
     def get_movement_by_id(self, movement_id: int):
         movement = self.repository.get_by_id(movement_id)
@@ -30,10 +31,11 @@ class MovementService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Movimiento no encontrado"
             )
-        return movement
+        return self._enrich_movement(movement)
 
     def get_movements_by_product(self, producto_id: int):
-        return self.repository.get_by_product(producto_id)
+        movements = self.repository.get_by_product(producto_id)
+        return [self._enrich_movement(movement) for movement in movements]
 
     def create_movement(self, movement_data: MovementCreate, current_user: User):
         tipo_movimiento = self._normalize_tipo_movimiento(
@@ -103,7 +105,8 @@ class MovementService:
             )
 
             self.db.commit()
-            return movement
+            self.db.refresh(movement)
+            return self._enrich_movement(movement)
 
         except HTTPException:
             self.db.rollback()
@@ -111,6 +114,21 @@ class MovementService:
         except Exception:
             self.db.rollback()
             raise
+
+    def _enrich_movement(self, movement: Movement):
+        movement.producto_nombre = (
+            movement.producto.nombre if movement.producto else None
+        )
+        movement.ubicacion_origen_nombre = (
+            movement.ubicacion_origen.codigo if movement.ubicacion_origen else None
+        )
+        movement.ubicacion_destino_nombre = (
+            movement.ubicacion_destino.codigo if movement.ubicacion_destino else None
+        )
+        movement.usuario_nombre = (
+            movement.usuario.username if movement.usuario else None
+        )
+        return movement
 
     def _normalize_tipo_movimiento(self, tipo_movimiento: str) -> str:
         tipo = tipo_movimiento.strip().lower()

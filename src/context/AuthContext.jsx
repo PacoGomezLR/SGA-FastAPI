@@ -50,6 +50,9 @@ function AuthProvider({ children }) {
       setToken(accessToken);
       localStorage.setItem("token", accessToken);
     } catch (error) {
+      setToken(null);
+      localStorage.removeItem("token");
+
       throw error instanceof Error
         ? error
         : new Error("Error al iniciar sesión");
@@ -61,17 +64,35 @@ function AuthProvider({ children }) {
     localStorage.removeItem("token");
   }
 
-  useEffect(() => {
-    function handleUnauthorized(event) {
-      if (event.detail === 401) {
-        logout();
-      }
+  async function authFetch(endpoint, options = {}) {
+    const headers = {
+      ...(options.headers || {}),
+      Authorization: token ? `Bearer ${token}` : ""
+    };
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers
+    });
+
+    if (response.status === 401) {
+      logout();
+      throw new Error("Token inválido o expirado");
     }
 
-    window.addEventListener("unauthorized", handleUnauthorized);
+    return response;
+  }
+
+  useEffect(() => {
+    function syncToken() {
+      const storedToken = localStorage.getItem("token") || null;
+      setToken(storedToken);
+    }
+
+    window.addEventListener("storage", syncToken);
 
     return () => {
-      window.removeEventListener("unauthorized", handleUnauthorized);
+      window.removeEventListener("storage", syncToken);
     };
   }, []);
 
@@ -81,7 +102,8 @@ function AuthProvider({ children }) {
         token,
         usuarioAutenticado,
         login,
-        logout
+        logout,
+        authFetch
       }}
     >
       {children}

@@ -24,4 +24,10 @@ class MovementResponse(MovementBase):
     usuario_id: int
     fecha: datetime
 
+    # 🔥 nuevos campos para auditoría legible
+    producto_nombre: Optional[str] = None
+    ubicacion_origen_nombre: Optional[str] = None
+    ubicacion_destino_nombre: Optional[str] = None
+    usuario_nombre: Optional[str] = None
+
     model_config = ConfigDict(from_attributes=True)
