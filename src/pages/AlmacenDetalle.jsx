@@ -120,7 +120,13 @@ function AlmacenDetalle() {
       </div>
 
       <div style={section}>
-        <h2 style={sectionTitle}>Zonas y ubicaciones</h2>
+        <div style={sectionHeader}>
+          <h2 style={{ margin: 0 }}>Zonas y ubicaciones</h2>
+
+          <Link to={`/zonas?nuevo=1&almacen_id=${id}`} style={createButton}>
+            + Nueva zona
+          </Link>
+        </div>
 
         {zonas.length === 0 ? (
           <div style={emptyBox}>Este almacén todavía no tiene zonas.</div>
@@ -133,7 +139,14 @@ function AlmacenDetalle() {
                 <div key={zona.id} style={zoneCard}>
                   <div style={zoneHeader}>
                     <div>
-                      <h3 style={{ margin: 0 }}>{zona.nombre}</h3>
+                      {/* 🔥 ZONA CLICABLE */}
+                      <Link
+                        to={`/zonas/${zona.id}`}
+                        style={zoneLink}
+                      >
+                        {zona.nombre}
+                      </Link>
+
                       <p style={zoneDescription}>
                         {zona.descripcion || "Sin descripción"}
                       </p>
@@ -153,7 +166,9 @@ function AlmacenDetalle() {
                   <div style={subTitle}>Ubicaciones</div>
 
                   {ubicacionesZona.length === 0 ? (
-                    <div style={emptyMiniBox}>No hay ubicaciones en esta zona.</div>
+                    <div style={emptyMiniBox}>
+                      No hay ubicaciones en esta zona.
+                    </div>
                   ) : (
                     <div style={locationsList}>
                       {ubicacionesZona.map((ubicacion) => (
@@ -177,6 +192,24 @@ function AlmacenDetalle() {
     </div>
   );
 }
+
+/* ESTILOS */
+
+const sectionHeader = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "16px"
+};
+
+const createButton = {
+  padding: "10px 14px",
+  borderRadius: "8px",
+  textDecoration: "none",
+  backgroundColor: "#2563eb",
+  color: "white",
+  fontWeight: "600"
+};
 
 const header = {
   display: "flex",
@@ -235,11 +268,6 @@ const section = {
   marginTop: "8px"
 };
 
-const sectionTitle = {
-  marginTop: 0,
-  marginBottom: "16px"
-};
-
 const zonesGrid = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
@@ -259,6 +287,13 @@ const zoneHeader = {
   alignItems: "flex-start",
   gap: "12px",
   marginBottom: "16px"
+};
+
+const zoneLink = {
+  fontSize: "18px",
+  fontWeight: "700",
+  color: "#2563eb",
+  textDecoration: "none"
 };
 
 const zoneDescription = {

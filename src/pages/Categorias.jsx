@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../api/api";
 import CrudPage from "../components/CrudPage";
-import { useSearchParams } from "react-router-dom";
 
 const initialForm = {
-  nombre: "",
-  almacen_id: ""
+  nombre: ""
 };
 
-function Zonas() {
-  const [zonas, setZonas] = useState([]);
-  const [almacenes, setAlmacenes] = useState([]);
+function Categorias() {
+  const [categorias, setCategorias] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
 
@@ -19,35 +16,17 @@ function Zonas() {
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState("");
 
-  const [searchParams] = useSearchParams();
-  const almacenIdFromUrl = searchParams.get("almacen_id");
-
   useEffect(() => {
-    cargarDatos();
+    cargarCategorias();
   }, []);
 
-  useEffect(() => {
-    if (almacenIdFromUrl) {
-      setForm((prev) => ({
-        ...prev,
-        almacen_id: almacenIdFromUrl
-      }));
-    }
-  }, [almacenIdFromUrl]);
-
-  async function cargarDatos() {
+  async function cargarCategorias() {
     try {
       setCargando(true);
-
-      const [zonasData, almacenesData] = await Promise.all([
-        apiFetch("/zones/"),
-        apiFetch("/warehouses/")
-      ]);
-
-      setZonas(zonasData);
-      setAlmacenes(almacenesData);
+      const data = await apiFetch("/categories/");
+      setCategorias(Array.isArray(data) ? data : []);
     } catch {
-      setError("Error al cargar zonas");
+      setError("Error al cargar categorías");
     } finally {
       setCargando(false);
     }
@@ -65,80 +44,60 @@ function Zonas() {
 
     try {
       const payload = {
-        nombre: form.nombre,
-        almacen_id: Number(form.almacen_id || almacenIdFromUrl)
+        nombre: form.nombre
       };
 
-      await apiFetch(editingId ? `/zones/${editingId}` : "/zones/", {
+      await apiFetch(editingId ? `/categories/${editingId}` : "/categories/", {
         method: editingId ? "PUT" : "POST",
         body: payload
       });
 
-      setMensaje("Zona guardada correctamente");
+      setMensaje("Categoría guardada correctamente");
       setForm(initialForm);
       setEditingId(null);
-      cargarDatos();
+      cargarCategorias();
     } catch {
-      setError("Error al guardar zona");
+      setError("Error al guardar categoría");
     }
   }
 
-  function editar(zona) {
-    setEditingId(zona.id);
+  function editar(categoria) {
+    setEditingId(categoria.id);
     setForm({
-      nombre: zona.nombre,
-      almacen_id: zona.almacen_id
+      nombre: categoria.nombre
     });
   }
 
   async function eliminar(id) {
-    await apiFetch(`/zones/${id}`, { method: "DELETE" });
-    cargarDatos();
+    await apiFetch(`/categories/${id}`, { method: "DELETE" });
+    cargarCategorias();
   }
 
-  const zonasFiltradas = zonas.filter((z) =>
-    z.nombre.toLowerCase().includes(busqueda.toLowerCase())
+  const categoriasFiltradas = categorias.filter((c) =>
+    c.nombre.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   return (
     <CrudPage
-      title="Zonas"
+      title="Categorías"
       message={mensaje}
       error={error}
-      cardTitle={editingId ? "Editar zona" : "Nueva zona"}
+      cardTitle={editingId ? "Editar categoría" : "Nueva categoría"}
       onSubmit={handleSubmit}
       searchValue={busqueda}
       onSearchChange={(e) => setBusqueda(e.target.value)}
       loading={cargando}
-      emptyMessage="No hay zonas"
+      emptyMessage="No hay categorías"
       formContent={
         <>
           <input
             name="nombre"
-            placeholder="Nombre de zona (Ej: Pasillo A)"
+            placeholder="Nombre de categoría"
             value={form.nombre}
             onChange={handleChange}
             required
             style={inputStyle}
           />
-
-          {/* 🔥 SOLO SI NO VIENES DE UN ALMACÉN */}
-          {!almacenIdFromUrl && (
-            <select
-              name="almacen_id"
-              value={form.almacen_id}
-              onChange={handleChange}
-              required
-              style={inputStyle}
-            >
-              <option value="">Selecciona almacén</option>
-              {almacenes.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.nombre}
-                </option>
-              ))}
-            </select>
-          )}
 
           <button type="submit" style={primaryButton}>
             {editingId ? "Actualizar" : "Crear"}
@@ -149,21 +108,19 @@ function Zonas() {
         <table style={table}>
           <thead>
             <tr>
-              <th style={th}>Zona</th>
-              <th style={th}>Almacén</th>
+              <th style={th}>Nombre</th>
               <th style={th}>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {zonasFiltradas.map((z) => (
-              <tr key={z.id} style={tr}>
-                <td style={td}>{z.nombre}</td>
-                <td style={td}>{z.almacen_nombre}</td>
+            {categoriasFiltradas.map((c) => (
+              <tr key={c.id} style={tr}>
+                <td style={td}>{c.nombre}</td>
                 <td style={td}>
-                  <button style={editButton} onClick={() => editar(z)}>
+                  <button style={editButton} onClick={() => editar(c)}>
                     Editar
                   </button>
-                  <button style={deleteButton} onClick={() => eliminar(z.id)}>
+                  <button style={deleteButton} onClick={() => eliminar(c.id)}>
                     Eliminar
                   </button>
                 </td>
@@ -208,8 +165,7 @@ const table = {
 const th = {
   textAlign: "left",
   padding: "12px",
-  backgroundColor: "#f1f5f9",
-  fontSize: "14px"
+  backgroundColor: "#f1f5f9"
 };
 
 const td = {
@@ -228,8 +184,7 @@ const editButton = {
   border: "none",
   backgroundColor: "#f59e0b",
   color: "white",
-  cursor: "pointer",
-  fontWeight: "600"
+  cursor: "pointer"
 };
 
 const deleteButton = {
@@ -238,8 +193,7 @@ const deleteButton = {
   border: "none",
   backgroundColor: "#dc2626",
   color: "white",
-  cursor: "pointer",
-  fontWeight: "600"
+  cursor: "pointer"
 };
 
-export default Zonas;
+export default Categorias;
