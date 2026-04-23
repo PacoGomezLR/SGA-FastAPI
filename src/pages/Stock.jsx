@@ -5,6 +5,8 @@ function Stock() {
   const [stock, setStock] = useState([]);
   const [soloBajo, setSoloBajo] = useState(false);
   const [almacenId, setAlmacenId] = useState("");
+  const [busqueda, setBusqueda] = useState("");
+  const [categoria, setCategoria] = useState("");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
@@ -40,10 +42,6 @@ function Stock() {
     cargarStock();
   }, [soloBajo, almacenId]);
 
-  const totalUnidades = useMemo(() => {
-    return stock.reduce((acc, item) => acc + (item.cantidad || 0), 0);
-  }, [stock]);
-
   const almacenes = useMemo(() => {
     const mapa = new Map();
 
@@ -64,6 +62,40 @@ function Stock() {
       a.nombre.localeCompare(b.nombre)
     );
   }, [stock]);
+
+  const categorias = useMemo(() => {
+    const unicas = new Set();
+
+    stock.forEach((item) => {
+      if (item.categoria_nombre && item.categoria_nombre.trim() !== "") {
+        unicas.add(item.categoria_nombre);
+      }
+    });
+
+    return Array.from(unicas).sort((a, b) => a.localeCompare(b));
+  }, [stock]);
+
+  const stockFiltrado = useMemo(() => {
+    const texto = busqueda.trim().toLowerCase();
+
+    return stock.filter((item) => {
+      const coincideBusqueda =
+        texto === "" ||
+        (item.producto_nombre || "").toLowerCase().includes(texto) ||
+        String(item.producto_id || "").includes(texto) ||
+        (item.ubicacion_nombre || "").toLowerCase().includes(texto) ||
+        (item.almacen_nombre || "").toLowerCase().includes(texto);
+
+      const coincideCategoria =
+        categoria === "" || (item.categoria_nombre || "") === categoria;
+
+      return coincideBusqueda && coincideCategoria;
+    });
+  }, [stock, busqueda, categoria]);
+
+  const totalUnidades = useMemo(() => {
+    return stockFiltrado.reduce((acc, item) => acc + (item.cantidad || 0), 0);
+  }, [stockFiltrado]);
 
   return (
     <div>
@@ -138,6 +170,40 @@ function Stock() {
             ))}
           </select>
         </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            backgroundColor: "white",
+            padding: "10px 12px",
+            borderRadius: "10px",
+            boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
+          }}
+        >
+          <label htmlFor="categoria">Categoría</label>
+          <select
+            id="categoria"
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+          >
+            <option value="">Todas</option>
+            {categorias.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <input
+          type="text"
+          placeholder="Buscar producto, almacén o ubicación..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          style={searchInput}
+        />
       </div>
 
       {error && (
@@ -163,7 +229,7 @@ function Stock() {
           marginBottom: "24px"
         }}
       >
-        <Card title="Registros" value={stock.length} />
+        <Card title="Registros" value={stockFiltrado.length} />
         <Card title="Unidades totales" value={totalUnidades} />
       </div>
 
@@ -179,7 +245,7 @@ function Stock() {
           <div style={{ padding: "20px" }}>
             <p style={{ margin: 0, color: "#64748b" }}>Cargando stock...</p>
           </div>
-        ) : stock.length === 0 ? (
+        ) : stockFiltrado.length === 0 ? (
           <div style={{ padding: "20px" }}>
             <p style={{ margin: 0, color: "#64748b" }}>
               No hay registros de stock
@@ -190,6 +256,7 @@ function Stock() {
             <thead>
               <tr>
                 <th style={th}>Producto</th>
+                <th style={th}>Categoría</th>
                 <th style={th}>Almacén</th>
                 <th style={th}>Ubicación</th>
                 <th style={th}>Cantidad</th>
@@ -197,7 +264,7 @@ function Stock() {
               </tr>
             </thead>
             <tbody>
-              {stock.map((item) => (
+              {stockFiltrado.map((item) => (
                 <tr
                   key={item.id}
                   style={{
@@ -206,6 +273,9 @@ function Stock() {
                 >
                   <td style={td}>
                     {item.producto_nombre || item.producto_id}
+                  </td>
+                  <td style={td}>
+                    {item.categoria_nombre || "-"}
                   </td>
                   <td style={td}>
                     {item.almacen_nombre || item.almacen_id || "-"}
@@ -292,6 +362,16 @@ const th = {
 const td = {
   padding: "12px",
   borderBottom: "1px solid #eee"
+};
+
+const searchInput = {
+  minWidth: "260px",
+  padding: "10px 12px",
+  borderRadius: "10px",
+  border: "1px solid #cbd5e1",
+  outline: "none",
+  backgroundColor: "white",
+  boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
 };
 
 export default Stock;

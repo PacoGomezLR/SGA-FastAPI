@@ -5,6 +5,8 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Productos from "./pages/Productos";
 import Almacenes from "./pages/Almacenes";
+import AlmacenDetalle from "./pages/AlmacenDetalle";
+import Zonas from "./pages/Zonas";
 import Stock from "./pages/Stock";
 import Recepciones from "./pages/Recepciones";
 import Movimientos from "./pages/Movimientos";
@@ -53,6 +55,8 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/productos" element={<Productos />} />
           <Route path="/almacenes" element={<Almacenes />} />
+          <Route path="/almacenes/:id" element={<AlmacenDetalle />} />
+          <Route path="/zonas" element={<Zonas />} />
           <Route path="/stock" element={<Stock />} />
           <Route path="/recepciones" element={<Recepciones />} />
           <Route path="/movimientos" element={<Movimientos />} />

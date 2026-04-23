@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { apiFetch } from "../api/api";
 import { useConfirm } from "../context/ConfirmContext";
 import CrudPage from "../components/CrudPage";
@@ -149,44 +150,75 @@ function Almacenes() {
     );
   });
 
+  const totalActivos = useMemo(() => {
+    return almacenes.filter((a) => a.activo).length;
+  }, [almacenes]);
+
+  const totalInactivos = useMemo(() => {
+    return almacenes.filter((a) => !a.activo).length;
+  }, [almacenes]);
+
   const tablaAlmacenes =
     almacenesFiltrados.length === 0 ? null : (
-      <table style={table}>
-        <thead>
-          <tr>
-            <th style={th}>ID</th>
-            <th style={th}>Nombre</th>
-            <th style={th}>Descripción</th>
-            <th style={th}>Dirección</th>
-            <th style={th}>Activo</th>
-            <th style={th}>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {almacenesFiltrados.map((a) => (
-            <tr key={a.id}>
-              <td style={td}>{a.id}</td>
-              <td style={td}>{a.nombre}</td>
-              <td style={td}>{a.descripcion || "-"}</td>
-              <td style={td}>{a.direccion || "-"}</td>
-              <td style={td}>{a.activo ? "Sí" : "No"}</td>
-              <td style={td}>
-                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                  <button type="button" onClick={() => editarAlmacen(a)}>
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => solicitarEliminacion(a)}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </td>
+      <div style={tableWrapper}>
+        <table style={table}>
+          <thead>
+            <tr>
+              <th style={th}>ID</th>
+              <th style={th}>Nombre</th>
+              <th style={th}>Descripción</th>
+              <th style={th}>Dirección</th>
+              <th style={th}>Estado</th>
+              <th style={th}>Detalle</th>
+              <th style={th}>Acciones</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {almacenesFiltrados.map((a) => (
+              <tr key={a.id} style={row}>
+                <td style={td}>{a.id}</td>
+                <td style={tdStrong}>{a.nombre}</td>
+                <td style={td}>{a.descripcion || "-"}</td>
+                <td style={td}>{a.direccion || "-"}</td>
+                <td style={td}>
+                  <span
+                    style={{
+                      ...badge,
+                      backgroundColor: a.activo ? "#dcfce7" : "#fee2e2",
+                      color: a.activo ? "#166534" : "#991b1b"
+                    }}
+                  >
+                    {a.activo ? "Activo" : "Inactivo"}
+                  </span>
+                </td>
+                <td style={td}>
+                  <Link to={`/almacenes/${a.id}`} style={detailLink}>
+                    Ver detalle
+                  </Link>
+                </td>
+                <td style={td}>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={() => editarAlmacen(a)}
+                      style={secondaryButton}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => solicitarEliminacion(a)}
+                      style={dangerButton}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     );
 
   return (
@@ -202,12 +234,15 @@ function Almacenes() {
       emptyMessage="No hay almacenes"
       formContent={
         <>
+          <div style={sectionTitle}>Datos principales</div>
+
           <input
             name="nombre"
-            placeholder="Nombre"
+            placeholder="Nombre del almacén"
             value={form.nombre}
             onChange={handleChange}
             required
+            style={input}
           />
 
           <textarea
@@ -216,16 +251,18 @@ function Almacenes() {
             value={form.descripcion}
             onChange={handleChange}
             rows="3"
+            style={{ ...input, resize: "vertical", minHeight: "90px" }}
           />
 
           <input
             name="direccion"
-            placeholder="Dirección"
+            placeholder="Dirección o referencia"
             value={form.direccion}
             onChange={handleChange}
+            style={input}
           />
 
-          <label style={{ display: "flex", gap: "8px" }}>
+          <label style={checkboxLabel}>
             <input
               type="checkbox"
               name="activo"
@@ -235,23 +272,104 @@ function Almacenes() {
             Activo
           </label>
 
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button type="submit" disabled={guardando}>
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <button type="submit" disabled={guardando} style={primaryButton}>
               {guardando ? "Guardando..." : editingId ? "Actualizar" : "Crear"}
             </button>
 
             {editingId && (
-              <button type="button" onClick={limpiarFormulario}>
+              <button type="button" onClick={limpiarFormulario} style={secondaryButton}>
                 Cancelar
               </button>
             )}
           </div>
         </>
       }
-      tableContent={tablaAlmacenes}
-    />
+      tableContent={
+        <>
+          <div style={statsGrid}>
+            <Card title="Total almacenes" value={almacenes.length} />
+            <Card title="Activos" value={totalActivos} />
+            <Card title="Inactivos" value={totalInactivos} />
+          </div>
+          {tablaAlmacenes}
+        </>
+      }
+    >
+      <div style={statsGrid}>
+        <Card title="Total almacenes" value={almacenes.length} />
+        <Card title="Activos" value={totalActivos} />
+        <Card title="Inactivos" value={totalInactivos} />
+      </div>
+
+      {tablaAlmacenes}
+    </CrudPage>
   );
 }
+
+function Card({ title, value }) {
+  return (
+    <div style={card}>
+      <h3 style={{ margin: 0, color: "#334155", fontSize: "16px" }}>{title}</h3>
+      <p
+        style={{
+          fontSize: "32px",
+          fontWeight: "700",
+          margin: "10px 0 0 0",
+          color: "#0f172a"
+        }}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+const card = {
+  padding: "20px",
+  backgroundColor: "white",
+  borderRadius: "12px",
+  boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
+  minWidth: "220px"
+};
+
+const statsGrid = {
+  display: "flex",
+  gap: "20px",
+  flexWrap: "wrap",
+  marginBottom: "24px"
+};
+
+const sectionTitle = {
+  gridColumn: "1 / -1",
+  fontWeight: "700",
+  color: "#334155",
+  marginBottom: "-4px"
+};
+
+const input = {
+  width: "100%",
+  padding: "10px 12px",
+  border: "1px solid #cbd5e1",
+  borderRadius: "8px",
+  outline: "none",
+  backgroundColor: "#fff"
+};
+
+const checkboxLabel = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  fontWeight: "500",
+  color: "#334155"
+};
+
+const tableWrapper = {
+  backgroundColor: "white",
+  borderRadius: "12px",
+  boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
+  overflow: "hidden"
+};
 
 const table = {
   width: "100%",
@@ -260,14 +378,77 @@ const table = {
 
 const th = {
   textAlign: "left",
-  padding: "10px",
-  borderBottom: "1px solid #ddd"
+  padding: "12px",
+  borderBottom: "1px solid #e2e8f0",
+  backgroundColor: "#f8fafc",
+  color: "#0f172a"
 };
 
 const td = {
-  padding: "10px",
+  padding: "12px",
   borderBottom: "1px solid #eee",
-  verticalAlign: "top"
+  verticalAlign: "top",
+  color: "#334155"
+};
+
+const tdStrong = {
+  ...td,
+  fontWeight: "700",
+  color: "#0f172a"
+};
+
+const row = {
+  backgroundColor: "white"
+};
+
+const badge = {
+  display: "inline-block",
+  padding: "4px 10px",
+  borderRadius: "999px",
+  fontSize: "12px",
+  fontWeight: "700"
+};
+
+const detailLink = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "8px 12px",
+  borderRadius: "8px",
+  textDecoration: "none",
+  backgroundColor: "#eff6ff",
+  color: "#1d4ed8",
+  fontWeight: "600"
+};
+
+const primaryButton = {
+  padding: "10px 14px",
+  border: "none",
+  borderRadius: "8px",
+  backgroundColor: "#2563eb",
+  color: "white",
+  cursor: "pointer",
+  fontWeight: "600"
+};
+
+const secondaryButton = {
+  padding: "10px 14px",
+  border: "1px solid #cbd5e1",
+  borderRadius: "8px",
+  backgroundColor: "white",
+  color: "#0f172a",
+  cursor: "pointer",
+  fontWeight: "600"
+};
+
+const dangerButton = {
+  padding: "10px 14px",
+  border: "none",
+  borderRadius: "8px",
+  backgroundColor: "#dc2626",
+  color: "white",
+  cursor: "pointer",
+  fontWeight: "600"
 };
 
 export default Almacenes;

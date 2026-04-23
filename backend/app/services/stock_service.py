@@ -25,6 +25,7 @@ class StockService:
                 "id": item.id,
                 "producto_id": item.producto_id,
                 "producto_nombre": item.producto_nombre,
+                "categoria_nombre": item.categoria_nombre,
                 "ubicacion_id": item.ubicacion_id,
                 "ubicacion_nombre": item.ubicacion_nombre,
                 "almacen_id": item.almacen_id,

@@ -29,6 +29,7 @@ class StockDetailedResponse(BaseModel):
     id: int
     producto_id: int
     producto_nombre: Optional[str] = None
+    categoria_nombre: Optional[str] = None
     ubicacion_id: int
     ubicacion_nombre: Optional[str] = None
     almacen_id: Optional[int] = None

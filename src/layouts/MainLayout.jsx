@@ -96,6 +96,10 @@ function MainLayout() {
               Almacenes
             </NavLink>
 
+            <NavLink to="/zonas" style={getLinkStyle}>
+              Zonas
+            </NavLink>
+
             <NavLink to="/stock" style={getLinkStyle}>
               Stock
             </NavLink>

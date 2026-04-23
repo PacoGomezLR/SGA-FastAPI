@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models.stock import Stock
 from app.models.product import Product
+from app.models.category import Category
 from app.models.location import Location
 from app.models.zone import Zone
 from app.models.warehouse import Warehouse
@@ -25,6 +26,7 @@ class StockRepository:
                 Stock.id,
                 Stock.producto_id,
                 Product.nombre.label("producto_nombre"),
+                Category.nombre.label("categoria_nombre"),
                 Product.stock_minimo,
                 Stock.ubicacion_id,
                 Location.codigo.label("ubicacion_nombre"),
@@ -34,6 +36,7 @@ class StockRepository:
                 (Stock.cantidad <= Product.stock_minimo).label("bajo_stock")
             )
             .join(Product, Product.id == Stock.producto_id)
+            .outerjoin(Category, Category.id == Product.categoria_id)
             .join(Location, Location.id == Stock.ubicacion_id)
             .join(Zone, Zone.id == Location.zona_id)
             .join(Warehouse, Warehouse.id == Zone.almacen_id)
