@@ -16,10 +16,11 @@ router = APIRouter(prefix="/stock", tags=["Stock"])
 )
 def get_stock(
     low: bool = Query(False, description="Filtrar solo stock bajo"),
+    almacen_id: int | None = Query(None, description="Filtrar por almacén"),
     db: Session = Depends(get_db)
 ):
     service = StockService(db)
-    return service.get_all_stock_detailed(low=low)
+    return service.get_all_stock_detailed(low=low, almacen_id=almacen_id)
 
 
 @router.get(

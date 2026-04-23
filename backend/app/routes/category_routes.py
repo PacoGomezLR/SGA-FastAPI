@@ -11,22 +11,23 @@ from app.services.category_service import CategoryService
 router = APIRouter(prefix="/categories", tags=["Categories"])
 
 
-@router.get("/", response_model=list[CategoryResponse])
-def get_categories(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
+@router.get(
+    "/",
+    response_model=list[CategoryResponse],
+    dependencies=[Depends(require_role("administrador", "supervisor", "operario"))]
+)
+def get_categories(db: Session = Depends(get_db)):
     repository = CategoryRepository(db)
     service = CategoryService(repository)
     return service.get_categories()
 
 
-@router.get("/{category_id}", response_model=CategoryResponse)
-def get_category(
-    category_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
+@router.get(
+    "/{category_id}",
+    response_model=CategoryResponse,
+    dependencies=[Depends(require_role("administrador", "supervisor", "operario"))]
+)
+def get_category(category_id: int, db: Session = Depends(get_db)):
     repository = CategoryRepository(db)
     service = CategoryService(repository)
 
@@ -36,12 +37,13 @@ def get_category(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.post("/", response_model=CategoryResponse, status_code=201)
-def create_category(
-    data: CategoryCreate,
-    current_user: User = Depends(require_role("admin")),
-    db: Session = Depends(get_db)
-):
+@router.post(
+    "/",
+    response_model=CategoryResponse,
+    status_code=201,
+    dependencies=[Depends(require_role("administrador"))]
+)
+def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
     repository = CategoryRepository(db)
     service = CategoryService(repository)
 
@@ -51,13 +53,12 @@ def create_category(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.put("/{category_id}", response_model=CategoryResponse)
-def update_category(
-    category_id: int,
-    data: CategoryUpdate,
-    current_user: User = Depends(require_role("admin")),
-    db: Session = Depends(get_db)
-):
+@router.put(
+    "/{category_id}",
+    response_model=CategoryResponse,
+    dependencies=[Depends(require_role("administrador"))]
+)
+def update_category(category_id: int, data: CategoryUpdate, db: Session = Depends(get_db)):
     repository = CategoryRepository(db)
     service = CategoryService(repository)
 
@@ -69,12 +70,12 @@ def update_category(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/{category_id}", status_code=204)
-def delete_category(
-    category_id: int,
-    current_user: User = Depends(require_role("admin")),
-    db: Session = Depends(get_db)
-):
+@router.delete(
+    "/{category_id}",
+    status_code=204,
+    dependencies=[Depends(require_role("administrador"))]
+)
+def delete_category(category_id: int, db: Session = Depends(get_db)):
     repository = CategoryRepository(db)
     service = CategoryService(repository)
 

@@ -4,6 +4,7 @@ import { apiFetch } from "../api/api";
 function Stock() {
   const [stock, setStock] = useState([]);
   const [soloBajo, setSoloBajo] = useState(false);
+  const [almacenId, setAlmacenId] = useState("");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
@@ -12,9 +13,17 @@ function Stock() {
       setCargando(true);
       setError("");
 
-      const endpoint = soloBajo
-        ? "/stock?low=true"
-        : "/stock";
+      const params = new URLSearchParams();
+
+      if (soloBajo) {
+        params.append("low", "true");
+      }
+
+      if (almacenId !== "") {
+        params.append("almacen_id", almacenId);
+      }
+
+      const endpoint = params.toString() ? `/stock?${params.toString()}` : "/stock";
 
       const data = await apiFetch(endpoint);
 
@@ -29,10 +38,31 @@ function Stock() {
 
   useEffect(() => {
     cargarStock();
-  }, [soloBajo]);
+  }, [soloBajo, almacenId]);
 
   const totalUnidades = useMemo(() => {
     return stock.reduce((acc, item) => acc + (item.cantidad || 0), 0);
+  }, [stock]);
+
+  const almacenes = useMemo(() => {
+    const mapa = new Map();
+
+    stock.forEach((item) => {
+      if (
+        item.almacen_id !== null &&
+        item.almacen_id !== undefined &&
+        !mapa.has(item.almacen_id)
+      ) {
+        mapa.set(item.almacen_id, {
+          id: item.almacen_id,
+          nombre: item.almacen_nombre || `Almacén ${item.almacen_id}`
+        });
+      }
+    });
+
+    return Array.from(mapa.values()).sort((a, b) =>
+      a.nombre.localeCompare(b.nombre)
+    );
   }, [stock]);
 
   return (
@@ -53,7 +83,17 @@ function Stock() {
             Consulta de existencias y alertas de stock bajo
           </p>
         </div>
+      </div>
 
+      <div
+        style={{
+          display: "flex",
+          gap: "12px",
+          flexWrap: "wrap",
+          alignItems: "center",
+          marginBottom: "20px"
+        }}
+      >
         <label
           style={{
             display: "flex",
@@ -72,6 +112,32 @@ function Stock() {
           />
           Solo stock bajo
         </label>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            backgroundColor: "white",
+            padding: "10px 12px",
+            borderRadius: "10px",
+            boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
+          }}
+        >
+          <label htmlFor="almacen">Almacén</label>
+          <select
+            id="almacen"
+            value={almacenId}
+            onChange={(e) => setAlmacenId(e.target.value)}
+          >
+            <option value="">Todos</option>
+            {almacenes.map((almacen) => (
+              <option key={almacen.id} value={almacen.id}>
+                {almacen.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {error && (
@@ -124,6 +190,7 @@ function Stock() {
             <thead>
               <tr>
                 <th style={th}>Producto</th>
+                <th style={th}>Almacén</th>
                 <th style={th}>Ubicación</th>
                 <th style={th}>Cantidad</th>
                 <th style={th}>Stock mínimo</th>
@@ -139,6 +206,9 @@ function Stock() {
                 >
                   <td style={td}>
                     {item.producto_nombre || item.producto_id}
+                  </td>
+                  <td style={td}>
+                    {item.almacen_nombre || item.almacen_id || "-"}
                   </td>
                   <td style={td}>
                     {item.ubicacion_nombre || item.ubicacion_id}

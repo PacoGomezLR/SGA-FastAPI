@@ -14,16 +14,42 @@ class ProductService:
         self.repository = ProductRepository(db)
 
     def get_all_products(self):
-        return self.repository.get_all()
+        products = self.repository.get_all()
+
+        return [
+            {
+                "id": p.id,
+                "nombre": p.nombre,
+                "descripcion": p.descripcion,
+                "sku": p.sku,
+                "categoria_id": p.categoria_id,
+                "categoria_nombre": p.categoria.nombre if p.categoria else None,
+                "unidad_medida": p.unidad_medida,
+                "activo": p.activo,
+                "stock_minimo": p.stock_minimo
+            }
+            for p in products
+        ]
 
     def get_product_by_id(self, product_id: int):
-        product = self.repository.get_by_id(product_id)
-        if not product:
+        p = self.repository.get_by_id(product_id)
+        if not p:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Producto no encontrado"
             )
-        return product
+
+        return {
+            "id": p.id,
+            "nombre": p.nombre,
+            "descripcion": p.descripcion,
+            "sku": p.sku,
+            "categoria_id": p.categoria_id,
+            "categoria_nombre": p.categoria.nombre if p.categoria else None,
+            "unidad_medida": p.unidad_medida,
+            "activo": p.activo,
+            "stock_minimo": p.stock_minimo
+        }
 
     def create_product(self, product_data: ProductCreate):
         sku = (product_data.sku or "").strip()

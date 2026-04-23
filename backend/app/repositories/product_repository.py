@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.product import Product
 from app.schemas.product import ProductCreate, ProductUpdate
@@ -9,10 +9,19 @@ class ProductRepository:
         self.db = db
 
     def get_all(self):
-        return self.db.query(Product).all()
+        return (
+            self.db.query(Product)
+            .options(joinedload(Product.categoria))
+            .all()
+        )
 
     def get_by_id(self, product_id: int):
-        return self.db.query(Product).filter(Product.id == product_id).first()
+        return (
+            self.db.query(Product)
+            .options(joinedload(Product.categoria))
+            .filter(Product.id == product_id)
+            .first()
+        )
 
     def get_by_sku(self, sku: str):
         return self.db.query(Product).filter(Product.sku == sku).first()

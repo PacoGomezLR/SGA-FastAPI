@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 from app.models.stock import Stock
 from app.models.product import Product
 from app.models.location import Location
+from app.models.zone import Zone
+from app.models.warehouse import Warehouse
 
 from app.schemas.stock import StockCreate, StockUpdate
 
@@ -17,7 +19,7 @@ class StockRepository:
     def get_all(self):
         return self.db.query(Stock).all()
 
-    def get_all_with_details(self, low: bool = False):
+    def get_all_with_details(self, low: bool = False, almacen_id: int | None = None):
         query = (
             self.db.query(
                 Stock.id,
@@ -26,15 +28,22 @@ class StockRepository:
                 Product.stock_minimo,
                 Stock.ubicacion_id,
                 Location.codigo.label("ubicacion_nombre"),
+                Warehouse.id.label("almacen_id"),
+                Warehouse.nombre.label("almacen_nombre"),
                 Stock.cantidad,
                 (Stock.cantidad <= Product.stock_minimo).label("bajo_stock")
             )
             .join(Product, Product.id == Stock.producto_id)
             .join(Location, Location.id == Stock.ubicacion_id)
+            .join(Zone, Zone.id == Location.zona_id)
+            .join(Warehouse, Warehouse.id == Zone.almacen_id)
         )
 
         if low:
             query = query.filter(Stock.cantidad <= Product.stock_minimo)
+
+        if almacen_id is not None:
+            query = query.filter(Warehouse.id == almacen_id)
 
         return (
             query.order_by(

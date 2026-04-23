@@ -61,6 +61,7 @@ class ProductUpdate(BaseModel):
 
 class ProductResponse(ProductBase):
     id: int
+    categoria_nombre: Optional[str] = None
 
     class Config:
         from_attributes = True
