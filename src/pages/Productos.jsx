@@ -26,6 +26,10 @@ function Productos() {
   const [editingId, setEditingId] = useState(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
+  const [mostrarModalCategoria, setMostrarModalCategoria] = useState(false);
+  const [guardandoCategoria, setGuardandoCategoria] = useState(false);
+  const [nuevaCategoria, setNuevaCategoria] = useState("");
+
   const { confirm } = useConfirm();
 
   async function cargarProductos() {
@@ -42,7 +46,6 @@ function Productos() {
     try {
       setCargando(true);
       setError("");
-
       await Promise.all([cargarProductos(), cargarCategorias()]);
     } catch (err) {
       setError(err.message || "Error al cargar productos");
@@ -176,6 +179,56 @@ function Productos() {
     });
   }
 
+  function abrirModalCategoria() {
+    setNuevaCategoria("");
+    setMostrarModalCategoria(true);
+  }
+
+  function cerrarModalCategoria() {
+    if (guardandoCategoria) return;
+    setNuevaCategoria("");
+    setMostrarModalCategoria(false);
+  }
+
+  async function crearCategoria() {
+    const nombreLimpio = nuevaCategoria.trim();
+
+    if (!nombreLimpio) {
+      setError('Debes escribir un nombre para la categoría');
+      return;
+    }
+
+    try {
+      setGuardandoCategoria(true);
+      setError("");
+      setMensaje("");
+
+      const nueva = await apiFetch("/categories/", {
+        method: "POST",
+        body: {
+          nombre: nombreLimpio
+        }
+      });
+
+      await cargarCategorias();
+
+      if (nueva?.id !== undefined && nueva?.id !== null) {
+        setForm((prev) => ({
+          ...prev,
+          categoria_id: String(nueva.id)
+        }));
+      }
+
+      setMensaje("Categoría creada correctamente");
+      setNuevaCategoria("");
+      setMostrarModalCategoria(false);
+    } catch (err) {
+      setError(err.message || "Error al crear la categoría");
+    } finally {
+      setGuardandoCategoria(false);
+    }
+  }
+
   const productosFiltrados = productos.filter((p) => {
     const texto = busqueda.toLowerCase().trim();
     if (!texto) return true;
@@ -243,165 +296,216 @@ function Productos() {
     );
 
   return (
-    <CrudPage
-      title="Productos"
-      message={mensaje}
-      error={error}
-      cardTitle={editingId ? "Editar producto" : "Nuevo producto"}
-      onSubmit={handleSubmit}
-      searchValue={busqueda}
-      onSearchChange={(e) => setBusqueda(e.target.value)}
-      loading={cargando}
-      emptyMessage="No hay productos"
-      formContent={
-        <>
-          <div style={accionesSuperiores}>
-            {!mostrarFormulario ? (
-              <button type="button" style={primaryButton} onClick={nuevoProducto}>
-                Crear producto
+    <>
+      <CrudPage
+        title="Productos"
+        message={mensaje}
+        error={error}
+        cardTitle={editingId ? "Editar producto" : "Nuevo producto"}
+        onSubmit={handleSubmit}
+        searchValue={busqueda}
+        onSearchChange={(e) => setBusqueda(e.target.value)}
+        loading={cargando}
+        emptyMessage="No hay productos"
+        formContent={
+          <>
+            <div style={accionesSuperiores}>
+              {!mostrarFormulario ? (
+                <button type="button" style={primaryButton} onClick={nuevoProducto}>
+                  Crear producto
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  style={secondaryButton}
+                  onClick={limpiarFormulario}
+                >
+                  Ocultar formulario
+                </button>
+              )}
+            </div>
+
+            {mostrarFormulario && (
+              <div style={formWrapper}>
+                <div style={bloque}>
+                  <div style={bloqueTitulo}>Datos principales</div>
+
+                  <div style={campo}>
+                    <label style={label}>Nombre</label>
+                    <input
+                      name="nombre"
+                      placeholder="Ej: Guitarra Fender Stratocaster"
+                      value={form.nombre}
+                      onChange={handleChange}
+                      required
+                      style={input}
+                    />
+                  </div>
+
+                  <div style={campo}>
+                    <label style={label}>SKU</label>
+                    <input
+                      name="sku"
+                      placeholder="Se genera automáticamente si lo dejas vacío"
+                      value={form.sku}
+                      onChange={handleChange}
+                      style={input}
+                    />
+                  </div>
+
+                  <div style={campo}>
+                    <label style={label}>Descripción</label>
+                    <textarea
+                      name="descripcion"
+                      placeholder="Añade una descripción breve del producto"
+                      value={form.descripcion}
+                      onChange={handleChange}
+                      rows="4"
+                      style={textarea}
+                    />
+                  </div>
+                </div>
+
+                <div style={bloque}>
+                  <div style={bloqueTitulo}>Configuración</div>
+
+                  <div style={dosColumnas}>
+                    <div style={campo}>
+                      <label style={label}>
+                        Categoría
+                        <button
+                          type="button"
+                          style={miniButton}
+                          onClick={abrirModalCategoria}
+                        >
+                          + Nueva
+                        </button>
+                      </label>
+
+                      <select
+                        name="categoria_id"
+                        value={form.categoria_id}
+                        onChange={handleChange}
+                        style={select}
+                        required
+                      >
+                        <option value="" disabled>
+                          Selecciona una categoría
+                        </option>
+                        {categorias.map((categoria) => (
+                          <option key={categoria.id} value={categoria.id}>
+                            {categoria.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div style={campo}>
+                      <label style={label}>Unidad de medida</label>
+                      <input
+                        name="unidad_medida"
+                        placeholder="Ej: unidad, kg, caja..."
+                        value={form.unidad_medida}
+                        onChange={handleChange}
+                        required
+                        style={input}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={dosColumnas}>
+                    <div style={campo}>
+                      <label style={label}>Stock mínimo</label>
+                      <input
+                        type="number"
+                        name="stock_minimo"
+                        placeholder="Cantidad mínima para alerta"
+                        value={form.stock_minimo}
+                        onChange={handleChange}
+                        min="0"
+                        required
+                        style={input}
+                      />
+                    </div>
+
+                    <div style={campo}>
+                      <label style={label}>Estado</label>
+                      <label style={checkboxCard}>
+                        <input
+                          type="checkbox"
+                          name="activo"
+                          checked={form.activo}
+                          onChange={handleChange}
+                        />
+                        <span>Producto activo</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={accionesFormulario}>
+                  <button type="submit" disabled={guardando} style={primaryButton}>
+                    {guardando
+                      ? "Guardando..."
+                      : editingId
+                        ? "Actualizar producto"
+                        : "Crear producto"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={limpiarFormulario}
+                    style={secondaryButton}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        }
+        tableContent={tablaProductos}
+      />
+
+      {mostrarModalCategoria && (
+        <div style={modalOverlay} onClick={cerrarModalCategoria}>
+          <div style={modalBox} onClick={(e) => e.stopPropagation()}>
+            <div style={modalTitulo}>Nueva categoría</div>
+
+            <div style={campo}>
+              <label style={label}>Nombre</label>
+              <input
+                value={nuevaCategoria}
+                onChange={(e) => setNuevaCategoria(e.target.value)}
+                placeholder="Ej: Guitarras"
+                style={input}
+                autoFocus
+              />
+            </div>
+
+            <div style={accionesFormulario}>
+              <button
+                type="button"
+                style={primaryButton}
+                onClick={crearCategoria}
+                disabled={guardandoCategoria}
+              >
+                {guardandoCategoria ? "Guardando..." : "Crear categoría"}
               </button>
-            ) : (
+
               <button
                 type="button"
                 style={secondaryButton}
-                onClick={limpiarFormulario}
+                onClick={cerrarModalCategoria}
+                disabled={guardandoCategoria}
               >
-                Ocultar formulario
+                Cancelar
               </button>
-            )}
-          </div>
-
-          {mostrarFormulario && (
-            <div style={formWrapper}>
-              <div style={bloque}>
-                <div style={bloqueTitulo}>Datos principales</div>
-
-                <div style={campo}>
-                  <label style={label}>Nombre</label>
-                  <input
-                    name="nombre"
-                    placeholder="Ej: Guitarra Fender Stratocaster"
-                    value={form.nombre}
-                    onChange={handleChange}
-                    required
-                    style={input}
-                  />
-                </div>
-
-                <div style={campo}>
-                  <label style={label}>SKU</label>
-                  <input
-                    name="sku"
-                    placeholder="Se genera automáticamente si lo dejas vacío"
-                    value={form.sku}
-                    onChange={handleChange}
-                    style={input}
-                  />
-                </div>
-
-                <div style={campo}>
-                  <label style={label}>Descripción</label>
-                  <textarea
-                    name="descripcion"
-                    placeholder="Añade una descripción breve del producto"
-                    value={form.descripcion}
-                    onChange={handleChange}
-                    rows="4"
-                    style={textarea}
-                  />
-                </div>
-              </div>
-
-              <div style={bloque}>
-                <div style={bloqueTitulo}>Configuración</div>
-
-                <div style={dosColumnas}>
-                  <div style={campo}>
-                    <label style={label}>Categoría</label>
-                    <select
-                      name="categoria_id"
-                      value={form.categoria_id}
-                      onChange={handleChange}
-                      style={select}
-                      required
-                    >
-                      <option value="" disabled>
-                        Selecciona una categoría
-                      </option>
-                      {categorias.map((categoria) => (
-                        <option key={categoria.id} value={categoria.id}>
-                          {categoria.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div style={campo}>
-                    <label style={label}>Unidad de medida</label>
-                    <input
-                      name="unidad_medida"
-                      placeholder="Ej: unidad, kg, caja..."
-                      value={form.unidad_medida}
-                      onChange={handleChange}
-                      required
-                      style={input}
-                    />
-                  </div>
-                </div>
-
-                <div style={dosColumnas}>
-                  <div style={campo}>
-                    <label style={label}>Stock mínimo</label>
-                    <input
-                      type="number"
-                      name="stock_minimo"
-                      placeholder="Cantidad mínima para alerta"
-                      value={form.stock_minimo}
-                      onChange={handleChange}
-                      min="0"
-                      required
-                      style={input}
-                    />
-                  </div>
-
-                  <div style={campo}>
-                    <label style={label}>Estado</label>
-                    <label style={checkboxCard}>
-                      <input
-                        type="checkbox"
-                        name="activo"
-                        checked={form.activo}
-                        onChange={handleChange}
-                      />
-                      <span>Producto activo</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div style={accionesFormulario}>
-                <button type="submit" disabled={guardando} style={primaryButton}>
-                  {guardando
-                    ? "Guardando..."
-                    : editingId
-                      ? "Actualizar producto"
-                      : "Crear producto"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={limpiarFormulario}
-                  style={secondaryButton}
-                >
-                  Cancelar
-                </button>
-              </div>
             </div>
-          )}
-        </>
-      }
-      tableContent={tablaProductos}
-    />
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -564,6 +668,44 @@ const th = {
 const td = {
   padding: "10px",
   borderBottom: "1px solid #eee"
+};
+
+const miniButton = {
+  marginLeft: "10px",
+  padding: "4px 8px",
+  fontSize: "12px",
+  borderRadius: "6px",
+  border: "1px solid #cbd5e1",
+  backgroundColor: "white",
+  cursor: "pointer"
+};
+
+const modalOverlay = {
+  position: "fixed",
+  inset: 0,
+  backgroundColor: "rgba(15, 23, 42, 0.45)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 1000,
+  padding: "20px"
+};
+
+const modalBox = {
+  width: "100%",
+  maxWidth: "420px",
+  backgroundColor: "white",
+  borderRadius: "16px",
+  padding: "20px",
+  boxShadow: "0 20px 50px rgba(0,0,0,0.20)",
+  display: "grid",
+  gap: "16px"
+};
+
+const modalTitulo = {
+  fontSize: "20px",
+  fontWeight: "700",
+  color: "#0f172a"
 };
 
 export default Productos;

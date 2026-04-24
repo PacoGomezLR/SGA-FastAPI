@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from sqlalchemy import update
+from sqlalchemy import update, func
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -21,37 +21,43 @@ class StockRepository:
         return self.db.query(Stock).all()
 
     def get_all_with_details(self, low: bool = False, almacen_id: int | None = None):
+        cantidad_expr = func.coalesce(Stock.cantidad, 0)
+        bajo_stock_expr = cantidad_expr <= Product.stock_minimo
+
         query = (
             self.db.query(
-                Stock.id,
-                Stock.producto_id,
+                Stock.id.label("id"),
+                Product.id.label("producto_id"),
                 Product.nombre.label("producto_nombre"),
                 Category.nombre.label("categoria_nombre"),
-                Product.stock_minimo,
-                Stock.ubicacion_id,
+                Product.stock_minimo.label("stock_minimo"),
+                Stock.ubicacion_id.label("ubicacion_id"),
                 Location.codigo.label("ubicacion_nombre"),
                 Warehouse.id.label("almacen_id"),
                 Warehouse.nombre.label("almacen_nombre"),
-                Stock.cantidad,
-                (Stock.cantidad <= Product.stock_minimo).label("bajo_stock")
+                cantidad_expr.label("cantidad"),
+                bajo_stock_expr.label("bajo_stock")
             )
-            .join(Product, Product.id == Stock.producto_id)
+            .select_from(Product)
             .outerjoin(Category, Category.id == Product.categoria_id)
-            .join(Location, Location.id == Stock.ubicacion_id)
-            .join(Zone, Zone.id == Location.zona_id)
-            .join(Warehouse, Warehouse.id == Zone.almacen_id)
+            .outerjoin(Stock, Stock.producto_id == Product.id)
+            .outerjoin(Location, Location.id == Stock.ubicacion_id)
+            .outerjoin(Zone, Zone.id == Location.zona_id)
+            .outerjoin(Warehouse, Warehouse.id == Zone.almacen_id)
         )
 
         if low:
-            query = query.filter(Stock.cantidad <= Product.stock_minimo)
+            query = query.filter(bajo_stock_expr)
 
         if almacen_id is not None:
             query = query.filter(Warehouse.id == almacen_id)
 
         return (
             query.order_by(
-                (Stock.cantidad <= Product.stock_minimo).desc(),
-                Stock.cantidad.asc()
+                bajo_stock_expr.desc(),
+                Product.nombre.asc(),
+                Warehouse.nombre.asc().nulls_last(),
+                Location.codigo.asc().nulls_last()
             )
             .all()
         )

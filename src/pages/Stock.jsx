@@ -3,6 +3,9 @@ import { apiFetch } from "../api/api";
 
 function Stock() {
   const [stock, setStock] = useState([]);
+  const [almacenes, setAlmacenes] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+
   const [soloBajo, setSoloBajo] = useState(false);
   const [almacenId, setAlmacenId] = useState("");
   const [busqueda, setBusqueda] = useState("");
@@ -26,7 +29,6 @@ function Stock() {
       }
 
       const endpoint = params.toString() ? `/stock?${params.toString()}` : "/stock";
-
       const data = await apiFetch(endpoint);
 
       setStock(Array.isArray(data) ? data : []);
@@ -38,42 +40,34 @@ function Stock() {
     }
   }
 
+  async function cargarAlmacenes() {
+    try {
+      const data = await apiFetch("/warehouses/");
+      setAlmacenes(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError((prev) => prev || err.message || "Error al cargar almacenes");
+      setAlmacenes([]);
+    }
+  }
+
+  async function cargarCategorias() {
+    try {
+      const data = await apiFetch("/categories/");
+      setCategorias(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError((prev) => prev || err.message || "Error al cargar categorías");
+      setCategorias([]);
+    }
+  }
+
+  useEffect(() => {
+    cargarAlmacenes();
+    cargarCategorias();
+  }, []);
+
   useEffect(() => {
     cargarStock();
   }, [soloBajo, almacenId]);
-
-  const almacenes = useMemo(() => {
-    const mapa = new Map();
-
-    stock.forEach((item) => {
-      if (
-        item.almacen_id !== null &&
-        item.almacen_id !== undefined &&
-        !mapa.has(item.almacen_id)
-      ) {
-        mapa.set(item.almacen_id, {
-          id: item.almacen_id,
-          nombre: item.almacen_nombre || `Almacén ${item.almacen_id}`
-        });
-      }
-    });
-
-    return Array.from(mapa.values()).sort((a, b) =>
-      a.nombre.localeCompare(b.nombre)
-    );
-  }, [stock]);
-
-  const categorias = useMemo(() => {
-    const unicas = new Set();
-
-    stock.forEach((item) => {
-      if (item.categoria_nombre && item.categoria_nombre.trim() !== "") {
-        unicas.add(item.categoria_nombre);
-      }
-    });
-
-    return Array.from(unicas).sort((a, b) => a.localeCompare(b));
-  }, [stock]);
 
   const stockFiltrado = useMemo(() => {
     const texto = busqueda.trim().toLowerCase();
@@ -84,10 +78,11 @@ function Stock() {
         (item.producto_nombre || "").toLowerCase().includes(texto) ||
         String(item.producto_id || "").includes(texto) ||
         (item.ubicacion_nombre || "").toLowerCase().includes(texto) ||
-        (item.almacen_nombre || "").toLowerCase().includes(texto);
+        (item.almacen_nombre || "").toLowerCase().includes(texto) ||
+        (item.categoria_nombre || "").toLowerCase().includes(texto);
 
       const coincideCategoria =
-        categoria === "" || (item.categoria_nombre || "") === categoria;
+        categoria === "" || String(item.categoria_nombre || "") === categoria;
 
       return coincideBusqueda && coincideCategoria;
     });
@@ -189,9 +184,9 @@ function Stock() {
             onChange={(e) => setCategoria(e.target.value)}
           >
             <option value="">Todas</option>
-            {categorias.map((item) => (
-              <option key={item} value={item}>
-                {item}
+            {categorias.map((cat) => (
+              <option key={cat.id} value={cat.nombre}>
+                {cat.nombre}
               </option>
             ))}
           </select>

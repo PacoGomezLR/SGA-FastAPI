@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api/api";
 
+const initialLocationForm = {
+  codigo: "",
+  descripcion: "",
+  activa: true
+};
+
 function AlmacenDetalle() {
   const { id } = useParams();
 
@@ -10,6 +16,12 @@ function AlmacenDetalle() {
   const [ubicaciones, setUbicaciones] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const [mensaje, setMensaje] = useState("");
+
+  const [mostrarModalUbicacion, setMostrarModalUbicacion] = useState(false);
+  const [zonaSeleccionada, setZonaSeleccionada] = useState(null);
+  const [locationForm, setLocationForm] = useState(initialLocationForm);
+  const [guardandoUbicacion, setGuardandoUbicacion] = useState(false);
 
   useEffect(() => {
     cargarDetalle();
@@ -44,6 +56,71 @@ function AlmacenDetalle() {
     }
   }
 
+  function abrirModalUbicacion(zona) {
+    setZonaSeleccionada(zona);
+    setLocationForm(initialLocationForm);
+    setMensaje("");
+    setError("");
+    setMostrarModalUbicacion(true);
+  }
+
+  function cerrarModalUbicacion() {
+    if (guardandoUbicacion) return;
+
+    setMostrarModalUbicacion(false);
+    setZonaSeleccionada(null);
+    setLocationForm(initialLocationForm);
+  }
+
+  function handleLocationChange(e) {
+    const { name, value, type, checked } = e.target;
+
+    setLocationForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value
+    }));
+  }
+
+  async function crearUbicacion(e) {
+    e.preventDefault();
+
+    if (!zonaSeleccionada) {
+      setError("No se ha seleccionado ninguna zona");
+      return;
+    }
+
+    if (!locationForm.codigo.trim()) {
+      setError("El código de la ubicación es obligatorio");
+      return;
+    }
+
+    try {
+      setGuardandoUbicacion(true);
+      setError("");
+      setMensaje("");
+
+      const payload = {
+        zona_id: Number(zonaSeleccionada.id),
+        codigo: locationForm.codigo.trim(),
+        descripcion: locationForm.descripcion.trim() || null,
+        activa: locationForm.activa
+      };
+
+      await apiFetch("/locations/", {
+        method: "POST",
+        body: payload
+      });
+
+      setMensaje("Ubicación creada correctamente");
+      cerrarModalUbicacion();
+      await cargarDetalle();
+    } catch (err) {
+      setError(err.message || "Error al crear la ubicación");
+    } finally {
+      setGuardandoUbicacion(false);
+    }
+  }
+
   const ubicacionesPorZona = useMemo(() => {
     const mapa = new Map();
 
@@ -64,10 +141,6 @@ function AlmacenDetalle() {
     return <p>Cargando detalle del almacén...</p>;
   }
 
-  if (error) {
-    return <div style={errorBox}>{error}</div>;
-  }
-
   if (!almacen) {
     return <p>No se ha encontrado el almacén.</p>;
   }
@@ -86,6 +159,9 @@ function AlmacenDetalle() {
           Volver a almacenes
         </Link>
       </div>
+
+      {mensaje && <div style={successBox}>{mensaje}</div>}
+      {error && <div style={errorBox}>{error}</div>}
 
       <div style={infoCard}>
         <div style={infoGrid}>
@@ -139,11 +215,7 @@ function AlmacenDetalle() {
                 <div key={zona.id} style={zoneCard}>
                   <div style={zoneHeader}>
                     <div>
-                      {/* 🔥 ZONA CLICABLE */}
-                      <Link
-                        to={`/zonas/${zona.id}`}
-                        style={zoneLink}
-                      >
+                      <Link to={`/zonas/${zona.id}`} style={zoneLink}>
                         {zona.nombre}
                       </Link>
 
@@ -163,7 +235,17 @@ function AlmacenDetalle() {
                     </span>
                   </div>
 
-                  <div style={subTitle}>Ubicaciones</div>
+                  <div style={locationsHeader}>
+                    <div style={subTitle}>Ubicaciones</div>
+
+                    <button
+                      type="button"
+                      style={miniCreateButton}
+                      onClick={() => abrirModalUbicacion(zona)}
+                    >
+                      + Nueva ubicación
+                    </button>
+                  </div>
 
                   {ubicacionesZona.length === 0 ? (
                     <div style={emptyMiniBox}>
@@ -189,6 +271,73 @@ function AlmacenDetalle() {
           </div>
         )}
       </div>
+
+      {mostrarModalUbicacion && (
+        <div style={modalOverlay} onClick={cerrarModalUbicacion}>
+          <div style={modalBox} onClick={(e) => e.stopPropagation()}>
+            <h2 style={modalTitle}>Nueva ubicación</h2>
+
+            <p style={modalSubtitle}>
+              Zona: <strong>{zonaSeleccionada?.nombre}</strong>
+            </p>
+
+            <form onSubmit={crearUbicacion}>
+              <div style={fieldGroup}>
+                <label style={label}>Código</label>
+                <input
+                  name="codigo"
+                  placeholder="Ej: A1, B3, EST-01..."
+                  value={locationForm.codigo}
+                  onChange={handleLocationChange}
+                  required
+                  style={input}
+                  autoFocus
+                />
+              </div>
+
+              <div style={fieldGroup}>
+                <label style={label}>Descripción</label>
+                <input
+                  name="descripcion"
+                  placeholder="Descripción de la ubicación"
+                  value={locationForm.descripcion}
+                  onChange={handleLocationChange}
+                  style={input}
+                />
+              </div>
+
+              <label style={checkboxCard}>
+                <input
+                  type="checkbox"
+                  name="activa"
+                  checked={locationForm.activa}
+                  onChange={handleLocationChange}
+                />
+                <span>Ubicación activa</span>
+              </label>
+
+              <div style={modalActions}>
+                <button
+                  type="submit"
+                  style={primaryButton}
+                  disabled={guardandoUbicacion}
+                >
+                  {guardandoUbicacion ? "Creando..." : "Crear ubicación"}
+                </button>
+
+                <button
+                  type="button"
+                  style={secondaryButton}
+                  onClick={cerrarModalUbicacion}
+                  disabled={guardandoUbicacion}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -301,10 +450,28 @@ const zoneDescription = {
   color: "#64748b"
 };
 
+const locationsHeader = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: "10px",
+  marginBottom: "12px"
+};
+
 const subTitle = {
   fontWeight: "700",
-  color: "#334155",
-  marginBottom: "12px"
+  color: "#334155"
+};
+
+const miniCreateButton = {
+  padding: "6px 10px",
+  borderRadius: "8px",
+  border: "none",
+  backgroundColor: "#2563eb",
+  color: "white",
+  fontSize: "13px",
+  fontWeight: "600",
+  cursor: "pointer"
 };
 
 const locationsList = {
@@ -339,12 +506,22 @@ const badge = {
   whiteSpace: "nowrap"
 };
 
+const successBox = {
+  padding: "12px",
+  backgroundColor: "#dcfce7",
+  color: "#166534",
+  borderRadius: "8px",
+  fontWeight: "500",
+  marginBottom: "16px"
+};
+
 const errorBox = {
   padding: "12px",
   backgroundColor: "#fee2e2",
   color: "#991b1b",
   borderRadius: "8px",
-  fontWeight: "500"
+  fontWeight: "500",
+  marginBottom: "16px"
 };
 
 const emptyBox = {
@@ -361,6 +538,93 @@ const emptyMiniBox = {
   backgroundColor: "#f8fafc",
   color: "#64748b",
   border: "1px solid #e2e8f0"
+};
+
+const modalOverlay = {
+  position: "fixed",
+  inset: 0,
+  backgroundColor: "rgba(15, 23, 42, 0.45)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 1000,
+  padding: "20px"
+};
+
+const modalBox = {
+  width: "100%",
+  maxWidth: "440px",
+  backgroundColor: "white",
+  borderRadius: "16px",
+  padding: "22px",
+  boxShadow: "0 20px 50px rgba(0,0,0,0.20)"
+};
+
+const modalTitle = {
+  margin: "0 0 6px 0",
+  color: "#0f172a"
+};
+
+const modalSubtitle = {
+  margin: "0 0 18px 0",
+  color: "#64748b"
+};
+
+const fieldGroup = {
+  display: "grid",
+  gap: "6px",
+  marginBottom: "14px"
+};
+
+const label = {
+  fontWeight: "600",
+  color: "#334155"
+};
+
+const input = {
+  width: "100%",
+  padding: "10px 12px",
+  borderRadius: "8px",
+  border: "1px solid #cbd5e1",
+  outline: "none",
+  backgroundColor: "white",
+  boxSizing: "border-box"
+};
+
+const checkboxCard = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  padding: "10px 12px",
+  borderRadius: "8px",
+  border: "1px solid #cbd5e1",
+  marginBottom: "16px"
+};
+
+const modalActions = {
+  display: "flex",
+  gap: "10px",
+  flexWrap: "wrap"
+};
+
+const primaryButton = {
+  padding: "10px 14px",
+  borderRadius: "8px",
+  border: "none",
+  backgroundColor: "#0f172a",
+  color: "white",
+  fontWeight: "600",
+  cursor: "pointer"
+};
+
+const secondaryButton = {
+  padding: "10px 14px",
+  borderRadius: "8px",
+  border: "1px solid #cbd5e1",
+  backgroundColor: "white",
+  color: "#0f172a",
+  fontWeight: "600",
+  cursor: "pointer"
 };
 
 export default AlmacenDetalle;

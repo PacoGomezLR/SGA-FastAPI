@@ -97,9 +97,13 @@ function Recepciones() {
       return ubicaciones;
     }
 
-    return ubicaciones.filter(
-      (ubicacion) => String(ubicacion.almacen_id) === String(form.almacen_id)
-    );
+    return ubicaciones.filter((ubicacion) => {
+      if (ubicacion.almacen_id !== undefined && ubicacion.almacen_id !== null) {
+        return String(ubicacion.almacen_id) === String(form.almacen_id);
+      }
+
+      return true;
+    });
   }, [ubicaciones, form.almacen_id]);
 
   const almacenSeleccionado = useMemo(() => {
