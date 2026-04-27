@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../api/api";
 
 function Dashboard() {
@@ -8,188 +8,372 @@ function Dashboard() {
   const [productosEnRiesgo, setProductosEnRiesgo] = useState(0);
 
   const [ultimosMovimientos, setUltimosMovimientos] = useState([]);
+  const [alertasStock, setAlertasStock] = useState([]);
 
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function cargarDatos() {
-      try {
-        setCargando(true);
-        setError("");
-
-        const [productos, almacenes, stock, movimientos] = await Promise.all([
-          apiFetch("/products/"),
-          apiFetch("/warehouses/"),
-          apiFetch("/stock/"),
-          apiFetch("/movements/")
-        ]);
-
-        const productosArray = Array.isArray(productos) ? productos : [];
-        const almacenesArray = Array.isArray(almacenes) ? almacenes : [];
-        const stockArray = Array.isArray(stock) ? stock : [];
-        const movimientosArray = Array.isArray(movimientos) ? movimientos : [];
-
-        setTotalProductos(productosArray.length);
-        setTotalAlmacenes(almacenesArray.length);
-
-        const totalStock = stockArray.reduce(
-          (acc, item) => acc + (item.cantidad || 0),
-          0
-        );
-        setStockTotal(totalStock);
-
-        const stockPorProducto = stockArray.reduce((acc, item) => {
-          const productoId = item.producto_id;
-          const cantidad = item.cantidad || 0;
-
-          acc[productoId] = (acc[productoId] || 0) + cantidad;
-          return acc;
-        }, {});
-
-        const totalProductosEnRiesgo = productosArray.filter((producto) => {
-          const stockActual = stockPorProducto[producto.id] || 0;
-          const stockMinimo = producto.stock_minimo || 0;
-
-          return stockActual <= stockMinimo;
-        }).length;
-
-        setProductosEnRiesgo(totalProductosEnRiesgo);
-
-        const ultimos = movimientosArray
-          .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
-          .slice(0, 5);
-
-        setUltimosMovimientos(ultimos);
-      } catch (err) {
-        setError(err.message || "Error al cargar datos");
-      } finally {
-        setCargando(false);
-      }
-    }
-
     cargarDatos();
   }, []);
 
+  async function cargarDatos() {
+    try {
+      setCargando(true);
+      setError("");
+
+      const [productos, almacenes, stock, movimientos] = await Promise.all([
+        apiFetch("/products/"),
+        apiFetch("/warehouses/"),
+        apiFetch("/stock?detailed=true"),
+        apiFetch("/movements/audit")
+      ]);
+
+      const productosArray = Array.isArray(productos) ? productos : [];
+      const almacenesArray = Array.isArray(almacenes) ? almacenes : [];
+      const stockArray = Array.isArray(stock) ? stock : [];
+      const movimientosArray = Array.isArray(movimientos) ? movimientos : [];
+
+      setTotalProductos(productosArray.length);
+      setTotalAlmacenes(almacenesArray.length);
+
+      const totalStock = stockArray.reduce(
+        (acc, item) => acc + Number(item.cantidad || 0),
+        0
+      );
+
+      setStockTotal(totalStock);
+
+      const riesgo = stockArray.filter(
+        (item) => item.bajo_stock === true
+      );
+
+      setProductosEnRiesgo(riesgo.length);
+      setAlertasStock(riesgo.slice(0, 6));
+
+      const ultimos = movimientosArray
+        .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+        .slice(0, 8);
+
+      setUltimosMovimientos(ultimos);
+    } catch (err) {
+      setError(err.message || "Error al cargar datos");
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  function colorTipo(tipo) {
+    if (tipo === "entrada") return "#166534";
+    if (tipo === "salida") return "#991b1b";
+    if (tipo === "traslado") return "#1d4ed8";
+    if (tipo === "ajuste") return "#92400e";
+    return "#374151";
+  }
+
+  function signoMovimiento(mov) {
+    if (mov.tipo_movimiento === "entrada") return "+";
+    if (mov.tipo_movimiento === "salida") return "-";
+    return "";
+  }
+
+  const cardBase = {
+    background: "#fff",
+    borderRadius: "14px",
+    padding: "20px",
+    border: "1px solid #e5e7eb",
+    boxShadow: "0 6px 18px rgba(0,0,0,0.04)"
+  };
+
+  if (cargando) {
+    return (
+      <div style={{ padding: "30px" }}>
+        <h1>Resumen Almacén</h1>
+        <div style={cardBase}>Cargando datos...</div>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <h1 style={{ marginBottom: "20px" }}>Resumen Almacén</h1>
+    <div style={{ padding: "30px" }}>
+      <h1 style={{ marginTop: 0, marginBottom: "8px" }}>
+        Resumen Almacén
+      </h1>
+
+      <p style={{ color: "#6b7280", marginBottom: "24px" }}>
+        Vista general del estado actual del almacén.
+      </p>
 
       {error && (
         <div
           style={{
-            marginBottom: "16px",
-            padding: "12px",
-            backgroundColor: "#fee2e2",
+            background: "#fee2e2",
             color: "#991b1b",
-            borderRadius: "8px",
-            fontWeight: "500"
+            padding: "12px",
+            borderRadius: "10px",
+            marginBottom: "18px"
           }}
         >
           {error}
         </div>
       )}
 
-      {cargando ? (
+      {/* TARJETAS */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: "18px",
+          marginBottom: "24px"
+        }}
+      >
+        <Card title="Total productos" value={totalProductos} />
+        <Card title="Total almacenes" value={totalAlmacenes} />
+        <Card title="Stock total" value={stockTotal} />
+        <Card
+          title="Productos en riesgo"
+          value={productosEnRiesgo}
+          color="#991b1b"
+        />
+      </div>
+
+      {/* ACCESOS RÁPIDOS */}
+      <div
+        style={{
+          ...cardBase,
+          marginBottom: "24px"
+        }}
+      >
+        <h3 style={{ marginTop: 0, marginBottom: "16px" }}>
+          Accesos rápidos
+        </h3>
+
         <div
           style={{
-            padding: "20px",
-            backgroundColor: "white",
-            borderRadius: "12px",
-            boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
-            maxWidth: "300px"
+            display: "flex",
+            gap: "12px",
+            flexWrap: "wrap"
           }}
         >
-          <p style={{ margin: 0, color: "#64748b" }}>
-            Cargando datos...
-          </p>
+          <QuickButton text="Nueva recepción" />
+          <QuickButton text="Nuevo movimiento" />
+          <QuickButton text="Nueva salida" />
+          <QuickButton text="Nuevo inventario" />
         </div>
-      ) : (
-        <>
+      </div>
+
+      {/* ALERTAS */}
+      <div
+        style={{
+          ...cardBase,
+          marginBottom: "24px"
+        }}
+      >
+        <h3 style={{ marginTop: 0, marginBottom: "16px" }}>
+          Alertas de stock bajo
+        </h3>
+
+        {alertasStock.length === 0 ? (
+          <p style={{ margin: 0, color: "#6b7280" }}>
+            No hay productos en riesgo.
+          </p>
+        ) : (
           <div
             style={{
-              display: "flex",
-              gap: "20px",
-              flexWrap: "wrap",
-              marginBottom: "30px"
+              display: "grid",
+              gap: "10px"
             }}
           >
-            <Card title="Total productos" value={totalProductos} />
-            <Card title="Total almacenes" value={totalAlmacenes} />
-            <Card title="Stock total" value={stockTotal} />
-            <Card title="Productos en riesgo" value={productosEnRiesgo} />
+            {alertasStock.map((item, index) => (
+              <div
+                key={index}
+                style={{
+                  padding: "12px",
+                  borderRadius: "10px",
+                  background: "#fff7ed",
+                  border: "1px solid #fed7aa",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: "10px",
+                  flexWrap: "wrap"
+                }}
+              >
+                <strong>{item.producto_nombre}</strong>
+
+                <span>
+                  Stock: {item.cantidad}
+                </span>
+
+                <span>
+                  Mínimo: {item.stock_minimo}
+                </span>
+
+                <span>
+                  {item.ubicacion_nombre || "-"}
+                </span>
+              </div>
+            ))}
           </div>
+        )}
+      </div>
 
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "20px",
-              borderRadius: "12px",
-              boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
-            }}
-          >
-            <h3 style={{ marginBottom: "16px", color: "#334155" }}>
-              Últimos movimientos
-            </h3>
+      {/* MOVIMIENTOS */}
+      <div style={cardBase}>
+        <h3 style={{ marginTop: 0, marginBottom: "16px" }}>
+          Últimos movimientos
+        </h3>
 
-            {ultimosMovimientos.length === 0 ? (
-              <p style={{ color: "#64748b" }}>No hay movimientos recientes</p>
-            ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ textAlign: "left", color: "#64748b" }}>
-                    <th>Fecha</th>
-                    <th>Producto</th>
-                    <th>Cantidad</th>
-                    <th>Tipo</th>
+        {ultimosMovimientos.length === 0 ? (
+          <p style={{ color: "#6b7280", margin: 0 }}>
+            No hay movimientos recientes.
+          </p>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                minWidth: "950px"
+              }}
+            >
+              <thead>
+                <tr style={{ background: "#f9fafb" }}>
+                  <th style={th}>Fecha</th>
+                  <th style={th}>Producto</th>
+                  <th style={th}>Cantidad</th>
+                  <th style={th}>Tipo</th>
+                  <th style={th}>Origen</th>
+                  <th style={th}>Destino</th>
+                  <th style={th}>Usuario</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {ultimosMovimientos.map((mov) => (
+                  <tr key={mov.id}>
+                    <td style={td}>
+                      {new Date(mov.fecha).toLocaleString()}
+                    </td>
+
+                    <td style={td}>
+                      {mov.producto_nombre || mov.producto_id}
+                    </td>
+
+                    <td
+                      style={{
+                        ...td,
+                        fontWeight: "700",
+                        color:
+                          mov.tipo_movimiento === "salida"
+                            ? "#991b1b"
+                            : "#166534"
+                      }}
+                    >
+                      {signoMovimiento(mov)}
+                      {mov.cantidad}
+                    </td>
+
+                    <td style={td}>
+                      <span
+                        style={{
+                          padding: "4px 10px",
+                          borderRadius: "999px",
+                          background: "#f3f4f6",
+                          color: colorTipo(mov.tipo_movimiento),
+                          fontWeight: "700",
+                          fontSize: "13px"
+                        }}
+                      >
+                        {mov.tipo_movimiento}
+                      </span>
+                    </td>
+
+                    <td style={td}>
+                      {mov.ubicacion_origen_nombre || "-"}
+                    </td>
+
+                    <td style={td}>
+                      {mov.ubicacion_destino_nombre || "-"}
+                    </td>
+
+                    <td style={td}>
+                      {mov.usuario_nombre || mov.usuario_id}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {ultimosMovimientos.map((mov) => (
-                    <tr key={mov.id}>
-                      <td>{new Date(mov.fecha).toLocaleString()}</td>
-                      <td>{mov.producto_id}</td>
-                      <td>{mov.cantidad}</td>
-                      <td>{mov.tipo}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                ))}
+              </tbody>
+            </table>
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
 
-function Card({ title, value }) {
+function Card({ title, value, color = "#0f172a" }) {
   return (
     <div
       style={{
+        background: "#fff",
+        borderRadius: "14px",
         padding: "20px",
-        backgroundColor: "white",
-        borderRadius: "12px",
-        boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
-        minWidth: "220px"
+        border: "1px solid #e5e7eb",
+        boxShadow: "0 6px 18px rgba(0,0,0,0.04)"
       }}
     >
-      <h3 style={{ margin: 0, color: "#334155" }}>
-        {title}
-      </h3>
-
-      <p
+      <div
         style={{
-          fontSize: "32px",
+          color: "#6b7280",
+          fontSize: "14px",
+          marginBottom: "8px"
+        }}
+      >
+        {title}
+      </div>
+
+      <div
+        style={{
+          fontSize: "34px",
           fontWeight: "700",
-          marginTop: "10px",
-          color: "#0f172a"
+          color
         }}
       >
         {value}
-      </p>
+      </div>
     </div>
   );
 }
+
+function QuickButton({ text }) {
+  return (
+    <button
+      type="button"
+      style={{
+        padding: "11px 16px",
+        borderRadius: "10px",
+        border: "none",
+        background: "#111827",
+        color: "#fff",
+        fontWeight: "700",
+        cursor: "pointer"
+      }}
+    >
+      {text}
+    </button>
+  );
+}
+
+const th = {
+  textAlign: "left",
+  padding: "12px",
+  borderBottom: "1px solid #e5e7eb",
+  fontSize: "14px"
+};
+
+const td = {
+  padding: "12px",
+  borderBottom: "1px solid #f3f4f6",
+  fontSize: "14px"
+};
 
 export default Dashboard;

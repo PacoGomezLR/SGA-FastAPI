@@ -27,11 +27,13 @@ class ShipmentService:
 
     def get_shipment_by_id(self, shipment_id: int):
         salida = self.repository.get_by_id(shipment_id)
+
         if not salida:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Salida no encontrada"
             )
+
         return salida
 
     def create_shipment(self, shipment_data: ShipmentCreate, usuario_id: int):
@@ -41,7 +43,10 @@ class ShipmentService:
                 detail="La salida debe contener al menos una línea"
             )
 
-        almacen = self.warehouse_repository.get_by_id(shipment_data.almacen_id)
+        almacen = self.warehouse_repository.get_by_id(
+            shipment_data.almacen_id
+        )
+
         if not almacen:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -51,14 +56,20 @@ class ShipmentService:
         lineas_modelo = []
 
         for linea in shipment_data.lineas:
-            producto = self.product_repository.get_by_id(linea.producto_id)
+            producto = self.product_repository.get_by_id(
+                linea.producto_id
+            )
+
             if not producto:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Producto con id {linea.producto_id} no encontrado"
                 )
 
-            ubicacion = self.location_repository.get_by_id(linea.ubicacion_origen_id)
+            ubicacion = self.location_repository.get_by_id(
+                linea.ubicacion_origen_id
+            )
+
             if not ubicacion:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -68,7 +79,7 @@ class ShipmentService:
             if linea.cantidad <= 0:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="La cantidad de cada línea debe ser mayor que 0"
+                    detail="La cantidad debe ser mayor que 0"
                 )
 
             if ubicacion.zona.almacen_id != shipment_data.almacen_id:
@@ -85,7 +96,7 @@ class ShipmentService:
                     producto_id=linea.producto_id,
                     ubicacion_origen_id=linea.ubicacion_origen_id,
                     cantidad=linea.cantidad,
-                    observaciones=linea.observaciones,
+                    observaciones=linea.observaciones
                 )
             )
 
@@ -100,23 +111,21 @@ class ShipmentService:
         try:
             salida_creada = self.repository.create(nueva_salida)
 
-            audit_service = AuditService(self.db)
-            audit_service.log_action(
-                usuario_id=usuario_id,
-                modulo="shipments",
-                accion="create",
-                entidad="salida",
-                entidad_id=salida_creada.id,
-                detalle=f"Salida creada en almacén {salida_creada.almacen_id} con {len(salida_creada.lineas)} líneas"
+            # 🔥 CAMBIO CLAVE:
+            # confirmar automáticamente al crear
+            self.db.flush()
+
+            salida_confirmada = self.confirm_shipment(
+                salida_creada.id,
+                usuario_id
             )
 
-            self.db.commit()
-            self.db.refresh(salida_creada)
-            return salida_creada
+            return salida_confirmada
 
         except HTTPException:
             self.db.rollback()
             raise
+
         except Exception:
             self.db.rollback()
             raise HTTPException(
@@ -147,29 +156,6 @@ class ShipmentService:
 
         try:
             for linea in salida.lineas:
-                producto = self.product_repository.get_by_id(linea.producto_id)
-                if not producto:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND,
-                        detail=f"Producto con id {linea.producto_id} no encontrado"
-                    )
-
-                ubicacion = self.location_repository.get_by_id(linea.ubicacion_origen_id)
-                if not ubicacion:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND,
-                        detail=f"Ubicación con id {linea.ubicacion_origen_id} no encontrada"
-                    )
-
-                if ubicacion.zona.almacen_id != salida.almacen_id:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=(
-                            f"La ubicación {linea.ubicacion_origen_id} no pertenece "
-                            f"al almacén {salida.almacen_id}"
-                        )
-                    )
-
                 self.stock_repository.remove_stock(
                     producto_id=linea.producto_id,
                     ubicacion_id=linea.ubicacion_origen_id,
@@ -185,21 +171,23 @@ class ShipmentService:
                     origen_tipo="salida",
                     origen_id=salida.id,
                     usuario_id=usuario_id,
-                    observaciones=f"Movimiento generado automáticamente al confirmar la salida {salida.id}"
+                    observaciones=f"Salida automática {salida.id}"
                 )
+
                 self.db.add(nuevo_movimiento)
 
             salida.estado = "confirmada"
             self.db.flush()
 
             audit_service = AuditService(self.db)
+
             audit_service.log_action(
                 usuario_id=usuario_id,
                 modulo="shipments",
                 accion="confirm",
                 entidad="salida",
                 entidad_id=salida.id,
-                detalle=f"Salida confirmada con {len(salida.lineas)} líneas en almacén {salida.almacen_id}"
+                detalle=f"Salida confirmada {salida.id}"
             )
 
             self.db.commit()
@@ -210,6 +198,7 @@ class ShipmentService:
         except HTTPException:
             self.db.rollback()
             raise
+
         except Exception:
             self.db.rollback()
             raise HTTPException(
