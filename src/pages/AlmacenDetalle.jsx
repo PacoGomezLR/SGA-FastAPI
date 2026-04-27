@@ -8,6 +8,12 @@ const initialLocationForm = {
   activa: true
 };
 
+const initialZoneForm = {
+  nombre: "",
+  descripcion: "",
+  activo: true
+};
+
 function AlmacenDetalle() {
   const { id } = useParams();
 
@@ -17,6 +23,10 @@ function AlmacenDetalle() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
+
+  const [mostrarFormZona, setMostrarFormZona] = useState(false);
+  const [zoneForm, setZoneForm] = useState(initialZoneForm);
+  const [guardandoZona, setGuardandoZona] = useState(false);
 
   const [mostrarModalUbicacion, setMostrarModalUbicacion] = useState(false);
   const [zonaSeleccionada, setZonaSeleccionada] = useState(null);
@@ -53,6 +63,65 @@ function AlmacenDetalle() {
       setUbicaciones([]);
     } finally {
       setCargando(false);
+    }
+  }
+
+  function abrirFormZona() {
+    setMostrarFormZona(true);
+    setZoneForm(initialZoneForm);
+    setMensaje("");
+    setError("");
+  }
+
+  function cancelarFormZona() {
+    if (guardandoZona) return;
+
+    setMostrarFormZona(false);
+    setZoneForm(initialZoneForm);
+  }
+
+  function handleZoneChange(e) {
+    const { name, value, type, checked } = e.target;
+
+    setZoneForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value
+    }));
+  }
+
+  async function crearZona(e) {
+    e.preventDefault();
+
+    if (!zoneForm.nombre.trim()) {
+      setError("El nombre de la zona es obligatorio");
+      return;
+    }
+
+    try {
+      setGuardandoZona(true);
+      setError("");
+      setMensaje("");
+
+      const payload = {
+        almacen_id: Number(id),
+        nombre: zoneForm.nombre.trim(),
+        descripcion: zoneForm.descripcion.trim() || null,
+        activo: zoneForm.activo
+      };
+
+      await apiFetch("/zones/", {
+        method: "POST",
+        body: payload
+      });
+
+      setMensaje("Zona creada correctamente");
+      setZoneForm(initialZoneForm);
+      setMostrarFormZona(false);
+      await cargarDetalle();
+    } catch (err) {
+      setError(err.message || "Error al crear la zona");
+    } finally {
+      setGuardandoZona(false);
     }
   }
 
@@ -199,10 +268,75 @@ function AlmacenDetalle() {
         <div style={sectionHeader}>
           <h2 style={{ margin: 0 }}>Zonas y ubicaciones</h2>
 
-          <Link to={`/zonas?nuevo=1&almacen_id=${id}`} style={createButton}>
-            + Nueva zona
-          </Link>
+          {!mostrarFormZona && (
+            <button type="button" style={createButton} onClick={abrirFormZona}>
+              + Nueva zona
+            </button>
+          )}
         </div>
+
+        {mostrarFormZona && (
+          <div style={zoneFormCard}>
+            <h3 style={zoneFormTitle}>Nueva zona</h3>
+
+            <form onSubmit={crearZona}>
+              <div style={zoneFormGrid}>
+                <div style={fieldGroup}>
+                  <label style={label}>Nombre</label>
+                  <input
+                    name="nombre"
+                    placeholder="Ej: Recepción, Picking, Reserva..."
+                    value={zoneForm.nombre}
+                    onChange={handleZoneChange}
+                    required
+                    style={input}
+                    autoFocus
+                  />
+                </div>
+
+                <div style={fieldGroup}>
+                  <label style={label}>Descripción</label>
+                  <input
+                    name="descripcion"
+                    placeholder="Descripción de la zona"
+                    value={zoneForm.descripcion}
+                    onChange={handleZoneChange}
+                    style={input}
+                  />
+                </div>
+              </div>
+
+              <label style={checkboxCard}>
+                <input
+                  type="checkbox"
+                  name="activo"
+                  checked={zoneForm.activo}
+                  onChange={handleZoneChange}
+                />
+                <span>Zona activa</span>
+              </label>
+
+              <div style={modalActions}>
+                <button
+                  type="submit"
+                  style={primaryButton}
+                  disabled={guardandoZona}
+                >
+                  {guardandoZona ? "Creando..." : "Crear zona"}
+                </button>
+
+                <button
+                  type="button"
+                  style={secondaryButton}
+                  onClick={cancelarFormZona}
+                  disabled={guardandoZona}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {zonas.length === 0 ? (
           <div style={emptyBox}>Este almacén todavía no tiene zonas.</div>
@@ -215,9 +349,9 @@ function AlmacenDetalle() {
                 <div key={zona.id} style={zoneCard}>
                   <div style={zoneHeader}>
                     <div>
-                      <Link to={`/zonas/${zona.id}`} style={zoneLink}>
+                      <span style={zoneLink}>
                         {zona.nombre}
-                      </Link>
+                      </span>
 
                       <p style={zoneDescription}>
                         {zona.descripcion || "Sin descripción"}
@@ -354,10 +488,12 @@ const sectionHeader = {
 const createButton = {
   padding: "10px 14px",
   borderRadius: "8px",
+  border: "none",
   textDecoration: "none",
   backgroundColor: "#2563eb",
   color: "white",
-  fontWeight: "600"
+  fontWeight: "600",
+  cursor: "pointer"
 };
 
 const header = {
@@ -415,6 +551,25 @@ const infoValue = {
 
 const section = {
   marginTop: "8px"
+};
+
+const zoneFormCard = {
+  backgroundColor: "white",
+  borderRadius: "12px",
+  boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
+  padding: "20px",
+  marginBottom: "20px"
+};
+
+const zoneFormTitle = {
+  margin: "0 0 16px 0",
+  color: "#0f172a"
+};
+
+const zoneFormGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+  gap: "14px"
 };
 
 const zonesGrid = {

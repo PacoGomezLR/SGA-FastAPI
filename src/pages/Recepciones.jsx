@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../api/api";
 
 const initialForm = {
-  almacen_id: "",
-  observaciones: "",
   producto_id: "",
   cantidad: "",
+  observaciones: "",
+  almacen_id: "",
+  zona_id: "",
   ubicacion_destino_id: ""
 };
 
@@ -16,8 +17,9 @@ function Recepciones() {
   const [cargando, setCargando] = useState(false);
   const [cargandoDatos, setCargandoDatos] = useState(true);
 
-  const [almacenes, setAlmacenes] = useState([]);
   const [productos, setProductos] = useState([]);
+  const [almacenes, setAlmacenes] = useState([]);
+  const [zonas, setZonas] = useState([]);
   const [ubicaciones, setUbicaciones] = useState([]);
 
   useEffect(() => {
@@ -29,19 +31,23 @@ function Recepciones() {
       setCargandoDatos(true);
       setError("");
 
-      const [almacenesData, productosData, ubicacionesData] = await Promise.all([
-        apiFetch("/warehouses/"),
-        apiFetch("/products/"),
-        apiFetch("/locations/")
-      ]);
+      const [productosData, almacenesData, zonasData, ubicacionesData] =
+        await Promise.all([
+          apiFetch("/products/"),
+          apiFetch("/warehouses/"),
+          apiFetch("/zones/"),
+          apiFetch("/locations/")
+        ]);
 
-      setAlmacenes(Array.isArray(almacenesData) ? almacenesData : []);
       setProductos(Array.isArray(productosData) ? productosData : []);
+      setAlmacenes(Array.isArray(almacenesData) ? almacenesData : []);
+      setZonas(Array.isArray(zonasData) ? zonasData : []);
       setUbicaciones(Array.isArray(ubicacionesData) ? ubicacionesData : []);
     } catch (err) {
       setError(err.message || "Error al cargar los datos del formulario");
-      setAlmacenes([]);
       setProductos([]);
+      setAlmacenes([]);
+      setZonas([]);
       setUbicaciones([]);
     } finally {
       setCargandoDatos(false);
@@ -49,11 +55,58 @@ function Recepciones() {
   }
 
   function handleChange(e) {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === "almacen_id" && {
+        zona_id: "",
+        ubicacion_destino_id: ""
+      }),
+      ...(name === "zona_id" && {
+        ubicacion_destino_id: ""
+      })
+    }));
   }
+
+  const zonasFiltradas = useMemo(() => {
+    if (!form.almacen_id) return [];
+
+    return zonas.filter(
+      (zona) => String(zona.almacen_id) === String(form.almacen_id)
+    );
+  }, [zonas, form.almacen_id]);
+
+  const ubicacionesFiltradas = useMemo(() => {
+    if (!form.zona_id) return [];
+
+    return ubicaciones.filter(
+      (ubicacion) => String(ubicacion.zona_id) === String(form.zona_id)
+    );
+  }, [ubicaciones, form.zona_id]);
+
+  const productoSeleccionado = useMemo(() => {
+    return productos.find(
+      (producto) => String(producto.id) === String(form.producto_id)
+    );
+  }, [productos, form.producto_id]);
+
+  const almacenSeleccionado = useMemo(() => {
+    return almacenes.find(
+      (almacen) => String(almacen.id) === String(form.almacen_id)
+    );
+  }, [almacenes, form.almacen_id]);
+
+  const zonaSeleccionada = useMemo(() => {
+    return zonas.find((zona) => String(zona.id) === String(form.zona_id));
+  }, [zonas, form.zona_id]);
+
+  const ubicacionSeleccionada = useMemo(() => {
+    return ubicaciones.find(
+      (ubicacion) => String(ubicacion.id) === String(form.ubicacion_destino_id)
+    );
+  }, [ubicaciones, form.ubicacion_destino_id]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -69,9 +122,7 @@ function Recepciones() {
         {
           producto_id: Number(form.producto_id),
           cantidad: Number(form.cantidad),
-          ubicacion_destino_id: form.ubicacion_destino_id
-            ? Number(form.ubicacion_destino_id)
-            : null,
+          ubicacion_destino_id: Number(form.ubicacion_destino_id),
           observaciones: null
         }
       ]
@@ -83,55 +134,24 @@ function Recepciones() {
         body: payload
       });
 
-      setMensaje(`Recepción creada correctamente con ID ${data.id}`);
+      await apiFetch(`/receptions/${data.id}/confirm`, {
+        method: "PUT"
+      });
+
+      setMensaje(`Recepción creada y confirmada correctamente con ID ${data.id}`);
       setForm(initialForm);
     } catch (err) {
-      setError(err.message || "Error al crear la recepción");
+      setError(err.message || "Error al crear y confirmar la recepción");
     } finally {
       setCargando(false);
     }
   }
 
-  const ubicacionesFiltradas = useMemo(() => {
-    if (!form.almacen_id) {
-      return ubicaciones;
-    }
-
-    return ubicaciones.filter((ubicacion) => {
-      if (ubicacion.almacen_id !== undefined && ubicacion.almacen_id !== null) {
-        return String(ubicacion.almacen_id) === String(form.almacen_id);
-      }
-
-      return true;
-    });
-  }, [ubicaciones, form.almacen_id]);
-
-  const almacenSeleccionado = useMemo(() => {
-    return almacenes.find(
-      (almacen) => String(almacen.id) === String(form.almacen_id)
-    );
-  }, [almacenes, form.almacen_id]);
-
-  const productoSeleccionado = useMemo(() => {
-    return productos.find(
-      (producto) => String(producto.id) === String(form.producto_id)
-    );
-  }, [productos, form.producto_id]);
-
-  const ubicacionSeleccionada = useMemo(() => {
-    return ubicaciones.find(
-      (ubicacion) => String(ubicacion.id) === String(form.ubicacion_destino_id)
-    );
-  }, [ubicaciones, form.ubicacion_destino_id]);
-
-  const resumen = useMemo(() => {
-    return {
-      almacen: almacenSeleccionado?.nombre || "-",
-      producto: productoSeleccionado?.nombre || "-",
-      cantidad: form.cantidad || "-",
-      ubicacion: ubicacionSeleccionada?.codigo || "Sin indicar"
-    };
-  }, [almacenSeleccionado, productoSeleccionado, ubicacionSeleccionada, form.cantidad]);
+  function limpiarFormulario() {
+    setForm(initialForm);
+    setMensaje("");
+    setError("");
+  }
 
   return (
     <div>
@@ -139,8 +159,7 @@ function Recepciones() {
         <div>
           <h1 style={{ margin: 0 }}>Recepciones</h1>
           <p style={subtitle}>
-            Registra la entrada de un producto en un almacén y define su cantidad
-            y ubicación de destino.
+            Registra la entrada de mercancía y confirma automáticamente su stock.
           </p>
         </div>
       </div>
@@ -149,51 +168,10 @@ function Recepciones() {
       {error && <div style={errorBox}>{error}</div>}
 
       <form onSubmit={handleSubmit}>
-        <div style={sectionsGrid}>
+        <div style={topGrid}>
           <section style={card}>
-            <h2 style={cardTitle}>1. Datos de la recepción</h2>
-
-            <div style={fieldGroup}>
-              <label htmlFor="almacen_id" style={label}>
-                Almacén
-              </label>
-              <select
-                id="almacen_id"
-                name="almacen_id"
-                value={form.almacen_id}
-                onChange={handleChange}
-                required
-                style={input}
-                disabled={cargandoDatos || cargando}
-              >
-                <option value="">Selecciona un almacén</option>
-                {almacenes.map((almacen) => (
-                  <option key={almacen.id} value={almacen.id}>
-                    {almacen.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={fieldGroup}>
-              <label htmlFor="observaciones" style={label}>
-                Observaciones
-              </label>
-              <textarea
-                id="observaciones"
-                name="observaciones"
-                placeholder="Observaciones de la recepción"
-                value={form.observaciones}
-                onChange={handleChange}
-                rows="4"
-                style={textarea}
-                disabled={cargando}
-              />
-            </div>
-          </section>
-
-          <section style={card}>
-            <h2 style={cardTitle}>2. Línea de recepción</h2>
+            <div style={stepBadge}>1</div>
+            <h2 style={cardTitle}>Datos de la recepción</h2>
 
             <div style={fieldGroup}>
               <label htmlFor="producto_id" style={label}>
@@ -236,18 +214,84 @@ function Recepciones() {
             </div>
 
             <div style={fieldGroup}>
+              <label htmlFor="observaciones" style={label}>
+                Observaciones
+              </label>
+              <textarea
+                id="observaciones"
+                name="observaciones"
+                placeholder="Observaciones de la recepción"
+                value={form.observaciones}
+                onChange={handleChange}
+                rows="4"
+                style={textarea}
+                disabled={cargando}
+              />
+            </div>
+          </section>
+
+          <section style={card}>
+            <div style={stepBadge}>2</div>
+            <h2 style={cardTitle}>Destino</h2>
+
+            <div style={fieldGroup}>
+              <label htmlFor="almacen_id" style={label}>
+                Almacén
+              </label>
+              <select
+                id="almacen_id"
+                name="almacen_id"
+                value={form.almacen_id}
+                onChange={handleChange}
+                required
+                style={input}
+                disabled={cargandoDatos || cargando}
+              >
+                <option value="">Selecciona un almacén</option>
+                {almacenes.map((almacen) => (
+                  <option key={almacen.id} value={almacen.id}>
+                    {almacen.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={fieldGroup}>
+              <label htmlFor="zona_id" style={label}>
+                Zona
+              </label>
+              <select
+                id="zona_id"
+                name="zona_id"
+                value={form.zona_id}
+                onChange={handleChange}
+                required
+                style={input}
+                disabled={!form.almacen_id || cargandoDatos || cargando}
+              >
+                <option value="">Selecciona una zona</option>
+                {zonasFiltradas.map((zona) => (
+                  <option key={zona.id} value={zona.id}>
+                    {zona.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={fieldGroup}>
               <label htmlFor="ubicacion_destino_id" style={label}>
-                Ubicación destino
+                Ubicación
               </label>
               <select
                 id="ubicacion_destino_id"
                 name="ubicacion_destino_id"
                 value={form.ubicacion_destino_id}
                 onChange={handleChange}
+                required
                 style={input}
-                disabled={cargandoDatos || cargando}
+                disabled={!form.zona_id || cargandoDatos || cargando}
               >
-                <option value="">Sin indicar</option>
+                <option value="">Selecciona una ubicación</option>
                 {ubicacionesFiltradas.map((ubicacion) => (
                   <option key={ubicacion.id} value={ubicacion.id}>
                     {ubicacion.codigo}
@@ -256,60 +300,69 @@ function Recepciones() {
               </select>
             </div>
           </section>
-
-          <section style={card}>
-            <h2 style={cardTitle}>3. Resumen y acción</h2>
-
-            <div style={summaryBox}>
-              <div style={summaryRow}>
-                <span style={summaryLabel}>Almacén</span>
-                <span style={summaryValue}>{resumen.almacen}</span>
-              </div>
-
-              <div style={summaryRow}>
-                <span style={summaryLabel}>Producto</span>
-                <span style={summaryValue}>{resumen.producto}</span>
-              </div>
-
-              <div style={summaryRow}>
-                <span style={summaryLabel}>Cantidad</span>
-                <span style={summaryValue}>{resumen.cantidad}</span>
-              </div>
-
-              <div style={summaryRow}>
-                <span style={summaryLabel}>Ubicación destino</span>
-                <span style={summaryValue}>{resumen.ubicacion}</span>
-              </div>
-            </div>
-
-            <div style={actions}>
-              <button
-                type="submit"
-                disabled={cargando || cargandoDatos}
-                style={{
-                  ...primaryButton,
-                  backgroundColor: cargando || cargandoDatos ? "#94a3b8" : "#0f172a",
-                  cursor: cargando || cargandoDatos ? "not-allowed" : "pointer"
-                }}
-              >
-                {cargando ? "Creando..." : "Crear recepción"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setForm(initialForm);
-                  setMensaje("");
-                  setError("");
-                }}
-                style={secondaryButton}
-                disabled={cargando}
-              >
-                Limpiar
-              </button>
-            </div>
-          </section>
         </div>
+
+        <section style={summaryCard}>
+          <div style={stepBadge}>3</div>
+          <h2 style={cardTitle}>Resumen</h2>
+
+          <div style={summaryGrid}>
+            <div style={summaryItem}>
+              <span style={summaryLabel}>Producto</span>
+              <strong style={summaryValue}>
+                {productoSeleccionado?.nombre || "-"}
+              </strong>
+            </div>
+
+            <div style={summaryItem}>
+              <span style={summaryLabel}>Cantidad</span>
+              <strong style={summaryValue}>{form.cantidad || "-"}</strong>
+            </div>
+
+            <div style={summaryItem}>
+              <span style={summaryLabel}>Almacén</span>
+              <strong style={summaryValue}>
+                {almacenSeleccionado?.nombre || "-"}
+              </strong>
+            </div>
+
+            <div style={summaryItem}>
+              <span style={summaryLabel}>Zona</span>
+              <strong style={summaryValue}>{zonaSeleccionada?.nombre || "-"}</strong>
+            </div>
+
+            <div style={summaryItem}>
+              <span style={summaryLabel}>Ubicación</span>
+              <strong style={summaryValue}>
+                {ubicacionSeleccionada?.codigo || "-"}
+              </strong>
+            </div>
+          </div>
+
+          <div style={actions}>
+            <button
+              type="submit"
+              disabled={cargando || cargandoDatos}
+              style={{
+                ...primaryButton,
+                backgroundColor:
+                  cargando || cargandoDatos ? "#94a3b8" : "#0f172a",
+                cursor: cargando || cargandoDatos ? "not-allowed" : "pointer"
+              }}
+            >
+              {cargando ? "Procesando..." : "Crear y confirmar recepción"}
+            </button>
+
+            <button
+              type="button"
+              onClick={limpiarFormulario}
+              style={secondaryButton}
+              disabled={cargando}
+            >
+              Limpiar
+            </button>
+          </div>
+        </section>
       </form>
     </div>
   );
@@ -349,23 +402,52 @@ const errorBox = {
   fontWeight: "500"
 };
 
-const sectionsGrid = {
+const topGrid = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+  gridTemplateColumns: "1fr 1fr",
   gap: "20px",
-  alignItems: "start"
+  alignItems: "stretch",
+  marginBottom: "20px"
 };
 
 const card = {
+  position: "relative",
   backgroundColor: "white",
-  borderRadius: "14px",
-  boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
-  padding: "22px"
+  borderRadius: "16px",
+  boxShadow: "0 8px 20px rgba(15, 23, 42, 0.06)",
+  padding: "28px 24px 24px",
+  border: "1px solid #e2e8f0"
+};
+
+const summaryCard = {
+  position: "relative",
+  backgroundColor: "white",
+  borderRadius: "16px",
+  boxShadow: "0 8px 20px rgba(15, 23, 42, 0.06)",
+  padding: "28px 24px 24px",
+  border: "1px solid #e2e8f0",
+  minHeight: "230px"
+};
+
+const stepBadge = {
+  position: "absolute",
+  top: "-14px",
+  left: "20px",
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  backgroundColor: "#0f172a",
+  color: "white",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontWeight: "800",
+  boxShadow: "0 6px 14px rgba(15, 23, 42, 0.22)"
 };
 
 const cardTitle = {
   marginTop: 0,
-  marginBottom: "18px",
+  marginBottom: "20px",
   fontSize: "24px",
   color: "#0f172a"
 };
@@ -378,52 +460,52 @@ const fieldGroup = {
 };
 
 const label = {
-  fontWeight: "600",
+  fontWeight: "700",
   color: "#334155"
 };
 
 const input = {
   width: "100%",
-  padding: "10px 12px",
-  borderRadius: "8px",
+  padding: "11px 12px",
+  borderRadius: "9px",
   border: "1px solid #cbd5e1",
   outline: "none",
-  backgroundColor: "#fff"
+  backgroundColor: "#fff",
+  color: "#0f172a"
 };
 
 const textarea = {
   ...input,
   resize: "vertical",
-  minHeight: "100px"
+  minHeight: "108px"
 };
 
-const summaryBox = {
+const summaryGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: "14px",
+  marginBottom: "22px"
+};
+
+const summaryItem = {
+  backgroundColor: "#f8fafc",
+  border: "1px solid #e2e8f0",
+  borderRadius: "12px",
+  padding: "14px",
   display: "flex",
   flexDirection: "column",
-  gap: "12px",
-  padding: "16px",
-  backgroundColor: "#f8fafc",
-  borderRadius: "10px",
-  border: "1px solid #e2e8f0",
-  marginBottom: "18px"
-};
-
-const summaryRow = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: "12px",
-  borderBottom: "1px solid #e2e8f0",
-  paddingBottom: "10px"
+  gap: "6px"
 };
 
 const summaryLabel = {
   color: "#64748b",
-  fontWeight: "600"
+  fontSize: "14px",
+  fontWeight: "700"
 };
 
 const summaryValue = {
   color: "#0f172a",
-  fontWeight: "700"
+  fontSize: "17px"
 };
 
 const actions = {
@@ -433,21 +515,21 @@ const actions = {
 };
 
 const primaryButton = {
-  padding: "10px 14px",
+  padding: "11px 16px",
   border: "none",
-  borderRadius: "8px",
+  borderRadius: "9px",
   color: "white",
-  fontWeight: "600"
+  fontWeight: "700"
 };
 
 const secondaryButton = {
-  padding: "10px 14px",
+  padding: "11px 16px",
   border: "1px solid #cbd5e1",
-  borderRadius: "8px",
+  borderRadius: "9px",
   backgroundColor: "white",
   color: "#0f172a",
   cursor: "pointer",
-  fontWeight: "600"
+  fontWeight: "700"
 };
 
 export default Recepciones;

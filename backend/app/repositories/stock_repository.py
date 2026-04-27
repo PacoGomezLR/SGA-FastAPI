@@ -1,6 +1,5 @@
 from fastapi import HTTPException, status
 from sqlalchemy import update, func
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from app.models.stock import Stock
@@ -27,14 +26,22 @@ class StockRepository:
         query = (
             self.db.query(
                 Stock.id.label("id"),
+
                 Product.id.label("producto_id"),
                 Product.nombre.label("producto_nombre"),
                 Category.nombre.label("categoria_nombre"),
+
                 Product.stock_minimo.label("stock_minimo"),
-                Stock.ubicacion_id.label("ubicacion_id"),
-                Location.codigo.label("ubicacion_nombre"),
+
                 Warehouse.id.label("almacen_id"),
                 Warehouse.nombre.label("almacen_nombre"),
+
+                Zone.id.label("zona_id"),
+                Zone.nombre.label("zona_nombre"),  # 👈 AÑADIDO
+
+                Stock.ubicacion_id.label("ubicacion_id"),
+                Location.codigo.label("ubicacion_nombre"),
+
                 cantidad_expr.label("cantidad"),
                 bajo_stock_expr.label("bajo_stock")
             )
@@ -57,6 +64,7 @@ class StockRepository:
                 bajo_stock_expr.desc(),
                 Product.nombre.asc(),
                 Warehouse.nombre.asc().nulls_last(),
+                Zone.nombre.asc().nulls_last(),      # 👈 ORDEN POR ZONA
                 Location.codigo.asc().nulls_last()
             )
             .all()
@@ -102,25 +110,24 @@ class StockRepository:
     def add_stock(self, producto_id: int, ubicacion_id: int, cantidad: int):
         if cantidad <= 0:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=400,
                 detail="La cantidad a sumar debe ser mayor que 0"
             )
 
-        stmt = insert(Stock).values(
-            producto_id=producto_id,
-            ubicacion_id=ubicacion_id,
-            cantidad=cantidad
-        )
+        stock = self.get_by_product_and_location(producto_id, ubicacion_id)
 
-        stmt = stmt.on_conflict_do_update(
-            index_elements=["producto_id", "ubicacion_id"],
-            set_={"cantidad": Stock.cantidad + cantidad}
-        )
+        if stock:
+            stock.cantidad += cantidad
+        else:
+            stock = Stock(
+                producto_id=producto_id,
+                ubicacion_id=ubicacion_id,
+                cantidad=cantidad
+            )
+            self.db.add(stock)
 
-        self.db.execute(stmt)
         self.db.flush()
-
-        return self.get_by_product_and_location(producto_id, ubicacion_id)
+        return stock
 
     def remove_stock(self, producto_id: int, ubicacion_id: int, cantidad: int):
         if cantidad <= 0:

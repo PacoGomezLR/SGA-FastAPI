@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.models.location import Location
 from app.models.movement import Movement
 from app.models.product import Product
-from app.models.warehouse import Warehouse  # 👈 AÑADIDO
+from app.models.warehouse import Warehouse
 from app.repositories.reception_repository import ReceptionRepository
 from app.repositories.stock_repository import StockRepository
 from app.schemas.reception import ReceptionCreate, ReceptionUpdate
@@ -36,7 +36,6 @@ class ReceptionService:
                 detail="La recepción debe tener al menos una línea"
             )
 
-        # 👇 VALIDACIÓN NUEVA
         self._validate_almacen(reception_data.almacen_id)
 
         for linea in reception_data.lineas:
@@ -45,27 +44,23 @@ class ReceptionService:
         try:
             recepcion_creada = self.repository.create(reception_data, usuario_id)
 
-            audit_service = AuditService(self.db)
-            audit_service.log_action(
+            AuditService(self.db).log_action(
                 usuario_id=usuario_id,
                 modulo="receptions",
                 accion="create",
                 entidad="recepcion",
                 entidad_id=recepcion_creada.id,
-                detalle=f"Recepción creada en almacén {recepcion_creada.almacen_id} con {len(recepcion_creada.lineas)} líneas"
+                detalle=f"Recepción creada en almacén {recepcion_creada.almacen_id}"
             )
 
             self.db.commit()
             self.db.refresh(recepcion_creada)
             return recepcion_creada
 
-        except HTTPException:
-            self.db.rollback()
-            raise
         except Exception as e:
             self.db.rollback()
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=500,
                 detail=f"Error al crear la recepción: {str(e)}"
             )
 
@@ -73,96 +68,66 @@ class ReceptionService:
         recepcion = self.repository.get_by_id(reception_id)
 
         if not recepcion:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Recepción no encontrada"
-            )
+            raise HTTPException(404, "Recepción no encontrada")
 
         if recepcion.estado != "borrador":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Solo se puede editar una recepción en borrador"
-            )
+            raise HTTPException(400, "Solo se puede editar en borrador")
 
-        if not reception_data.lineas:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="La recepción debe tener al menos una línea"
-            )
-
-        # 👇 VALIDACIÓN NUEVA
         self._validate_almacen(reception_data.almacen_id)
 
         for linea in reception_data.lineas:
             self._validate_line(linea, reception_data.almacen_id)
 
         try:
-            recepcion_actualizada = self.repository.update(recepcion, reception_data)
+            recepcion = self.repository.update(recepcion, reception_data)
 
-            audit_service = AuditService(self.db)
-            audit_service.log_action(
+            AuditService(self.db).log_action(
                 usuario_id=usuario_id,
                 modulo="receptions",
                 accion="update",
                 entidad="recepcion",
-                entidad_id=recepcion_actualizada.id,
-                detalle=f"Recepción actualizada en almacén {recepcion_actualizada.almacen_id} con {len(reception_data.lineas)} líneas"
+                entidad_id=recepcion.id,
+                detalle="Recepción actualizada"
             )
 
             self.db.commit()
-            self.db.refresh(recepcion_actualizada)
-            return recepcion_actualizada
+            self.db.refresh(recepcion)
+            return recepcion
 
-        except HTTPException:
-            self.db.rollback()
-            raise
         except Exception as e:
             self.db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error al actualizar la recepción: {str(e)}"
-            )
+            raise HTTPException(500, str(e))
 
     def confirm_reception(self, reception_id: int):
         recepcion = self.repository.get_by_id(reception_id)
 
         if not recepcion:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Recepción no encontrada"
-            )
+            raise HTTPException(404, "Recepción no encontrada")
 
         if recepcion.estado == "confirmada":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="La recepción ya está confirmada"
-            )
+            raise HTTPException(400, "Ya confirmada")
 
         if recepcion.estado != "borrador":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Solo se puede confirmar una recepción en borrador"
-            )
+            raise HTTPException(400, "Solo se puede confirmar en borrador")
 
         if not recepcion.lineas:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="La recepción no tiene líneas"
-            )
+            raise HTTPException(400, "Sin líneas")
 
-        # 👇 VALIDACIÓN NUEVA
         self._validate_almacen(recepcion.almacen_id)
 
         try:
             for linea in recepcion.lineas:
+
                 self._validate_line(linea, recepcion.almacen_id)
 
+                # 🔥 SUMA DE STOCK
                 self.stock_repository.add_stock(
                     producto_id=linea.producto_id,
                     ubicacion_id=linea.ubicacion_destino_id,
                     cantidad=linea.cantidad
                 )
 
+                # 🔥 MOVIMIENTO
                 movimiento = Movement(
                     producto_id=linea.producto_id,
                     ubicacion_origen_id=None,
@@ -172,108 +137,64 @@ class ReceptionService:
                     origen_tipo="recepcion",
                     origen_id=recepcion.id,
                     usuario_id=recepcion.usuario_id,
-                    observaciones=f"Movimiento generado al confirmar la recepción {recepcion.id}"
+                    observaciones=f"Entrada por recepción {recepcion.id}"
                 )
+
                 self.db.add(movimiento)
 
-            recepcion.estado = "confirmada"
-            self.db.flush()
+                # 🔥 CLAVE → asegura persistencia en cada iteración
+                self.db.flush()
 
-            audit_service = AuditService(self.db)
-            audit_service.log_action(
+            recepcion.estado = "confirmada"
+
+            AuditService(self.db).log_action(
                 usuario_id=recepcion.usuario_id,
                 modulo="receptions",
                 accion="confirm",
                 entidad="recepcion",
                 entidad_id=recepcion.id,
-                detalle=f"Recepción confirmada con {len(recepcion.lineas)} líneas"
+                detalle="Recepción confirmada"
             )
 
             self.db.commit()
             self.db.refresh(recepcion)
             return recepcion
 
-        except HTTPException:
-            self.db.rollback()
-            raise
         except Exception as e:
             self.db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error al confirmar la recepción: {str(e)}"
-            )
+            raise HTTPException(500, str(e))
 
-    # 👇 NUEVO MÉTODO
     def _validate_almacen(self, almacen_id: int):
-        almacen = (
-            self.db.query(Warehouse)
-            .filter(Warehouse.id == almacen_id)
-            .first()
-        )
+        almacen = self.db.query(Warehouse).filter(Warehouse.id == almacen_id).first()
 
         if not almacen:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"El almacén {almacen_id} no existe"
-            )
+            raise HTTPException(404, "Almacén no existe")
 
         if not almacen.activo:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"El almacén {almacen_id} está inactivo"
-            )
+            raise HTTPException(400, "Almacén inactivo")
 
     def _validate_line(self, linea, almacen_id: int):
+
         if linea.cantidad <= 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"La cantidad de la línea con producto {linea.producto_id} debe ser mayor que 0"
-            )
+            raise HTTPException(400, "Cantidad inválida")
 
-        producto = (
-            self.db.query(Product)
-            .filter(Product.id == linea.producto_id)
-            .first()
-        )
-
+        producto = self.db.query(Product).filter(Product.id == linea.producto_id).first()
         if not producto:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"El producto {linea.producto_id} no existe"
-            )
+            raise HTTPException(404, "Producto no existe")
 
         if not producto.activo:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"El producto {linea.producto_id} está inactivo"
-            )
+            raise HTTPException(400, "Producto inactivo")
 
         if linea.ubicacion_destino_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"La línea con producto {linea.producto_id} no tiene ubicación destino"
-            )
+            raise HTTPException(400, "Falta ubicación")
 
-        ubicacion = (
-            self.db.query(Location)
-            .filter(Location.id == linea.ubicacion_destino_id)
-            .first()
-        )
+        ubicacion = self.db.query(Location).filter(Location.id == linea.ubicacion_destino_id).first()
 
         if not ubicacion:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"La ubicación destino de la línea con producto {linea.producto_id} no existe"
-            )
+            raise HTTPException(404, "Ubicación no existe")
 
         if not ubicacion.activa:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"La ubicación destino de la línea con producto {linea.producto_id} está inactiva"
-            )
+            raise HTTPException(400, "Ubicación inactiva")
 
         if not ubicacion.zona or ubicacion.zona.almacen_id != almacen_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"La ubicación destino de la línea con producto {linea.producto_id} no pertenece al almacén de la recepción"
-            )
+            raise HTTPException(400, "Ubicación no pertenece al almacén")

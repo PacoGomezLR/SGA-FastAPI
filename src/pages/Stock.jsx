@@ -20,17 +20,14 @@ function Stock() {
 
       const params = new URLSearchParams();
 
-      if (soloBajo) {
-        params.append("low", "true");
-      }
+      if (soloBajo) params.append("low", "true");
+      if (almacenId !== "") params.append("almacen_id", almacenId);
 
-      if (almacenId !== "") {
-        params.append("almacen_id", almacenId);
-      }
+      const endpoint = params.toString()
+        ? `/stock?${params.toString()}`
+        : "/stock";
 
-      const endpoint = params.toString() ? `/stock?${params.toString()}` : "/stock";
       const data = await apiFetch(endpoint);
-
       setStock(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message || "Error al cargar el stock");
@@ -78,6 +75,7 @@ function Stock() {
         (item.producto_nombre || "").toLowerCase().includes(texto) ||
         String(item.producto_id || "").includes(texto) ||
         (item.ubicacion_nombre || "").toLowerCase().includes(texto) ||
+        (item.zona_nombre || "").toLowerCase().includes(texto) ||
         (item.almacen_nombre || "").toLowerCase().includes(texto) ||
         (item.categoria_nombre || "").toLowerCase().includes(texto);
 
@@ -88,50 +86,23 @@ function Stock() {
     });
   }, [stock, busqueda, categoria]);
 
-  const totalUnidades = useMemo(() => {
-    return stockFiltrado.reduce((acc, item) => acc + (item.cantidad || 0), 0);
-  }, [stockFiltrado]);
+  function formatearCantidad(cantidad) {
+    return Number(cantidad || 0);
+  }
 
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "16px",
-          marginBottom: "20px",
-          flexWrap: "wrap"
-        }}
-      >
+      <div style={header}>
         <div>
           <h1 style={{ margin: 0 }}>Stock</h1>
-          <p style={{ margin: "6px 0 0 0", color: "#64748b" }}>
-            Consulta de existencias y alertas de stock bajo
+          <p style={subtitle}>
+            Consulta de existencias por producto, almacén, zona y ubicación.
           </p>
         </div>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: "12px",
-          flexWrap: "wrap",
-          alignItems: "center",
-          marginBottom: "20px"
-        }}
-      >
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            backgroundColor: "white",
-            padding: "10px 12px",
-            borderRadius: "10px",
-            boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
-          }}
-        >
+      <section style={filtersCard}>
+        <label style={checkboxFilter}>
           <input
             type="checkbox"
             checked={soloBajo}
@@ -140,22 +111,15 @@ function Stock() {
           Solo stock bajo
         </label>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            backgroundColor: "white",
-            padding: "10px 12px",
-            borderRadius: "10px",
-            boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
-          }}
-        >
-          <label htmlFor="almacen">Almacén</label>
+        <div style={filterGroup}>
+          <label htmlFor="almacen" style={filterLabel}>
+            Almacén
+          </label>
           <select
             id="almacen"
             value={almacenId}
             onChange={(e) => setAlmacenId(e.target.value)}
+            style={select}
           >
             <option value="">Todos</option>
             {almacenes.map((almacen) => (
@@ -166,22 +130,15 @@ function Stock() {
           </select>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            backgroundColor: "white",
-            padding: "10px 12px",
-            borderRadius: "10px",
-            boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
-          }}
-        >
-          <label htmlFor="categoria">Categoría</label>
+        <div style={filterGroup}>
+          <label htmlFor="categoria" style={filterLabel}>
+            Categoría
+          </label>
           <select
             id="categoria"
             value={categoria}
             onChange={(e) => setCategoria(e.target.value)}
+            style={select}
           >
             <option value="">Todas</option>
             {categorias.map((cat) => (
@@ -194,58 +151,20 @@ function Stock() {
 
         <input
           type="text"
-          placeholder="Buscar producto, almacén o ubicación..."
+          placeholder="Buscar producto, almacén, zona o ubicación..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           style={searchInput}
         />
-      </div>
+      </section>
 
-      {error && (
-        <div
-          style={{
-            marginBottom: "16px",
-            padding: "12px",
-            backgroundColor: "#fee2e2",
-            color: "#991b1b",
-            borderRadius: "8px",
-            fontWeight: "500"
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <div style={errorBox}>{error}</div>}
 
-      <div
-        style={{
-          display: "flex",
-          gap: "20px",
-          flexWrap: "wrap",
-          marginBottom: "24px"
-        }}
-      >
-        <Card title="Registros" value={stockFiltrado.length} />
-        <Card title="Unidades totales" value={totalUnidades} />
-      </div>
-
-      <div
-        style={{
-          backgroundColor: "white",
-          borderRadius: "12px",
-          boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
-          overflow: "hidden"
-        }}
-      >
+      <section style={tableCard}>
         {cargando ? (
-          <div style={{ padding: "20px" }}>
-            <p style={{ margin: 0, color: "#64748b" }}>Cargando stock...</p>
-          </div>
+          <div style={emptyBox}>Cargando stock...</div>
         ) : stockFiltrado.length === 0 ? (
-          <div style={{ padding: "20px" }}>
-            <p style={{ margin: 0, color: "#64748b" }}>
-              No hay registros de stock
-            </p>
-          </div>
+          <div style={emptyBox}>No hay registros de stock</div>
         ) : (
           <table style={table}>
             <thead>
@@ -253,94 +172,140 @@ function Stock() {
                 <th style={th}>Producto</th>
                 <th style={th}>Categoría</th>
                 <th style={th}>Almacén</th>
+                <th style={th}>Zona</th>
                 <th style={th}>Ubicación</th>
                 <th style={th}>Cantidad</th>
                 <th style={th}>Stock mínimo</th>
               </tr>
             </thead>
+
             <tbody>
-              {stockFiltrado.map((item) => (
+              {stockFiltrado.map((item, index) => (
                 <tr
-                  key={item.id}
+                  key={`${item.producto_id}-${item.ubicacion_id || "sin"}-${index}`}
                   style={{
-                    backgroundColor: item.bajo_stock ? "#fef2f2" : "white"
+                    backgroundColor: item.bajo_stock ? "#fff1f2" : "white"
                   }}
                 >
-                  <td style={td}>
-                    {item.producto_nombre || item.producto_id}
+                  <td style={td}>{item.producto_nombre || item.producto_id}</td>
+                  <td style={td}>{item.categoria_nombre || "-"}</td>
+                  <td style={td}>{item.almacen_nombre || "-"}</td>
+                  <td style={td}>{item.zona_nombre || "-"}</td>
+                  <td style={td}>{item.ubicacion_nombre || "-"}</td>
+
+                  <td style={tdCantidad}>
+                    <span
+                      style={{
+                        ...cantidadTexto,
+                        color: item.bajo_stock ? "#dc2626" : "#0f172a"
+                      }}
+                    >
+                      {formatearCantidad(item.cantidad)}
+                    </span>
+
+                    <span style={badgeWrapper}>
+                      {item.bajo_stock && <span style={badgeBajo}>BAJO</span>}
+                    </span>
                   </td>
-                  <td style={td}>
-                    {item.categoria_nombre || "-"}
-                  </td>
-                  <td style={td}>
-                    {item.almacen_nombre || item.almacen_id || "-"}
-                  </td>
-                  <td style={td}>
-                    {item.ubicacion_nombre || item.ubicacion_id}
-                  </td>
-                  <td
-                    style={{
-                      ...td,
-                      color: item.bajo_stock ? "#dc2626" : "#0f172a",
-                      fontWeight: item.bajo_stock ? "700" : "400"
-                    }}
-                  >
-                    {item.cantidad}
-                    {item.bajo_stock && (
-                      <span
-                        style={{
-                          display: "inline-block",
-                          marginLeft: "8px",
-                          padding: "2px 6px",
-                          fontSize: "12px",
-                          backgroundColor: "#dc2626",
-                          color: "white",
-                          borderRadius: "6px"
-                        }}
-                      >
-                        BAJO
-                      </span>
-                    )}
-                  </td>
-                  <td style={td}>
-                    {item.stock_minimo ?? "-"}
-                  </td>
+
+                  <td style={td}>{formatearCantidad(item.stock_minimo)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
-      </div>
+      </section>
     </div>
   );
 }
 
-function Card({ title, value }) {
-  return (
-    <div
-      style={{
-        padding: "20px",
-        backgroundColor: "white",
-        borderRadius: "12px",
-        boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
-        minWidth: "220px"
-      }}
-    >
-      <h3 style={{ margin: 0, color: "#334155" }}>{title}</h3>
+const header = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: "16px",
+  marginBottom: "20px",
+  flexWrap: "wrap"
+};
 
-      <p
-        style={{
-          fontSize: "32px",
-          fontWeight: "700",
-          marginTop: "10px",
-          color: "#0f172a"
-        }}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
+const subtitle = {
+  margin: "6px 0 0 0",
+  color: "#64748b"
+};
+
+const filtersCard = {
+  display: "flex",
+  gap: "12px",
+  flexWrap: "wrap",
+  alignItems: "center",
+  backgroundColor: "white",
+  borderRadius: "14px",
+  padding: "16px",
+  marginBottom: "20px",
+  border: "1px solid #e2e8f0",
+  boxShadow: "0 5px 15px rgba(15, 23, 42, 0.05)"
+};
+
+const checkboxFilter = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  fontWeight: "700",
+  color: "#0f172a"
+};
+
+const filterGroup = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px"
+};
+
+const filterLabel = {
+  fontWeight: "700",
+  color: "#334155"
+};
+
+const select = {
+  padding: "9px 10px",
+  borderRadius: "9px",
+  border: "1px solid #cbd5e1",
+  backgroundColor: "white",
+  color: "#0f172a",
+  outline: "none"
+};
+
+const searchInput = {
+  minWidth: "330px",
+  padding: "10px 12px",
+  borderRadius: "9px",
+  border: "1px solid #cbd5e1",
+  outline: "none",
+  backgroundColor: "white"
+};
+
+const errorBox = {
+  marginBottom: "16px",
+  padding: "12px 14px",
+  backgroundColor: "#fee2e2",
+  color: "#991b1b",
+  border: "1px solid #fca5a5",
+  borderRadius: "10px",
+  fontWeight: "600"
+};
+
+const tableCard = {
+  backgroundColor: "white",
+  borderRadius: "14px",
+  boxShadow: "0 5px 15px rgba(15, 23, 42, 0.05)",
+  border: "1px solid #e2e8f0",
+  overflow: "hidden"
+};
+
+const emptyBox = {
+  padding: "20px",
+  color: "#64748b",
+  fontWeight: "600"
+};
 
 const table = {
   width: "100%",
@@ -349,24 +314,47 @@ const table = {
 
 const th = {
   textAlign: "left",
-  padding: "12px",
-  borderBottom: "1px solid #ddd",
-  backgroundColor: "#f8fafc"
+  padding: "14px 12px",
+  borderBottom: "1px solid #e2e8f0",
+  backgroundColor: "#f8fafc",
+  color: "#0f172a",
+  fontWeight: "800"
 };
 
 const td = {
-  padding: "12px",
-  borderBottom: "1px solid #eee"
+  padding: "13px 12px",
+  borderBottom: "1px solid #f1f5f9",
+  color: "#0f172a"
 };
 
-const searchInput = {
-  minWidth: "260px",
-  padding: "10px 12px",
-  borderRadius: "10px",
-  border: "1px solid #cbd5e1",
-  outline: "none",
-  backgroundColor: "white",
-  boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
+const tdCantidad = {
+  ...td,
+  whiteSpace: "nowrap"
+};
+
+const cantidadTexto = {
+  display: "inline-block",
+  width: "40px",
+  fontFamily: "monospace",
+  fontWeight: "800",
+  letterSpacing: "1px",
+  textAlign: "right"
+};
+
+const badgeWrapper = {
+  display: "inline-block",
+  width: "60px",
+  marginLeft: "10px"
+};
+
+const badgeBajo = {
+  display: "inline-block",
+  padding: "3px 7px",
+  fontSize: "11px",
+  backgroundColor: "#dc2626",
+  color: "white",
+  borderRadius: "999px",
+  fontWeight: "800"
 };
 
 export default Stock;

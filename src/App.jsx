@@ -6,7 +6,6 @@ import Dashboard from "./pages/Dashboard";
 import Productos from "./pages/Productos";
 import Almacenes from "./pages/Almacenes";
 import AlmacenDetalle from "./pages/AlmacenDetalle";
-import Zonas from "./pages/Zonas";
 import Stock from "./pages/Stock";
 import Recepciones from "./pages/Recepciones";
 import Movimientos from "./pages/Movimientos";
@@ -14,9 +13,6 @@ import Salidas from "./pages/Salidas";
 import Inventarios from "./pages/Inventarios";
 import Auditoria from "./pages/Auditoria";
 import Categorias from "./pages/Categorias";
-
-/* 🔥 NUEVOS */
-import ZonaDetalle from "./pages/ZonaDetalle";
 import Ubicaciones from "./pages/Ubicaciones";
 
 import MainLayout from "./layouts/MainLayout";
@@ -62,13 +58,7 @@ function App() {
           <Route path="/categorias" element={<Categorias />} />
           <Route path="/almacenes" element={<Almacenes />} />
           <Route path="/almacenes/:id" element={<AlmacenDetalle />} />
-
-          <Route path="/zonas" element={<Zonas />} />
-          <Route path="/zonas/:id" element={<ZonaDetalle />} />
-
-          {/* 🔥 NUEVA RUTA */}
           <Route path="/ubicaciones" element={<Ubicaciones />} />
-
           <Route path="/stock" element={<Stock />} />
           <Route path="/recepciones" element={<Recepciones />} />
           <Route path="/movimientos" element={<Movimientos />} />

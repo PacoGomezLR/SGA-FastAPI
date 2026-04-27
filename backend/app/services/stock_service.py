@@ -30,6 +30,11 @@ class StockService:
                 "ubicacion_nombre": item.ubicacion_nombre,
                 "almacen_id": item.almacen_id,
                 "almacen_nombre": item.almacen_nombre,
+
+                # 🔥 NUEVO
+                "zona_id": getattr(item, "zona_id", None),
+                "zona_nombre": getattr(item, "zona_nombre", None),
+
                 "cantidad": item.cantidad,
                 "stock_minimo": item.stock_minimo,
                 "bajo_stock": item.bajo_stock
@@ -62,6 +67,7 @@ class StockService:
             stock_data.producto_id,
             stock_data.ubicacion_id
         )
+
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -72,6 +78,7 @@ class StockService:
 
     def update_stock(self, stock_id: int, stock_data: StockUpdate):
         stock = self.repository.get_by_id(stock_id)
+
         if not stock:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -83,6 +90,7 @@ class StockService:
             if stock_data.producto_id is not None
             else stock.producto_id
         )
+
         nueva_ubicacion_id = (
             stock_data.ubicacion_id
             if stock_data.ubicacion_id is not None
@@ -98,6 +106,7 @@ class StockService:
             nuevo_producto_id,
             nueva_ubicacion_id
         )
+
         if existing and existing.id != stock_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -108,6 +117,7 @@ class StockService:
 
     def delete_stock(self, stock_id: int):
         stock = self.repository.get_by_id(stock_id)
+
         if not stock:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -115,10 +125,14 @@ class StockService:
             )
 
         self.repository.delete(stock)
-        return {"message": "Registro de stock eliminado correctamente"}
+
+        return {
+            "message": "Registro de stock eliminado correctamente"
+        }
 
     def validar_producto_y_ubicacion_existentes(self, producto_id: int, ubicacion_id: int):
         producto = self.product_repository.get_by_id(producto_id)
+
         if not producto:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -126,6 +140,7 @@ class StockService:
             )
 
         ubicacion = self.location_repository.get_by_id(ubicacion_id)
+
         if not ubicacion:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -175,6 +190,7 @@ class StockService:
             ubicacion_id=ubicacion_id,
             cantidad=cantidad
         )
+
         return self.repository.create(nuevo_stock)
 
     def restar_stock(self, producto_id: int, ubicacion_id: int, cantidad: int):
@@ -189,4 +205,5 @@ class StockService:
         stock.cantidad -= cantidad
         self.db.commit()
         self.db.refresh(stock)
+
         return stock
