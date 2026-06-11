@@ -9,7 +9,7 @@ Sistema web para la gestión integral de un almacén: control de stock, ubicacio
 
 ### Dashboard
 
-![Dashboard](dashboard.png)
+![Dashboard](docs/images/dashboard.png)
 
 ### Gestión de productos
 
