@@ -1,5 +1,7 @@
 # SGA — Sistema de Gestión de Almacén
 
+![Dashboard](dashboard.png)
+
 Sistema web para la gestión integral de un almacén: control de stock, ubicaciones, movimientos, salidas, recepciones e inventarios.
 
 ---
