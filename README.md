@@ -1,7 +1,39 @@
 # SGA — Sistema de Gestión de Almacén
 
+
 Sistema web para la gestión integral de un almacén: control de stock, ubicaciones, movimientos, salidas, recepciones e inventarios.
 
+---
+
+## Capturas de pantalla
+
+### Dashboard
+
+![Dashboard](docs/images/dashboard.png)
+
+### Gestión de productos
+
+![Productos](docs/images/productos.png)
+
+### Recepción de mercancía
+
+![Recepciones](docs/images/recepciones.png)
+
+### Movimientos internos
+
+![Movimientos](docs/images/movimientos.png)
+
+### Auditoría
+
+![Auditoría](docs/images/auditoria.png)
+
+### Documentación API (Swagger)
+
+![Swagger API](docs/images/swagger-api.png)
+
+### Autenticación API
+
+![Swagger Auth](docs/images/swagger-auth.png)
 ---
 
 ## Tecnologías
