@@ -20,6 +20,9 @@ backend/.env
 .vscode/
 .idea/
 
+# Claude Code
+.claude/
+
 # Sistema
 .DS_Store
 
