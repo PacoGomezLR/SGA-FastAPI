@@ -60,6 +60,29 @@ Estos principios vienen definidos en el diseño del núcleo de stock :contentRef
 
 ---
 
+## Arrancar el proyecto
+
+### Backend (FastAPI)
+
+```bash
+cd backend
+source venv/Scripts/activate
+uvicorn app.main:app --reload
+```
+
+API disponible en `http://127.0.0.1:8000`
+
+### Frontend (React + Vite)
+
+```bash
+cd ~/Desktop/proyecto-sga
+npm run dev
+```
+
+App disponible en `http://localhost:5173`
+
+---
+
 ## Estructura del proyecto
 
 ```bash
