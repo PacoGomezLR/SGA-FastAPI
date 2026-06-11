@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { apiFetch } from "../api/api";
 
 function Dashboard() {
@@ -44,9 +44,7 @@ function Dashboard() {
 
       setStockTotal(totalStock);
 
-      const riesgo = stockArray.filter(
-        (item) => item.bajo_stock === true
-      );
+      const riesgo = stockArray.filter((item) => item.bajo_stock === true);
 
       setProductosEnRiesgo(riesgo.length);
       setAlertasStock(riesgo.slice(0, 6));
@@ -96,9 +94,7 @@ function Dashboard() {
 
   return (
     <div style={{ padding: "30px" }}>
-      <h1 style={{ marginTop: 0, marginBottom: "8px" }}>
-        Resumen Almacén
-      </h1>
+      <h1 style={{ marginTop: 0, marginBottom: "8px" }}>Resumen Almacén</h1>
 
       <p style={{ color: "#6b7280", marginBottom: "24px" }}>
         Vista general del estado actual del almacén.
@@ -118,7 +114,6 @@ function Dashboard() {
         </div>
       )}
 
-      {/* TARJETAS */}
       <div
         style={{
           display: "grid",
@@ -130,31 +125,13 @@ function Dashboard() {
         <Card title="Total productos" value={totalProductos} />
         <Card title="Total almacenes" value={totalAlmacenes} />
         <Card title="Stock total" value={stockTotal} />
-        <Card
-          title="Productos en riesgo"
-          value={productosEnRiesgo}
-          color="#991b1b"
-        />
+        <Card title="Productos en riesgo" value={productosEnRiesgo} color="#991b1b" />
       </div>
 
-      {/* ACCESOS RÁPIDOS */}
-      <div
-        style={{
-          ...cardBase,
-          marginBottom: "24px"
-        }}
-      >
-        <h3 style={{ marginTop: 0, marginBottom: "16px" }}>
-          Accesos rápidos
-        </h3>
+      <div style={{ ...cardBase, marginBottom: "24px" }}>
+        <h3 style={{ marginTop: 0, marginBottom: "16px" }}>Accesos rápidos</h3>
 
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            flexWrap: "wrap"
-          }}
-        >
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
           <QuickButton text="Nueva recepción" />
           <QuickButton text="Nuevo movimiento" />
           <QuickButton text="Nueva salida" />
@@ -162,13 +139,7 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* ALERTAS */}
-      <div
-        style={{
-          ...cardBase,
-          marginBottom: "24px"
-        }}
-      >
+      <div style={{ ...cardBase, marginBottom: "24px" }}>
         <h3 style={{ marginTop: 0, marginBottom: "16px" }}>
           Alertas de stock bajo
         </h3>
@@ -178,46 +149,43 @@ function Dashboard() {
             No hay productos en riesgo.
           </p>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gap: "10px"
-            }}
-          >
-            {alertasStock.map((item, index) => (
-              <div
-                key={index}
-                style={{
-                  padding: "12px",
-                  borderRadius: "10px",
-                  background: "#fff7ed",
-                  border: "1px solid #fed7aa",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: "10px",
-                  flexWrap: "wrap"
-                }}
-              >
-                <strong>{item.producto_nombre}</strong>
+          <div style={{ overflowX: "auto" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "separate",
+                borderSpacing: "0",
+                minWidth: "760px",
+                background: "#fff7ed",
+                border: "1px solid #fed7aa",
+                borderRadius: "10px",
+                overflow: "hidden"
+              }}
+            >
+              <thead>
+                <tr>
+                  <th style={alertTh}>Producto</th>
+                  <th style={alertThCenter}>Stock</th>
+                  <th style={alertThCenter}>Mínimo</th>
+                  <th style={alertThCenter}>Ubicación</th>
+                </tr>
+              </thead>
 
-                <span>
-                  Stock: {item.cantidad}
-                </span>
-
-                <span>
-                  Mínimo: {item.stock_minimo}
-                </span>
-
-                <span>
-                  {item.ubicacion_nombre || "-"}
-                </span>
-              </div>
-            ))}
+              <tbody>
+                {alertasStock.map((item, index) => (
+                  <tr key={index}>
+                    <td style={alertTdStrong}>{item.producto_nombre}</td>
+                    <td style={alertTdCenter}>{item.cantidad}</td>
+                    <td style={alertTdCenter}>{item.stock_minimo}</td>
+                    <td style={alertTdCenter}>{item.ubicacion_nombre || "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
 
-      {/* MOVIMIENTOS */}
       <div style={cardBase}>
         <h3 style={{ marginTop: 0, marginBottom: "16px" }}>
           Últimos movimientos
@@ -251,13 +219,8 @@ function Dashboard() {
               <tbody>
                 {ultimosMovimientos.map((mov) => (
                   <tr key={mov.id}>
-                    <td style={td}>
-                      {new Date(mov.fecha).toLocaleString()}
-                    </td>
-
-                    <td style={td}>
-                      {mov.producto_nombre || mov.producto_id}
-                    </td>
+                    <td style={td}>{new Date(mov.fecha).toLocaleString()}</td>
+                    <td style={td}>{mov.producto_nombre || mov.producto_id}</td>
 
                     <td
                       style={{
@@ -288,17 +251,9 @@ function Dashboard() {
                       </span>
                     </td>
 
-                    <td style={td}>
-                      {mov.ubicacion_origen_nombre || "-"}
-                    </td>
-
-                    <td style={td}>
-                      {mov.ubicacion_destino_nombre || "-"}
-                    </td>
-
-                    <td style={td}>
-                      {mov.usuario_nombre || mov.usuario_id}
-                    </td>
+                    <td style={td}>{mov.ubicacion_origen_nombre || "-"}</td>
+                    <td style={td}>{mov.ubicacion_destino_nombre || "-"}</td>
+                    <td style={td}>{mov.usuario_nombre || mov.usuario_id}</td>
                   </tr>
                 ))}
               </tbody>
@@ -321,25 +276,11 @@ function Card({ title, value, color = "#0f172a" }) {
         boxShadow: "0 6px 18px rgba(0,0,0,0.04)"
       }}
     >
-      <div
-        style={{
-          color: "#6b7280",
-          fontSize: "14px",
-          marginBottom: "8px"
-        }}
-      >
+      <div style={{ color: "#6b7280", fontSize: "14px", marginBottom: "8px" }}>
         {title}
       </div>
 
-      <div
-        style={{
-          fontSize: "34px",
-          fontWeight: "700",
-          color
-        }}
-      >
-        {value}
-      </div>
+      <div style={{ fontSize: "34px", fontWeight: "700", color }}>{value}</div>
     </div>
   );
 }
@@ -362,6 +303,39 @@ function QuickButton({ text }) {
     </button>
   );
 }
+
+const alertTh = {
+  textAlign: "left",
+  padding: "12px",
+  borderBottom: "1px solid #fed7aa",
+  fontSize: "14px",
+  fontWeight: "700",
+  color: "#111827"
+};
+
+const alertThCenter = {
+  ...alertTh,
+  textAlign: "center",
+  width: "160px"
+};
+
+const alertTd = {
+  padding: "12px",
+  borderBottom: "1px solid #ffedd5",
+  fontSize: "14px",
+  color: "#111827"
+};
+
+const alertTdStrong = {
+  ...alertTd,
+  fontWeight: "700"
+};
+
+const alertTdCenter = {
+  ...alertTd,
+  textAlign: "center",
+  width: "160px"
+};
 
 const th = {
   textAlign: "left",
