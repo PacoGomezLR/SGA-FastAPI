@@ -143,6 +143,14 @@ uvicorn app.main:app --reload
 API disponible en `http://127.0.0.1:8000`
 Documentación interactiva en `http://127.0.0.1:8000/docs`
 
+### Tests
+
+```bash
+# Desde backend/, con el entorno virtual activo y SECRET_KEY definida
+cd backend
+python -m pytest tests/ -v
+```
+
 ### Frontend
 
 ```bash
@@ -206,7 +214,7 @@ Documentación completa disponible en `/docs` (Swagger UI) con el servidor en ma
 - [x] Auditoría de operaciones
 - [x] Dashboard con KPIs en tiempo real
 - [x] 3 migraciones Alembic progresivas
-- [ ] Tests unitarios e integración
+- [x] 23 tests automatizados con pytest (auth, productos, movimientos, health)
 - [ ] Dockerización
 - [ ] Despliegue en producción
 
@@ -214,11 +222,11 @@ Documentación completa disponible en `/docs` (Swagger UI) con el servidor en ma
 
 ## Próximas mejoras
 
-1. **Tests** — pytest con tests de servicios core (stock, inventario, recepciones)
-2. **Docker** — `docker-compose.yml` con backend + PostgreSQL
-3. **CORS restrictivo** — configurar orígenes permitidos por variable de entorno
-4. **Refresh token** — renovación automática de sesión en el frontend
-5. **Paginación** — en listados de movimientos, auditoría y stock
+1. **Docker** — `docker-compose.yml` con backend + PostgreSQL
+2. **CORS restrictivo** — configurar orígenes permitidos por variable de entorno
+3. **Refresh token** — renovación automática de sesión en el frontend
+4. **Paginación** — en listados de movimientos, auditoría y stock
+5. **Ampliar cobertura de tests** — recepciones, inventarios y stock
 
 ---
 
