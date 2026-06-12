@@ -10,6 +10,7 @@ __pycache__/
 
 # Variables sensibles
 .env
+*.env
 backend/.env
 
 # Bases de datos
@@ -32,3 +33,10 @@ backend/.env
 # Node / Frontend
 node_modules/
 dist/
+
+# Carpeta backend duplicada (eliminada en limpieza fase 3)
+app/
+
+# Scripts raíz duplicados (versiones canónicas en backend/)
+create_admin.py
+create_test_users.py

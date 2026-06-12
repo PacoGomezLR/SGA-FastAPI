@@ -1,0 +1,21 @@
+# Web framework y servidor
+fastapi==0.135.1
+uvicorn==0.42.0
+
+# Base de datos
+sqlalchemy==2.0.48
+alembic==1.18.4
+psycopg[binary]==3.3.3
+
+# Validación y configuración
+pydantic==2.12.5
+pydantic-settings==2.13.1
+
+# Seguridad JWT
+python-jose[cryptography]==3.5.0
+
+# Hashing de contraseñas
+passlib[bcrypt]==1.7.4
+
+# Formularios (requerido por OAuth2PasswordRequestForm de FastAPI)
+python-multipart==0.0.22

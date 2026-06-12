@@ -1,3 +1,5 @@
+import os
+
 from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
@@ -58,27 +60,27 @@ def main() -> None:
         create_user_if_not_exists(
             db=db,
             nombre="Administrador",
-            email="admin@test.com",
-            username="admin",
-            password="admin123",
+            email=os.environ.get("TEST_ADMIN_EMAIL", "admin@test.com"),
+            username=os.environ.get("TEST_ADMIN_USERNAME", "admin"),
+            password=os.environ["TEST_ADMIN_PASSWORD"],
             role_name="administrador",
         )
 
         create_user_if_not_exists(
             db=db,
             nombre="Supervisor",
-            email="supervisor@test.com",
-            username="supervisor",
-            password="supervisor123",
+            email=os.environ.get("TEST_SUPERVISOR_EMAIL", "supervisor@test.com"),
+            username=os.environ.get("TEST_SUPERVISOR_USERNAME", "supervisor"),
+            password=os.environ["TEST_SUPERVISOR_PASSWORD"],
             role_name="supervisor",
         )
 
         create_user_if_not_exists(
             db=db,
             nombre="Operario",
-            email="operario@test.com",
-            username="operario",
-            password="operario123",
+            email=os.environ.get("TEST_OPERARIO_EMAIL", "operario@test.com"),
+            username=os.environ.get("TEST_OPERARIO_USERNAME", "operario"),
+            password=os.environ["TEST_OPERARIO_PASSWORD"],
             role_name="operario",
         )
 
