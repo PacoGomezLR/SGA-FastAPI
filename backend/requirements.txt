@@ -16,6 +16,7 @@ python-jose[cryptography]==3.5.0
 
 # Hashing de contraseñas
 passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
 
 # Formularios (requerido por OAuth2PasswordRequestForm de FastAPI)
 python-multipart==0.0.22
