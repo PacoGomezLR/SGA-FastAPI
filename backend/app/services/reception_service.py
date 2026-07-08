@@ -57,11 +57,14 @@ class ReceptionService:
             self.db.refresh(recepcion_creada)
             return recepcion_creada
 
-        except Exception as e:
+        except HTTPException:
+            self.db.rollback()
+            raise
+        except Exception:
             self.db.rollback()
             raise HTTPException(
-                status_code=500,
-                detail=f"Error al crear la recepción: {str(e)}"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error interno al crear la recepción"
             )
 
     def update_reception(self, reception_id: int, reception_data: ReceptionUpdate, usuario_id: int):
@@ -94,9 +97,15 @@ class ReceptionService:
             self.db.refresh(recepcion)
             return recepcion
 
-        except Exception as e:
+        except HTTPException:
             self.db.rollback()
-            raise HTTPException(500, str(e))
+            raise
+        except Exception:
+            self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error interno al actualizar la recepción"
+            )
 
     def confirm_reception(self, reception_id: int):
         recepcion = self.repository.get_by_id(reception_id)
@@ -160,9 +169,15 @@ class ReceptionService:
             self.db.refresh(recepcion)
             return recepcion
 
-        except Exception as e:
+        except HTTPException:
             self.db.rollback()
-            raise HTTPException(500, str(e))
+            raise
+        except Exception:
+            self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error interno al confirmar la recepción"
+            )
 
     def _validate_almacen(self, almacen_id: int):
         almacen = self.db.query(Warehouse).filter(Warehouse.id == almacen_id).first()

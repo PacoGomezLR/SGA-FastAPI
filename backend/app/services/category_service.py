@@ -1,3 +1,5 @@
+from fastapi import HTTPException, status
+
 from app.models.category import Category
 from app.repositories.category_repository import CategoryRepository
 from app.schemas.category import CategoryCreate, CategoryUpdate
@@ -13,13 +15,19 @@ class CategoryService:
     def get_category(self, category_id: int):
         category = self.repository.get_by_id(category_id)
         if not category:
-            raise ValueError("Categoría no encontrada")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Categoría no encontrada"
+            )
         return category
 
     def create_category(self, data: CategoryCreate):
         existing_category = self.repository.get_by_name(data.nombre)
         if existing_category:
-            raise ValueError("Ya existe una categoría con ese nombre")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Ya existe una categoría con ese nombre"
+            )
 
         new_category = Category(
             nombre=data.nombre,
@@ -31,12 +39,18 @@ class CategoryService:
     def update_category(self, category_id: int, data: CategoryUpdate):
         category = self.repository.get_by_id(category_id)
         if not category:
-            raise ValueError("Categoría no encontrada")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Categoría no encontrada"
+            )
 
         if data.nombre is not None:
             existing_category = self.repository.get_by_name(data.nombre)
             if existing_category and existing_category.id != category_id:
-                raise ValueError("Ya existe una categoría con ese nombre")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Ya existe una categoría con ese nombre"
+                )
             category.nombre = data.nombre
 
         if data.descripcion is not None:
@@ -50,6 +64,9 @@ class CategoryService:
     def delete_category(self, category_id: int):
         category = self.repository.get_by_id(category_id)
         if not category:
-            raise ValueError("Categoría no encontrada")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Categoría no encontrada"
+            )
 
         self.repository.delete(category)

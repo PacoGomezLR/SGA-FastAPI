@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -30,11 +30,7 @@ def get_categories(db: Session = Depends(get_db)):
 def get_category(category_id: int, db: Session = Depends(get_db)):
     repository = CategoryRepository(db)
     service = CategoryService(repository)
-
-    try:
-        return service.get_category(category_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    return service.get_category(category_id)
 
 
 @router.post(
@@ -46,11 +42,7 @@ def get_category(category_id: int, db: Session = Depends(get_db)):
 def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
     repository = CategoryRepository(db)
     service = CategoryService(repository)
-
-    try:
-        return service.create_category(data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.create_category(data)
 
 
 @router.put(
@@ -61,13 +53,7 @@ def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
 def update_category(category_id: int, data: CategoryUpdate, db: Session = Depends(get_db)):
     repository = CategoryRepository(db)
     service = CategoryService(repository)
-
-    try:
-        return service.update_category(category_id, data)
-    except ValueError as e:
-        if str(e) == "Categoría no encontrada":
-            raise HTTPException(status_code=404, detail=str(e))
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.update_category(category_id, data)
 
 
 @router.delete(
@@ -78,8 +64,4 @@ def update_category(category_id: int, data: CategoryUpdate, db: Session = Depend
 def delete_category(category_id: int, db: Session = Depends(get_db)):
     repository = CategoryRepository(db)
     service = CategoryService(repository)
-
-    try:
-        service.delete_category(category_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    service.delete_category(category_id)
