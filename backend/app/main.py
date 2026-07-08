@@ -24,6 +24,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "https://sga-fastapi.vercel.app",
+        "https://sga-fast-api.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
