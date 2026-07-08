@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy import update, func
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.models.stock import Stock
@@ -114,20 +115,20 @@ class StockRepository:
                 detail="La cantidad a sumar debe ser mayor que 0"
             )
 
-        stock = self.get_by_product_and_location(producto_id, ubicacion_id)
+        stmt = pg_insert(Stock).values(
+            producto_id=producto_id,
+            ubicacion_id=ubicacion_id,
+            cantidad=cantidad
+        )
+        stmt = stmt.on_conflict_do_update(
+            constraint="uq_stock_producto_ubicacion",
+            set_={"cantidad": Stock.cantidad + stmt.excluded.cantidad}
+        )
 
-        if stock:
-            stock.cantidad += cantidad
-        else:
-            stock = Stock(
-                producto_id=producto_id,
-                ubicacion_id=ubicacion_id,
-                cantidad=cantidad
-            )
-            self.db.add(stock)
-
+        self.db.execute(stmt)
         self.db.flush()
-        return stock
+
+        return self.get_by_product_and_location(producto_id, ubicacion_id)
 
     def remove_stock(self, producto_id: int, ubicacion_id: int, cantidad: int):
         if cantidad <= 0:
