@@ -567,7 +567,7 @@ class InventoryService:
             )
 
     def _validate_product(self, producto_id: int):
-        producto = self.db.query(Product).filter(User.id == producto_id).first()
+        producto = self.db.query(Product).filter(Product.id == producto_id).first()
         if not producto:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
