@@ -214,19 +214,18 @@ Documentación completa disponible en `/docs` (Swagger UI) con el servidor en ma
 - [x] Auditoría de operaciones
 - [x] Dashboard con KPIs en tiempo real
 - [x] 3 migraciones Alembic progresivas
-- [x] 23 tests automatizados con pytest (auth, productos, movimientos, health)
+- [x] 30 tests automatizados con pytest (auth, categorías, productos, movimientos, health)
+- [x] Despliegue en producción (Vercel + Render + Neon)
 - [ ] Dockerización
-- [ ] Despliegue en producción
 
 ---
 
 ## Próximas mejoras
 
 1. **Docker** — `docker-compose.yml` con backend + PostgreSQL
-2. **CORS restrictivo** — configurar orígenes permitidos por variable de entorno
-3. **Refresh token** — renovación automática de sesión en el frontend
-4. **Paginación** — en listados de movimientos, auditoría y stock
-5. **Ampliar cobertura de tests** — recepciones, inventarios y stock
+2. **Refresh token** — renovación automática de sesión en el frontend
+3. **Paginación** — en listados de movimientos, auditoría y stock
+4. **Ampliar cobertura de tests** — recepciones, inventarios y stock
 
 ---
 

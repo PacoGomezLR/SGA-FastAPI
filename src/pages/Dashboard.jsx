@@ -26,7 +26,7 @@ function Dashboard() {
         apiFetch("/products/"),
         apiFetch("/warehouses/"),
         apiFetch("/stock?detailed=true"),
-        apiFetch("/movements/audit")
+        apiFetch("/movements/")
       ]);
 
       const productosArray = Array.isArray(productos) ? productos : [];
