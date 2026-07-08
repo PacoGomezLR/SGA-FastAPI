@@ -18,7 +18,7 @@ from app.routes import auth_routes
 
 app = FastAPI(title="SGA API")
 
-# 🔐 CORS (temporalmente abierto, restringir en producción)
+# 🔐 CORS restringido a los orígenes autorizados (frontend local y producción en Vercel)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
