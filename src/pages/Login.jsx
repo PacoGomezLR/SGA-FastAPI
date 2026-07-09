@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import * as styles from "./Login.styles";
 
 function Login() {
   const navigate = useNavigate();
@@ -59,77 +60,20 @@ function Login() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        background:
-          "linear-gradient(135deg, #e2e8f0 0%, #f8fafc 50%, #e2e8f0 100%)",
-        padding: "20px"
-      }}
-    >
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          backgroundColor: "white",
-          padding: "32px",
-          borderRadius: "16px",
-          width: "100%",
-          maxWidth: "420px",
-          boxShadow: "0 12px 30px rgba(15, 23, 42, 0.12)",
-          border: "1px solid #e2e8f0"
-        }}
-      >
-        <div style={{ marginBottom: "24px", textAlign: "center" }}>
-          <h1
-            style={{
-              margin: "0 0 8px 0",
-              color: "#0f172a",
-              fontSize: "28px"
-            }}
-          >
-            Iniciar sesión
-          </h1>
+    <div style={styles.page}>
+      <form onSubmit={handleSubmit} style={styles.form}>
+        <div style={styles.headerWrapper}>
+          <h1 style={styles.title}>Iniciar sesión</h1>
 
-          <p
-            style={{
-              margin: 0,
-              color: "#64748b",
-              fontSize: "14px"
-            }}
-          >
+          <p style={styles.subtitle}>
             Accede al sistema de gestión de almacén
           </p>
         </div>
 
-        {error && (
-          <div
-            style={{
-              marginBottom: "16px",
-              padding: "12px",
-              backgroundColor: "#fee2e2",
-              color: "#991b1b",
-              borderRadius: "10px",
-              fontSize: "14px",
-              border: "1px solid #fecaca"
-            }}
-          >
-            {error}
-          </div>
-        )}
+        {error && <div style={styles.errorBox}>{error}</div>}
 
-        <div style={{ marginBottom: "16px" }}>
-          <label
-            htmlFor="username"
-            style={{
-              display: "block",
-              marginBottom: "6px",
-              fontWeight: "600",
-              color: "#334155"
-            }}
-          >
+        <div style={styles.fieldWrapper}>
+          <label htmlFor="username" style={styles.fieldLabel}>
             Usuario
           </label>
 
@@ -142,29 +86,12 @@ function Login() {
             placeholder="Introduce tu usuario"
             autoComplete="username"
             disabled={cargando}
-            style={{
-              width: "100%",
-              padding: "12px",
-              border: "1px solid #cbd5e1",
-              borderRadius: "10px",
-              outline: "none",
-              fontSize: "14px",
-              boxSizing: "border-box",
-              backgroundColor: cargando ? "#f8fafc" : "white"
-            }}
+            style={styles.fieldInput(cargando)}
           />
         </div>
 
-        <div style={{ marginBottom: "22px" }}>
-          <label
-            htmlFor="password"
-            style={{
-              display: "block",
-              marginBottom: "6px",
-              fontWeight: "600",
-              color: "#334155"
-            }}
-          >
+        <div style={styles.fieldWrapperLast}>
+          <label htmlFor="password" style={styles.fieldLabel}>
             Contraseña
           </label>
 
@@ -177,35 +104,11 @@ function Login() {
             placeholder="Introduce tu contraseña"
             autoComplete="current-password"
             disabled={cargando}
-            style={{
-              width: "100%",
-              padding: "12px",
-              border: "1px solid #cbd5e1",
-              borderRadius: "10px",
-              outline: "none",
-              fontSize: "14px",
-              boxSizing: "border-box",
-              backgroundColor: cargando ? "#f8fafc" : "white"
-            }}
+            style={styles.fieldInput(cargando)}
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={cargando}
-          style={{
-            width: "100%",
-            padding: "12px",
-            backgroundColor: "#0f172a",
-            color: "white",
-            border: "none",
-            borderRadius: "10px",
-            cursor: cargando ? "not-allowed" : "pointer",
-            opacity: cargando ? 0.75 : 1,
-            fontWeight: "600",
-            fontSize: "15px"
-          }}
-        >
+        <button type="submit" disabled={cargando} style={styles.submitButton(cargando)}>
           {cargando ? "Entrando..." : "Entrar"}
         </button>
       </form>
