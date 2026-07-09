@@ -46,9 +46,9 @@ class StockRepository:
                 cantidad_expr.label("cantidad"),
                 bajo_stock_expr.label("bajo_stock")
             )
-            .select_from(Product)
+            .select_from(Stock)
+            .join(Product, Product.id == Stock.producto_id)
             .outerjoin(Category, Category.id == Product.categoria_id)
-            .outerjoin(Stock, Stock.producto_id == Product.id)
             .outerjoin(Location, Location.id == Stock.ubicacion_id)
             .outerjoin(Zone, Zone.id == Location.zona_id)
             .outerjoin(Warehouse, Warehouse.id == Zone.almacen_id)
