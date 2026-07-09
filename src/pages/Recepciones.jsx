@@ -300,7 +300,9 @@ function Recepciones() {
                 <option value="">Selecciona un almacén</option>
                 {almacenes.map((almacen) => (
                   <option key={almacen.id} value={almacen.id}>
-                    {almacen.nombre}
+                    {almacen.descripcion
+                      ? `${almacen.nombre} — ${almacen.descripcion}`
+                      : almacen.nombre}
                   </option>
                 ))}
               </select>
