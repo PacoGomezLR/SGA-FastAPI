@@ -11,6 +11,14 @@ const initialForm = {
   activo: true
 };
 
+const nuevoPasillo = () => ({
+  numero_pasillo: "",
+  lado_d: false,
+  lado_i: false,
+  eje_y_max: "",
+  eje_x_max: ""
+});
+
 function Almacenes() {
   const [almacenes, setAlmacenes] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -21,6 +29,7 @@ function Almacenes() {
 
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
+  const [pasillos, setPasillos] = useState([]);
 
   const { confirm } = useConfirm();
 
@@ -54,6 +63,7 @@ function Almacenes() {
   function limpiarFormulario() {
     setForm(initialForm);
     setEditingId(null);
+    setPasillos([]);
     setError("");
     setMensaje("");
   }
@@ -62,6 +72,7 @@ function Almacenes() {
     setEditingId(almacen.id);
     setMensaje("");
     setError("");
+    setPasillos([]);
 
     setForm({
       nombre: almacen.nombre ?? "",
@@ -69,6 +80,24 @@ function Almacenes() {
       direccion: almacen.direccion ?? "",
       activo: almacen.activo ?? true
     });
+  }
+
+  function agregarPasillo() {
+    setPasillos((prev) => [...prev, nuevoPasillo()]);
+  }
+
+  function quitarPasillo(index) {
+    setPasillos((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function handlePasilloChange(index, e) {
+    const { name, value, type, checked } = e.target;
+
+    setPasillos((prev) =>
+      prev.map((p, i) =>
+        i === index ? { ...p, [name]: type === "checkbox" ? checked : value } : p
+      )
+    );
   }
 
   async function handleSubmit(e) {
@@ -79,17 +108,33 @@ function Almacenes() {
       setError("");
       setMensaje("");
 
-      const payload = {
+      const warehousePayload = {
         nombre: form.nombre.trim(),
         descripcion: form.descripcion.trim(),
         direccion: form.direccion.trim(),
         activo: form.activo
       };
 
-      await apiFetch(editingId ? `/warehouses/${editingId}` : "/warehouses/", {
-        method: editingId ? "PUT" : "POST",
-        body: payload
-      });
+      if (editingId) {
+        await apiFetch(`/warehouses/${editingId}`, {
+          method: "PUT",
+          body: warehousePayload
+        });
+      } else {
+        await apiFetch("/warehouse-layout/", {
+          method: "POST",
+          body: {
+            warehouse: warehousePayload,
+            pasillos: pasillos.map((p) => ({
+              numero_pasillo: Number(p.numero_pasillo),
+              lado_d: p.lado_d,
+              lado_i: p.lado_i,
+              eje_y_max: Number(p.eje_y_max),
+              eje_x_max: Number(p.eje_x_max)
+            }))
+          }
+        });
+      }
 
       setMensaje(
         editingId
@@ -272,6 +317,81 @@ function Almacenes() {
             Activo
           </label>
 
+          {!editingId && (
+            <div style={pasillosSection}>
+              <div style={sectionTitle}>Pasillos (opcional)</div>
+
+              {pasillos.map((p, index) => (
+                <div key={index} style={pasilloRow}>
+                  <input
+                    name="numero_pasillo"
+                    type="number"
+                    min="1"
+                    placeholder="Nº pasillo"
+                    value={p.numero_pasillo}
+                    onChange={(e) => handlePasilloChange(index, e)}
+                    style={{ ...input, width: "110px" }}
+                    required
+                  />
+
+                  <label style={checkboxLabelInline}>
+                    <input
+                      type="checkbox"
+                      name="lado_d"
+                      checked={p.lado_d}
+                      onChange={(e) => handlePasilloChange(index, e)}
+                    />
+                    Lado D
+                  </label>
+
+                  <label style={checkboxLabelInline}>
+                    <input
+                      type="checkbox"
+                      name="lado_i"
+                      checked={p.lado_i}
+                      onChange={(e) => handlePasilloChange(index, e)}
+                    />
+                    Lado I
+                  </label>
+
+                  <input
+                    name="eje_y_max"
+                    type="number"
+                    min="1"
+                    placeholder="Filas (Y)"
+                    value={p.eje_y_max}
+                    onChange={(e) => handlePasilloChange(index, e)}
+                    style={{ ...input, width: "110px" }}
+                    required
+                  />
+
+                  <input
+                    name="eje_x_max"
+                    type="number"
+                    min="1"
+                    placeholder="Columnas (X)"
+                    value={p.eje_x_max}
+                    onChange={(e) => handlePasilloChange(index, e)}
+                    style={{ ...input, width: "120px" }}
+                    required
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => quitarPasillo(index)}
+                    style={dangerButton}
+                  >
+                    Quitar
+                  </button>
+                </div>
+              ))}
+
+              <button type="button" onClick={agregarPasillo} style={secondaryButton}>
+                + Añadir pasillo
+              </button>
+            </div>
+          )}
+
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <button type="submit" disabled={guardando} style={primaryButton}>
               {guardando ? "Guardando..." : editingId ? "Actualizar" : "Crear"}
@@ -362,6 +482,31 @@ const checkboxLabel = {
   gap: "8px",
   fontWeight: "500",
   color: "#334155"
+};
+
+const checkboxLabelInline = {
+  display: "flex",
+  alignItems: "center",
+  gap: "6px",
+  fontWeight: "500",
+  color: "#334155",
+  whiteSpace: "nowrap"
+};
+
+const pasillosSection = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "10px",
+  padding: "14px",
+  border: "1px dashed #cbd5e1",
+  borderRadius: "10px"
+};
+
+const pasilloRow = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  flexWrap: "wrap"
 };
 
 const tableWrapper = {
