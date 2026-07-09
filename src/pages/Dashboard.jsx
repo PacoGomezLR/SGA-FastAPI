@@ -125,17 +125,6 @@ function Dashboard() {
       <DashboardCharts />
 
       <div style={{ ...styles.cardBase, marginBottom: "24px" }}>
-        <h3 style={{ marginTop: 0, marginBottom: "16px" }}>Accesos rápidos</h3>
-
-        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-          <QuickButton text="Nueva recepción" />
-          <QuickButton text="Nuevo movimiento" />
-          <QuickButton text="Nueva salida" />
-          <QuickButton text="Nuevo inventario" />
-        </div>
-      </div>
-
-      <div style={{ ...styles.cardBase, marginBottom: "24px" }}>
         <h3 style={{ marginTop: 0, marginBottom: "16px" }}>
           Alertas de stock bajo
         </h3>
@@ -278,25 +267,6 @@ function Card({ title, value, color = "#0f172a" }) {
 
       <div style={{ fontSize: "34px", fontWeight: "700", color }}>{value}</div>
     </div>
-  );
-}
-
-function QuickButton({ text }) {
-  return (
-    <button
-      type="button"
-      style={{
-        padding: "11px 16px",
-        borderRadius: "10px",
-        border: "none",
-        background: "#111827",
-        color: "#fff",
-        fontWeight: "700",
-        cursor: "pointer"
-      }}
-    >
-      {text}
-    </button>
   );
 }
 
