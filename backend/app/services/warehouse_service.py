@@ -1,12 +1,18 @@
 from fastapi import HTTPException, status
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
+from app.models.location import Location
+from app.models.stock import Stock
+from app.models.warehouse import Warehouse
+from app.models.zone import Zone
 from app.repositories.warehouse_repository import WarehouseRepository
 from app.schemas.warehouse import WarehouseCreate, WarehouseUpdate
 
 
 class WarehouseService:
     def __init__(self, db: Session):
+        self.db = db
         self.repository = WarehouseRepository(db)
 
     def get_all_warehouses(self):
@@ -58,3 +64,50 @@ class WarehouseService:
 
         self.repository.delete(warehouse)
         return {"message": "Almacén eliminado correctamente"}
+
+    def get_occupancy(self):
+        ubicacion_ocupada = (
+            select(Stock.ubicacion_id)
+            .where(Stock.cantidad > 0)
+            .distinct()
+            .subquery()
+        )
+
+        query = (
+            select(
+                Warehouse.id.label("almacen_id"),
+                Warehouse.nombre.label("almacen_nombre"),
+                func.count(Location.id).label("ubicaciones_totales"),
+                func.count(
+                    case((ubicacion_ocupada.c.ubicacion_id.isnot(None), 1))
+                ).label("ubicaciones_ocupadas"),
+            )
+            .select_from(Warehouse)
+            .join(Zone, Zone.almacen_id == Warehouse.id)
+            .join(Location, Location.zona_id == Zone.id)
+            .join(
+                ubicacion_ocupada,
+                ubicacion_ocupada.c.ubicacion_id == Location.id,
+                isouter=True,
+            )
+            .where(Location.activa.is_(True))
+            .group_by(Warehouse.id, Warehouse.nombre)
+            .order_by(Warehouse.nombre)
+        )
+
+        filas = self.db.execute(query).all()
+
+        return [
+            {
+                "almacen_id": fila.almacen_id,
+                "almacen_nombre": fila.almacen_nombre,
+                "ubicaciones_totales": fila.ubicaciones_totales,
+                "ubicaciones_ocupadas": fila.ubicaciones_ocupadas,
+                "porcentaje_ocupacion": (
+                    round(fila.ubicaciones_ocupadas / fila.ubicaciones_totales * 100, 2)
+                    if fila.ubicaciones_totales
+                    else 0.0
+                ),
+            }
+            for fila in filas
+        ]

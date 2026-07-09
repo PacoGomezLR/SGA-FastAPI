@@ -2,7 +2,12 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.schemas.warehouse import WarehouseCreate, WarehouseUpdate, WarehouseResponse
+from app.schemas.warehouse import (
+    WarehouseCreate,
+    WarehouseUpdate,
+    WarehouseResponse,
+    WarehouseOccupancyResponse,
+)
 from app.security.dependencies import require_role
 from app.services.warehouse_service import WarehouseService
 
@@ -19,6 +24,18 @@ def get_warehouses(
 ):
     service = WarehouseService(db)
     return service.get_all_warehouses()
+
+
+@router.get(
+    "/occupancy",
+    response_model=list[WarehouseOccupancyResponse]
+)
+def get_warehouses_occupancy(
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role("administrador", "supervisor", "operario"))
+):
+    service = WarehouseService(db)
+    return service.get_occupancy()
 
 
 @router.get(

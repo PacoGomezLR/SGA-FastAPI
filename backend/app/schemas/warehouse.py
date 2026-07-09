@@ -40,3 +40,11 @@ class WarehouseResponse(WarehouseBase):
 
     class Config:
         from_attributes = True
+
+
+class WarehouseOccupancyResponse(BaseModel):
+    almacen_id: int
+    almacen_nombre: str
+    ubicaciones_totales: int
+    ubicaciones_ocupadas: int
+    porcentaje_ocupacion: float
