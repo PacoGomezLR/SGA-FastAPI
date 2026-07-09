@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../api/api";
 import * as styles from "./Dashboard.styles";
+import DashboardCharts from "./DashboardCharts";
 
 function Dashboard() {
   const [totalProductos, setTotalProductos] = useState(0);
@@ -120,6 +121,8 @@ function Dashboard() {
         <Card title="Stock total" value={stockTotal} />
         <Card title="Productos en riesgo" value={productosEnRiesgo} color="#991b1b" />
       </div>
+
+      <DashboardCharts />
 
       <div style={{ ...styles.cardBase, marginBottom: "24px" }}>
         <h3 style={{ marginTop: 0, marginBottom: "16px" }}>Accesos rápidos</h3>
