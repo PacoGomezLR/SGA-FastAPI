@@ -25,6 +25,11 @@ export const table = {
   boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
 };
 
+export const tableWrapper = {
+  width: "100%",
+  overflowX: "auto"
+};
+
 export const th = {
   textAlign: "left",
   padding: "12px",

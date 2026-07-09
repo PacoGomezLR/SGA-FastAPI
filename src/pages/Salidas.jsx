@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useIsMobile } from "../hooks/useMediaQuery";
 import * as styles from "./Salidas.styles";
 
 const API_BASE_URL =
@@ -7,6 +8,8 @@ const API_BASE_URL =
 
 function Salidas() {
   const { token, authFetch } = useAuth();
+  const esMobile = useIsMobile();
+  const paddingPagina = esMobile ? "16px" : "30px";
 
   const [productos, setProductos] = useState([]);
   const [almacenes, setAlmacenes] = useState([]);
@@ -203,11 +206,11 @@ function Salidas() {
   }
 
   if (cargandoDatos) {
-    return <div style={{ padding: "30px" }}>Cargando...</div>;
+    return <div style={{ padding: paddingPagina }}>Cargando...</div>;
   }
 
   return (
-    <div style={{ padding: "30px" }}>
+    <div style={{ padding: paddingPagina }}>
       <h1 style={{ marginTop: 0 }}>Salidas</h1>
 
       <p style={{ color: "#6b7280", marginBottom: "22px" }}>

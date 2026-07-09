@@ -2,6 +2,8 @@ export const sectionHeader = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
+  flexWrap: "wrap",
+  gap: "12px",
   marginBottom: "16px"
 };
 
@@ -18,6 +20,8 @@ export const header = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
+  flexWrap: "wrap",
+  gap: "12px",
   marginBottom: "24px"
 };
 

@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useIsMobile } from "../hooks/useMediaQuery";
 import * as styles from "./Auditoria.styles";
 
 function Auditoria() {
   const { token, authFetch } = useAuth();
+  const esMobile = useIsMobile();
+  const paddingPagina = esMobile ? "16px" : "30px";
 
   const [movements, setMovements] = useState([]);
   const [fechaBusqueda, setFechaBusqueda] = useState("");
@@ -128,7 +131,7 @@ function Auditoria() {
   }, [movementsFiltrados]);
 
   return (
-    <div style={{ padding: "30px" }}>
+    <div style={{ padding: paddingPagina }}>
       <h1 style={{ marginTop: 0 }}>Auditoría</h1>
 
       <p style={{ color: "#6b7280", marginBottom: "22px" }}>

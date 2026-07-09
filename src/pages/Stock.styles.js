@@ -62,6 +62,13 @@ export const searchInput = {
   backgroundColor: "white"
 };
 
+export const searchInputMobile = {
+  ...searchInput,
+  minWidth: "0",
+  width: "100%",
+  boxSizing: "border-box"
+};
+
 export const errorBox = {
   marginBottom: "16px",
   padding: "12px 14px",
@@ -78,6 +85,10 @@ export const tableCard = {
   boxShadow: "0 5px 15px rgba(15, 23, 42, 0.05)",
   border: "1px solid #e2e8f0",
   overflow: "hidden"
+};
+
+export const tableWrapper = {
+  overflowX: "auto"
 };
 
 export const emptyBox = {

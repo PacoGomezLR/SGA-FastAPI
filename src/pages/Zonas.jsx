@@ -147,31 +147,33 @@ function Zonas() {
         </>
       }
       tableContent={
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>Zona</th>
-              <th style={styles.th}>Almacén</th>
-              <th style={styles.th}>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {zonasFiltradas.map((z) => (
-              <tr key={z.id} style={styles.tr}>
-                <td style={styles.td}>{z.nombre}</td>
-                <td style={styles.td}>{z.almacen_nombre}</td>
-                <td style={styles.td}>
-                  <button style={styles.editButton} onClick={() => editar(z)}>
-                    Editar
-                  </button>
-                  <button style={styles.deleteButton} onClick={() => eliminar(z.id)}>
-                    Eliminar
-                  </button>
-                </td>
+        <div style={styles.tableWrapper}>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>Zona</th>
+                <th style={styles.th}>Almacén</th>
+                <th style={styles.th}>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {zonasFiltradas.map((z) => (
+                <tr key={z.id} style={styles.tr}>
+                  <td style={styles.td}>{z.nombre}</td>
+                  <td style={styles.td}>{z.almacen_nombre}</td>
+                  <td style={styles.td}>
+                    <button style={styles.editButton} onClick={() => editar(z)}>
+                      Editar
+                    </button>
+                    <button style={styles.deleteButton} onClick={() => eliminar(z.id)}>
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       }
     />
   );

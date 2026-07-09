@@ -25,7 +25,8 @@ export const inputStyle = {
   borderRadius: "8px",
   border: "1px solid #cbd5e1",
   fontSize: "14px",
-  width: "100%"
+  width: "100%",
+  boxSizing: "border-box"
 };
 
 export const primaryButton = {

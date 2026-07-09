@@ -106,6 +106,7 @@ function Categorias() {
         </>
       }
       tableContent={
+        <div style={styles.tableWrapper}>
         <table style={styles.table}>
           <thead>
             <tr>
@@ -129,6 +130,7 @@ function Categorias() {
             ))}
           </tbody>
         </table>
+        </div>
       }
     />
   );

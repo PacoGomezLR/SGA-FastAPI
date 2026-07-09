@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../api/api";
+import { useIsMobile } from "../hooks/useMediaQuery";
 import * as styles from "./Stock.styles";
 
 function Stock() {
+  const esMobile = useIsMobile();
   const [stock, setStock] = useState([]);
   const [almacenes, setAlmacenes] = useState([]);
   const [categorias, setCategorias] = useState([]);
@@ -155,7 +157,7 @@ function Stock() {
           placeholder="Buscar producto, almacén, zona o ubicación..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          style={styles.searchInput}
+          style={esMobile ? styles.searchInputMobile : styles.searchInput}
         />
       </section>
 
@@ -167,53 +169,55 @@ function Stock() {
         ) : stockFiltrado.length === 0 ? (
           <div style={styles.emptyBox}>No hay registros de stock</div>
         ) : (
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Producto</th>
-                <th style={styles.th}>Categoría</th>
-                <th style={styles.th}>Almacén</th>
-                <th style={styles.th}>Zona</th>
-                <th style={styles.th}>Ubicación</th>
-                <th style={styles.th}>Cantidad</th>
-                <th style={styles.th}>Stock mínimo</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {stockFiltrado.map((item, index) => (
-                <tr
-                  key={`${item.producto_id}-${item.ubicacion_id || "sin"}-${index}`}
-                  style={{
-                    backgroundColor: item.bajo_stock ? "#fff1f2" : "white"
-                  }}
-                >
-                  <td style={styles.td}>{item.producto_nombre || item.producto_id}</td>
-                  <td style={styles.td}>{item.categoria_nombre || "-"}</td>
-                  <td style={styles.td}>{item.almacen_nombre || "-"}</td>
-                  <td style={styles.td}>{item.zona_nombre || "-"}</td>
-                  <td style={styles.td}>{item.ubicacion_nombre || "-"}</td>
-
-                  <td style={styles.tdCantidad}>
-                    <span
-                      style={{
-                        ...styles.cantidadTexto,
-                        color: item.bajo_stock ? "#dc2626" : "#0f172a"
-                      }}
-                    >
-                      {formatearCantidad(item.cantidad)}
-                    </span>
-
-                    <span style={styles.badgeWrapper}>
-                      {item.bajo_stock && <span style={styles.badgeBajo}>BAJO</span>}
-                    </span>
-                  </td>
-
-                  <td style={styles.td}>{formatearCantidad(item.stock_minimo)}</td>
+          <div style={styles.tableWrapper}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Producto</th>
+                  <th style={styles.th}>Categoría</th>
+                  <th style={styles.th}>Almacén</th>
+                  <th style={styles.th}>Zona</th>
+                  <th style={styles.th}>Ubicación</th>
+                  <th style={styles.th}>Cantidad</th>
+                  <th style={styles.th}>Stock mínimo</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {stockFiltrado.map((item, index) => (
+                  <tr
+                    key={`${item.producto_id}-${item.ubicacion_id || "sin"}-${index}`}
+                    style={{
+                      backgroundColor: item.bajo_stock ? "#fff1f2" : "white"
+                    }}
+                  >
+                    <td style={styles.td}>{item.producto_nombre || item.producto_id}</td>
+                    <td style={styles.td}>{item.categoria_nombre || "-"}</td>
+                    <td style={styles.td}>{item.almacen_nombre || "-"}</td>
+                    <td style={styles.td}>{item.zona_nombre || "-"}</td>
+                    <td style={styles.td}>{item.ubicacion_nombre || "-"}</td>
+
+                    <td style={styles.tdCantidad}>
+                      <span
+                        style={{
+                          ...styles.cantidadTexto,
+                          color: item.bajo_stock ? "#dc2626" : "#0f172a"
+                        }}
+                      >
+                        {formatearCantidad(item.cantidad)}
+                      </span>
+
+                      <span style={styles.badgeWrapper}>
+                        {item.bajo_stock && <span style={styles.badgeBajo}>BAJO</span>}
+                      </span>
+                    </td>
+
+                    <td style={styles.td}>{formatearCantidad(item.stock_minimo)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </div>

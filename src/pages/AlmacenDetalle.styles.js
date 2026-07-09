@@ -2,7 +2,9 @@ export const sectionHeader = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  marginBottom: "16px"
+  marginBottom: "16px",
+  flexWrap: "wrap",
+  gap: "10px"
 };
 
 export const createButton = {
@@ -110,7 +112,8 @@ export const zoneHeader = {
   justifyContent: "space-between",
   alignItems: "flex-start",
   gap: "12px",
-  marginBottom: "16px"
+  marginBottom: "16px",
+  flexWrap: "wrap"
 };
 
 export const zoneLink = {
@@ -130,7 +133,8 @@ export const locationsHeader = {
   justifyContent: "space-between",
   alignItems: "center",
   gap: "10px",
-  marginBottom: "12px"
+  marginBottom: "12px",
+  flexWrap: "wrap"
 };
 
 export const subTitle = {

@@ -1,3 +1,4 @@
+import { useIsMobile } from "../hooks/useMediaQuery";
 import * as styles from "./CrudPage.styles";
 
 function CrudPage({
@@ -13,6 +14,8 @@ function CrudPage({
   formContent,
   tableContent
 }) {
+  const esMobile = useIsMobile();
+
   return (
     <div>
       <h1 style={styles.pageTitle}>{title}</h1>
@@ -20,7 +23,7 @@ function CrudPage({
       {message && <div style={styles.successBox}>{message}</div>}
       {error && <div style={styles.errorBox}>{error}</div>}
 
-      <div style={styles.card}>
+      <div style={esMobile ? styles.cardMobile : styles.card}>
         <h2 style={styles.cardTitleStyle}>{cardTitle}</h2>
 
         <form onSubmit={onSubmit}>
@@ -44,7 +47,9 @@ function CrudPage({
         <p style={styles.infoText}>{emptyMessage}</p>
       ) : null}
 
-      {tableContent}
+      {tableContent && (
+        <div style={styles.tableWrapper}>{tableContent}</div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../api/api";
+import { useIsMobile } from "../hooks/useMediaQuery";
 import * as styles from "./Recepciones.styles";
 
 const initialForm = {
@@ -12,6 +13,7 @@ const initialForm = {
 };
 
 function Recepciones() {
+  const esMobile = useIsMobile();
   const [form, setForm] = useState(initialForm);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
@@ -218,7 +220,7 @@ function Recepciones() {
       {error && <div style={styles.errorBox}>{error}</div>}
 
       <form onSubmit={handleSubmit}>
-        <div style={styles.topGrid}>
+        <div style={esMobile ? styles.topGridMobile : styles.topGrid}>
           <section style={styles.card}>
             <div style={styles.stepBadge}>1</div>
             <h2 style={styles.cardTitle}>Datos de la recepción</h2>

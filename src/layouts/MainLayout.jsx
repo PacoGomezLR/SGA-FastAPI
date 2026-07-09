@@ -1,12 +1,27 @@
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useConfirm } from "../context/ConfirmContext";
+import { useIsTabletDown } from "../hooks/useMediaQuery";
 import * as styles from "./MainLayout.styles";
 
 function MainLayout() {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { confirm } = useConfirm();
+
+  const esTabletODown = useIsTabletDown();
+  const [sidebarAbierta, setSidebarAbierta] = useState(false);
+  const [rutaPrevia, setRutaPrevia] = useState(location.pathname);
+
+  if (location.pathname !== rutaPrevia) {
+    setRutaPrevia(location.pathname);
+    if (sidebarAbierta) {
+      setSidebarAbierta(false);
+    }
+  }
 
   function solicitarCerrarSesion() {
     confirm({
@@ -34,9 +49,21 @@ function MainLayout() {
     };
   }
 
+  const mostrarSidebarFija = !esTabletODown;
+
+  const asideStyle = mostrarSidebarFija
+    ? styles.aside
+    : sidebarAbierta
+      ? styles.asideMobileOpen
+      : styles.asideMobileClosed;
+
   return (
     <div style={styles.container}>
-      <aside style={styles.aside}>
+      {!mostrarSidebarFija && sidebarAbierta && (
+        <div style={styles.overlay} onClick={() => setSidebarAbierta(false)} />
+      )}
+
+      <aside style={asideStyle}>
         <div>
           <div style={styles.logoWrapper}>
             <h2 style={styles.logoTitle}>
@@ -104,12 +131,23 @@ function MainLayout() {
 
       <main style={styles.main}>
         <header style={styles.header}>
+          {!mostrarSidebarFija && (
+            <button
+              type="button"
+              aria-label={sidebarAbierta ? "Cerrar menú" : "Abrir menú"}
+              style={styles.menuButton}
+              onClick={() => setSidebarAbierta((abierta) => !abierta)}
+            >
+              {sidebarAbierta ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          )}
+
           <h1 style={styles.headerTitle}>
             Panel de gestión
           </h1>
         </header>
 
-        <section style={styles.section}>
+        <section style={mostrarSidebarFija ? styles.section : styles.sectionMobile}>
           <Outlet />
         </section>
       </main>

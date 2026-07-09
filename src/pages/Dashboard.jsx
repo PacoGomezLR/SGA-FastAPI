@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Boxes, Package, Warehouse } from "lucide-react";
 import { apiFetch } from "../api/api";
+import { useIsMobile } from "../hooks/useMediaQuery";
 import * as styles from "./Dashboard.styles";
 import DashboardCharts from "./DashboardCharts";
 
 function Dashboard() {
+  const esMobile = useIsMobile();
   const [totalProductos, setTotalProductos] = useState(0);
   const [totalAlmacenes, setTotalAlmacenes] = useState(0);
   const [stockTotal, setStockTotal] = useState(0);
@@ -78,9 +80,11 @@ function Dashboard() {
     return "";
   }
 
+  const paddingPagina = esMobile ? "16px" : "30px";
+
   if (cargando) {
     return (
-      <div style={{ padding: "30px" }}>
+      <div style={{ padding: paddingPagina }}>
         <h1>Resumen Almacén</h1>
         <div style={styles.cardBase}>Cargando datos...</div>
       </div>
@@ -88,7 +92,7 @@ function Dashboard() {
   }
 
   return (
-    <div style={{ padding: "30px" }}>
+    <div style={{ padding: paddingPagina }}>
       <h1 style={{ marginTop: 0, marginBottom: "8px" }}>Resumen Almacén</h1>
 
       <p style={{ color: "#6b7280", marginBottom: "24px" }}>

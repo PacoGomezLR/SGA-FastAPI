@@ -10,6 +10,11 @@ export const card = {
   marginBottom: "24px"
 };
 
+export const cardMobile = {
+  ...card,
+  padding: "18px"
+};
+
 export const cardTitleStyle = {
   marginTop: 0,
   marginBottom: "20px"
@@ -47,10 +52,15 @@ export const searchInput = {
   borderRadius: "10px",
   border: "1px solid #cbd5e1",
   outline: "none",
-  backgroundColor: "white"
+  backgroundColor: "white",
+  boxSizing: "border-box"
 };
 
 export const infoText = {
   color: "#64748b",
   marginBottom: "16px"
+};
+
+export const tableWrapper = {
+  overflowX: "auto"
 };

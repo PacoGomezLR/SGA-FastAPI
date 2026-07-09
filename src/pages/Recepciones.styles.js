@@ -40,6 +40,11 @@ export const topGrid = {
   marginBottom: "20px"
 };
 
+export const topGridMobile = {
+  ...topGrid,
+  gridTemplateColumns: "1fr"
+};
+
 export const card = {
   position: "relative",
   backgroundColor: "white",

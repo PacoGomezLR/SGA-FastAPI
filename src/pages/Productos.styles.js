@@ -183,12 +183,18 @@ export const modalOverlay = {
 export const modalBox = {
   width: "100%",
   maxWidth: "420px",
+  maxHeight: "80vh",
+  overflowY: "auto",
   backgroundColor: "white",
   borderRadius: "16px",
   padding: "20px",
   boxShadow: "0 20px 50px rgba(0,0,0,0.20)",
   display: "grid",
   gap: "16px"
+};
+
+export const tableWrapper = {
+  overflowX: "auto"
 };
 
 export const modalTitulo = {

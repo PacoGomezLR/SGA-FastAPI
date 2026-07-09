@@ -16,6 +16,10 @@ export const primaryButton = {
   cursor: "pointer"
 };
 
+export const tableWrapper = {
+  overflowX: "auto"
+};
+
 export const table = {
   width: "100%",
   borderCollapse: "collapse",

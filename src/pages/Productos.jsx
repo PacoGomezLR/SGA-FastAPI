@@ -245,6 +245,7 @@ function Productos() {
 
   const tablaProductos =
     productosFiltrados.length === 0 ? null : (
+      <div style={styles.tableWrapper}>
       <table style={styles.table}>
         <thead>
           <tr>
@@ -294,6 +295,7 @@ function Productos() {
           ))}
         </tbody>
       </table>
+      </div>
     );
 
   return (
