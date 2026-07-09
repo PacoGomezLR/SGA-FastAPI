@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AlertTriangle, Boxes, Package, Warehouse } from "lucide-react";
 import { apiFetch } from "../api/api";
 import * as styles from "./Dashboard.styles";
 import DashboardCharts from "./DashboardCharts";
@@ -116,10 +117,30 @@ function Dashboard() {
           marginBottom: "24px"
         }}
       >
-        <Card title="Total productos" value={totalProductos} />
-        <Card title="Total almacenes" value={totalAlmacenes} />
-        <Card title="Stock total" value={stockTotal} />
-        <Card title="Productos en riesgo" value={productosEnRiesgo} color="#991b1b" />
+        <Card
+          title="Total productos"
+          value={totalProductos}
+          icon={Package}
+          color="#2a78d6"
+        />
+        <Card
+          title="Total almacenes"
+          value={totalAlmacenes}
+          icon={Warehouse}
+          color="#1baf7a"
+        />
+        <Card
+          title="Stock total"
+          value={stockTotal}
+          icon={Boxes}
+          color="#eda100"
+        />
+        <Card
+          title="Productos en riesgo"
+          value={productosEnRiesgo}
+          icon={AlertTriangle}
+          color="#991b1b"
+        />
       </div>
 
       <DashboardCharts />
@@ -250,7 +271,7 @@ function Dashboard() {
   );
 }
 
-function Card({ title, value, color = "#0f172a" }) {
+function Card({ title, value, color = "#0f172a", icon: Icon }) {
   return (
     <div
       style={{
@@ -258,14 +279,37 @@ function Card({ title, value, color = "#0f172a" }) {
         borderRadius: "14px",
         padding: "20px",
         border: "1px solid #e5e7eb",
-        boxShadow: "0 6px 18px rgba(0,0,0,0.04)"
+        boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: "12px"
       }}
     >
-      <div style={{ color: "#6b7280", fontSize: "14px", marginBottom: "8px" }}>
-        {title}
+      <div>
+        <div style={{ color: "#6b7280", fontSize: "14px", marginBottom: "8px" }}>
+          {title}
+        </div>
+
+        <div style={{ fontSize: "34px", fontWeight: "700", color }}>{value}</div>
       </div>
 
-      <div style={{ fontSize: "34px", fontWeight: "700", color }}>{value}</div>
+      {Icon && (
+        <div
+          style={{
+            width: "44px",
+            height: "44px",
+            borderRadius: "12px",
+            backgroundColor: `${color}1a`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0
+          }}
+        >
+          <Icon size={22} color={color} strokeWidth={2} />
+        </div>
+      )}
     </div>
   );
 }
