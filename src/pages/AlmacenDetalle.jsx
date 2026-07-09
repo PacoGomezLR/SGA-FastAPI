@@ -20,9 +20,12 @@ function AlmacenDetalle() {
   const [almacen, setAlmacen] = useState(null);
   const [zonas, setZonas] = useState([]);
   const [ubicaciones, setUbicaciones] = useState([]);
+  const [stock, setStock] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
+
+  const [filaSeleccionada, setFilaSeleccionada] = useState(null);
 
   const [mostrarFormZona, setMostrarFormZona] = useState(false);
   const [zoneForm, setZoneForm] = useState(initialZoneForm);
@@ -42,10 +45,11 @@ function AlmacenDetalle() {
       setCargando(true);
       setError("");
 
-      const [almacenData, zonasData, ubicacionesData] = await Promise.all([
+      const [almacenData, zonasData, ubicacionesData, stockData] = await Promise.all([
         apiFetch(`/warehouses/${id}`),
         apiFetch("/zones/"),
-        apiFetch("/locations/")
+        apiFetch("/locations/"),
+        apiFetch("/stock/", { params: { almacen_id: id } })
       ]);
 
       setAlmacen(almacenData || null);
@@ -56,11 +60,13 @@ function AlmacenDetalle() {
 
       setZonas(zonasDelAlmacen);
       setUbicaciones(Array.isArray(ubicacionesData) ? ubicacionesData : []);
+      setStock(Array.isArray(stockData) ? stockData : []);
     } catch (err) {
       setError(err.message || "Error al cargar el detalle del almacén");
       setAlmacen(null);
       setZonas([]);
       setUbicaciones([]);
+      setStock([]);
     } finally {
       setCargando(false);
     }
@@ -206,6 +212,58 @@ function AlmacenDetalle() {
     return mapa;
   }, [zonas, ubicaciones]);
 
+  const stockPorUbicacion = useMemo(() => {
+    const mapa = new Map();
+
+    stock.forEach((linea) => {
+      if (!mapa.has(linea.ubicacion_id)) {
+        mapa.set(linea.ubicacion_id, []);
+      }
+      mapa.get(linea.ubicacion_id).push(linea);
+    });
+
+    return mapa;
+  }, [stock]);
+
+  const filasPorZona = useMemo(() => {
+    const mapa = new Map();
+
+    ubicacionesPorZona.forEach((ubicacionesZona, zonaId) => {
+      const filas = new Map();
+
+      ubicacionesZona.forEach((ubicacion) => {
+        const clave = ubicacion.eje_x ?? ubicacion.codigo;
+
+        if (!filas.has(clave)) {
+          filas.set(clave, { fila: ubicacion.eje_x, ubicaciones: [] });
+        }
+        filas.get(clave).ubicaciones.push(ubicacion);
+      });
+
+      const listaFilas = Array.from(filas.values()).sort((a, b) => {
+        if (a.fila == null) return 1;
+        if (b.fila == null) return -1;
+        return a.fila - b.fila;
+      });
+
+      listaFilas.forEach((f) => {
+        f.ubicaciones.sort((a, b) => (a.eje_y ?? 0) - (b.eje_y ?? 0));
+      });
+
+      mapa.set(zonaId, listaFilas);
+    });
+
+    return mapa;
+  }, [ubicacionesPorZona]);
+
+  function abrirFila(zona, fila) {
+    setFilaSeleccionada({ zona, fila });
+  }
+
+  function cerrarFila() {
+    setFilaSeleccionada(null);
+  }
+
   if (cargando) {
     return <p>Cargando detalle del almacén...</p>;
   }
@@ -343,7 +401,7 @@ function AlmacenDetalle() {
         ) : (
           <div style={zonesGrid}>
             {zonas.map((zona) => {
-              const ubicacionesZona = ubicacionesPorZona.get(zona.id) || [];
+              const filasZona = filasPorZona.get(zona.id) || [];
 
               return (
                 <div key={zona.id} style={zoneCard}>
@@ -381,21 +439,27 @@ function AlmacenDetalle() {
                     </button>
                   </div>
 
-                  {ubicacionesZona.length === 0 ? (
+                  {filasZona.length === 0 ? (
                     <div style={emptyMiniBox}>
                       No hay ubicaciones en esta zona.
                     </div>
                   ) : (
                     <div style={locationsList}>
-                      {ubicacionesZona.map((ubicacion) => (
-                        <div key={ubicacion.id} style={locationItem}>
+                      {filasZona.map((f) => (
+                        <button
+                          type="button"
+                          key={f.fila ?? f.ubicaciones[0]?.id}
+                          style={locationItemButton}
+                          onClick={() => abrirFila(zona, f)}
+                        >
                           <div style={locationCode}>
-                            {ubicacion.codigo || `Ubicación ${ubicacion.id}`}
+                            {f.fila != null ? `Fila ${f.fila}` : "Sin fila"}
                           </div>
                           <div style={locationText}>
-                            {ubicacion.descripcion || "Sin descripción"}
+                            {f.ubicaciones.length} altura
+                            {f.ubicaciones.length === 1 ? "" : "s"}
                           </div>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   )}
@@ -405,6 +469,58 @@ function AlmacenDetalle() {
           </div>
         )}
       </div>
+
+      {filaSeleccionada && (
+        <div style={modalOverlay} onClick={cerrarFila}>
+          <div style={modalBox} onClick={(e) => e.stopPropagation()}>
+            <h2 style={modalTitle}>
+              {filaSeleccionada.fila.fila != null
+                ? `Fila ${filaSeleccionada.fila.fila}`
+                : "Sin fila"}
+            </h2>
+
+            <p style={modalSubtitle}>
+              Zona: <strong>{filaSeleccionada.zona.nombre}</strong>
+            </p>
+
+            <div style={locationsList}>
+              {filaSeleccionada.fila.ubicaciones.map((ubicacion) => {
+                const stockUbicacion = stockPorUbicacion.get(ubicacion.id) || [];
+
+                return (
+                  <div key={ubicacion.id} style={locationItem}>
+                    <div style={locationCode}>
+                      {ubicacion.eje_y != null
+                        ? `Altura ${ubicacion.eje_y}`
+                        : ubicacion.codigo || `Ubicación ${ubicacion.id}`}
+                    </div>
+
+                    {stockUbicacion.length === 0 ? (
+                      <div style={locationText}>Sin productos</div>
+                    ) : (
+                      <div style={locationText}>
+                        {stockUbicacion.map((linea) => (
+                          <div key={linea.ubicacion_id + "-" + linea.producto_id}>
+                            {linea.producto_nombre || `Producto ${linea.producto_id}`}
+                            {" — "}
+                            {linea.cantidad}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={modalActions}>
+              <button type="button" style={secondaryButton} onClick={cerrarFila}>
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {mostrarModalUbicacion && (
         <div style={modalOverlay} onClick={cerrarModalUbicacion}>
@@ -639,6 +755,15 @@ const locationItem = {
   border: "1px solid #e2e8f0",
   borderRadius: "10px",
   padding: "12px"
+};
+
+const locationItemButton = {
+  ...locationItem,
+  width: "100%",
+  textAlign: "left",
+  backgroundColor: "white",
+  cursor: "pointer",
+  font: "inherit"
 };
 
 const locationCode = {
