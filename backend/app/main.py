@@ -6,6 +6,7 @@ from app.db.session import SessionLocal
 from app.routes.category_routes import router as category_router
 from app.routes.product_routes import router as product_router
 from app.routes.warehouse_routes import router as warehouse_router
+from app.routes.warehouse_layout_routes import router as warehouse_layout_router
 from app.routes.zone_routes import router as zone_router
 from app.routes.location_routes import router as location_router
 from app.routes.stock_routes import router as stock_router
@@ -34,6 +35,7 @@ app.add_middleware(
 app.include_router(category_router)
 app.include_router(product_router)
 app.include_router(warehouse_router)
+app.include_router(warehouse_layout_router)
 app.include_router(zone_router)
 app.include_router(location_router)
 app.include_router(stock_router)

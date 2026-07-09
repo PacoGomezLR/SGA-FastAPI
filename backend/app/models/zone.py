@@ -19,6 +19,10 @@ class Zone(Base):
     descripcion: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
+    # Datos lógicos de layout, usados para la representación 2D/3D del almacén
+    numero_pasillo: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    lado: Mapped[Optional[str]] = mapped_column(String(1), nullable=True)
+
     # Relación: cada zona pertenece a un almacén
     almacen = relationship("Warehouse", back_populates="zonas")
 

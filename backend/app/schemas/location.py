@@ -8,6 +8,8 @@ class LocationBase(BaseModel):
     codigo: str = Field(..., min_length=1)
     descripcion: Optional[str] = None
     activa: bool = True
+    eje_y: Optional[int] = Field(default=None, ge=1)
+    eje_x: Optional[int] = Field(default=None, ge=1)
 
     @field_validator("codigo")
     @classmethod
@@ -26,6 +28,8 @@ class LocationUpdate(BaseModel):
     codigo: Optional[str] = None
     descripcion: Optional[str] = None
     activa: Optional[bool] = None
+    eje_y: Optional[int] = Field(default=None, ge=1)
+    eje_x: Optional[int] = Field(default=None, ge=1)
 
     @field_validator("codigo")
     @classmethod

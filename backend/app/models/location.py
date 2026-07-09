@@ -19,6 +19,11 @@ class Location(Base):
     descripcion: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     activa: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
+    # Coordenadas lógicas dentro de la rejilla de la zona, usadas para la
+    # representación 2D/3D del almacén
+    eje_y: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    eje_x: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
     # Relación: cada ubicación pertenece a una zona
     zona = relationship("Zone", back_populates="ubicaciones")
 
