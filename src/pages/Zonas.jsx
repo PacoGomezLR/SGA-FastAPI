@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "../api/api";
 import CrudPage from "../components/CrudPage";
 import { useSearchParams } from "react-router-dom";
+import * as styles from "./Zonas.styles";
 
 const initialForm = {
   nombre: "",
@@ -119,7 +120,7 @@ function Zonas() {
             value={form.nombre}
             onChange={handleChange}
             required
-            style={inputStyle}
+            style={styles.inputStyle}
           />
 
           {/* 🔥 SOLO SI NO VIENES DE UN ALMACÉN */}
@@ -129,7 +130,7 @@ function Zonas() {
               value={form.almacen_id}
               onChange={handleChange}
               required
-              style={inputStyle}
+              style={styles.inputStyle}
             >
               <option value="">Selecciona almacén</option>
               {almacenes.map((a) => (
@@ -140,30 +141,30 @@ function Zonas() {
             </select>
           )}
 
-          <button type="submit" style={primaryButton}>
+          <button type="submit" style={styles.primaryButton}>
             {editingId ? "Actualizar" : "Crear"}
           </button>
         </>
       }
       tableContent={
-        <table style={table}>
+        <table style={styles.table}>
           <thead>
             <tr>
-              <th style={th}>Zona</th>
-              <th style={th}>Almacén</th>
-              <th style={th}>Acciones</th>
+              <th style={styles.th}>Zona</th>
+              <th style={styles.th}>Almacén</th>
+              <th style={styles.th}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {zonasFiltradas.map((z) => (
-              <tr key={z.id} style={tr}>
-                <td style={td}>{z.nombre}</td>
-                <td style={td}>{z.almacen_nombre}</td>
-                <td style={td}>
-                  <button style={editButton} onClick={() => editar(z)}>
+              <tr key={z.id} style={styles.tr}>
+                <td style={styles.td}>{z.nombre}</td>
+                <td style={styles.td}>{z.almacen_nombre}</td>
+                <td style={styles.td}>
+                  <button style={styles.editButton} onClick={() => editar(z)}>
                     Editar
                   </button>
-                  <button style={deleteButton} onClick={() => eliminar(z.id)}>
+                  <button style={styles.deleteButton} onClick={() => eliminar(z.id)}>
                     Eliminar
                   </button>
                 </td>
@@ -175,71 +176,5 @@ function Zonas() {
     />
   );
 }
-
-/* ESTILOS */
-
-const inputStyle = {
-  padding: "10px 12px",
-  borderRadius: "8px",
-  border: "1px solid #cbd5e1",
-  fontSize: "14px",
-  width: "100%"
-};
-
-const primaryButton = {
-  padding: "10px 14px",
-  borderRadius: "8px",
-  backgroundColor: "#2563eb",
-  color: "white",
-  border: "none",
-  fontWeight: "600",
-  cursor: "pointer"
-};
-
-const table = {
-  width: "100%",
-  borderCollapse: "collapse",
-  backgroundColor: "white",
-  borderRadius: "12px",
-  overflow: "hidden",
-  boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
-};
-
-const th = {
-  textAlign: "left",
-  padding: "12px",
-  backgroundColor: "#f1f5f9",
-  fontSize: "14px"
-};
-
-const td = {
-  padding: "12px",
-  borderTop: "1px solid #e2e8f0"
-};
-
-const tr = {
-  transition: "background 0.2s"
-};
-
-const editButton = {
-  padding: "6px 10px",
-  marginRight: "6px",
-  borderRadius: "6px",
-  border: "none",
-  backgroundColor: "#f59e0b",
-  color: "white",
-  cursor: "pointer",
-  fontWeight: "600"
-};
-
-const deleteButton = {
-  padding: "6px 10px",
-  borderRadius: "6px",
-  border: "none",
-  backgroundColor: "#dc2626",
-  color: "white",
-  cursor: "pointer",
-  fontWeight: "600"
-};
 
 export default Zonas;

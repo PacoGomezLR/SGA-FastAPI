@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useConfirm } from "../context/ConfirmContext";
+import * as styles from "./MainLayout.styles";
 
 function MainLayout() {
   const { logout } = useAuth();
@@ -34,56 +35,20 @@ function MainLayout() {
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        backgroundColor: "#f8fafc"
-      }}
-    >
-      <aside
-        style={{
-          width: "240px",
-          backgroundColor: "#0f172a",
-          color: "white",
-          padding: "24px 16px",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          boxShadow: "2px 0 8px rgba(0, 0, 0, 0.08)"
-        }}
-      >
+    <div style={styles.container}>
+      <aside style={styles.aside}>
         <div>
-          <div style={{ marginBottom: "32px" }}>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "24px",
-                fontWeight: "700",
-                letterSpacing: "0.5px"
-              }}
-            >
+          <div style={styles.logoWrapper}>
+            <h2 style={styles.logoTitle}>
               SGA
             </h2>
 
-            <p
-              style={{
-                margin: "8px 0 0 0",
-                fontSize: "14px",
-                color: "#94a3b8"
-              }}
-            >
+            <p style={styles.logoSubtitle}>
               Sistema de gestión de almacén
             </p>
           </div>
 
-          <nav
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px"
-            }}
-          >
+          <nav style={styles.nav}>
             <NavLink to="/dashboard" style={getLinkStyle}>
               Resumen Almacén
             </NavLink>
@@ -126,58 +91,25 @@ function MainLayout() {
           </nav>
         </div>
 
-        <div style={{ borderTop: "1px solid #334155", paddingTop: "16px" }}>
+        <div style={styles.footerWrapper}>
           <button
             type="button"
             onClick={solicitarCerrarSesion}
-            style={{
-              width: "100%",
-              padding: "10px 12px",
-              backgroundColor: "#dc2626",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontWeight: "600"
-            }}
+            style={styles.logoutButton}
           >
             Cerrar sesión
           </button>
         </div>
       </aside>
 
-      <main
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          minWidth: 0
-        }}
-      >
-        <header
-          style={{
-            backgroundColor: "#ffffff",
-            borderBottom: "1px solid #e2e8f0",
-            padding: "16px 24px"
-          }}
-        >
-          <h1
-            style={{
-              margin: 0,
-              fontSize: "20px",
-              color: "#0f172a"
-            }}
-          >
+      <main style={styles.main}>
+        <header style={styles.header}>
+          <h1 style={styles.headerTitle}>
             Panel de gestión
           </h1>
         </header>
 
-        <section
-          style={{
-            flex: 1,
-            padding: "24px"
-          }}
-        >
+        <section style={styles.section}>
           <Outlet />
         </section>
       </main>

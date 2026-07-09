@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import * as styles from "./Movimientos.styles";
 
 function Movimientos() {
   const { token, authFetch } = useAuth();
@@ -229,21 +230,6 @@ function Movimientos() {
     }
   }
 
-  const input = {
-    width: "100%",
-    padding: "11px 14px",
-    borderRadius: "10px",
-    border: "1px solid #d1d5db",
-    fontSize: "14px",
-    boxSizing: "border-box"
-  };
-
-  const label = {
-    fontWeight: "700",
-    marginBottom: "6px",
-    fontSize: "14px"
-  };
-
   if (cargandoDatos) {
     return <div style={{ padding: "30px" }}>Cargando...</div>;
   }
@@ -269,10 +255,10 @@ function Movimientos() {
         }}
       >
         <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-          <div style={label}>Nombre producto</div>
+          <div style={styles.label}>Nombre producto</div>
 
           <input
-            style={input}
+            style={styles.input}
             value={busquedaProducto}
             onChange={(e) => {
               setBusquedaProducto(e.target.value);
@@ -314,12 +300,12 @@ function Movimientos() {
         <div><strong>DESTINO</strong></div>
 
         <div>
-          <div style={label}>Almacén origen</div>
+          <div style={styles.label}>Almacén origen</div>
           <select
             name="almacen_origen_id"
             value={form.almacen_origen_id}
             onChange={handleChange}
-            style={input}
+            style={styles.input}
             required
           >
             <option value="">Seleccionar</option>
@@ -330,12 +316,12 @@ function Movimientos() {
         </div>
 
         <div>
-          <div style={label}>Almacén destino</div>
+          <div style={styles.label}>Almacén destino</div>
           <select
             name="almacen_destino_id"
             value={form.almacen_destino_id}
             onChange={handleChange}
-            style={input}
+            style={styles.input}
             required
           >
             <option value="">Seleccionar</option>
@@ -346,12 +332,12 @@ function Movimientos() {
         </div>
 
         <div>
-          <div style={label}>Zona origen</div>
+          <div style={styles.label}>Zona origen</div>
           <select
             name="zona_origen_id"
             value={form.zona_origen_id}
             onChange={handleChange}
-            style={input}
+            style={styles.input}
             required
           >
             <option value="">Seleccionar</option>
@@ -362,12 +348,12 @@ function Movimientos() {
         </div>
 
         <div>
-          <div style={label}>Zona destino</div>
+          <div style={styles.label}>Zona destino</div>
           <select
             name="zona_destino_id"
             value={form.zona_destino_id}
             onChange={handleChange}
-            style={input}
+            style={styles.input}
             required
           >
             <option value="">Seleccionar</option>
@@ -378,12 +364,12 @@ function Movimientos() {
         </div>
 
         <div>
-          <div style={label}>Ubicación origen</div>
+          <div style={styles.label}>Ubicación origen</div>
           <select
             name="ubicacion_origen_id"
             value={form.ubicacion_origen_id}
             onChange={handleChange}
-            style={input}
+            style={styles.input}
             required
           >
             <option value="">Seleccionar</option>
@@ -394,12 +380,12 @@ function Movimientos() {
         </div>
 
         <div>
-          <div style={label}>Ubicación destino</div>
+          <div style={styles.label}>Ubicación destino</div>
           <select
             name="ubicacion_destino_id"
             value={form.ubicacion_destino_id}
             onChange={handleChange}
-            style={input}
+            style={styles.input}
             required
           >
             <option value="">Seleccionar</option>
@@ -410,25 +396,25 @@ function Movimientos() {
         </div>
 
         <div>
-          <div style={label}>Cantidad</div>
+          <div style={styles.label}>Cantidad</div>
           <input
             type="number"
             name="cantidad"
             value={form.cantidad}
             onChange={handleChange}
-            style={input}
+            style={styles.input}
             required
           />
         </div>
 
         <div>
-          <div style={label}>Observaciones</div>
+          <div style={styles.label}>Observaciones</div>
           <input
             type="text"
             name="observaciones"
             value={form.observaciones}
             onChange={handleChange}
-            style={input}
+            style={styles.input}
           />
         </div>
 

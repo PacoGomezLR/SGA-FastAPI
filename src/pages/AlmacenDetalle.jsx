@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api/api";
+import * as styles from "./AlmacenDetalle.styles";
 
 const initialLocationForm = {
   codigo: "",
@@ -274,39 +275,39 @@ function AlmacenDetalle() {
 
   return (
     <div>
-      <div style={header}>
+      <div style={styles.header}>
         <div>
           <h1 style={{ margin: 0 }}>{almacen.nombre}</h1>
-          <p style={subtitle}>
+          <p style={styles.subtitle}>
             Vista jerárquica del almacén, sus zonas y sus ubicaciones
           </p>
         </div>
 
-        <Link to="/almacenes" style={backButton}>
+        <Link to="/almacenes" style={styles.backButton}>
           Volver a almacenes
         </Link>
       </div>
 
-      {mensaje && <div style={successBox}>{mensaje}</div>}
-      {error && <div style={errorBox}>{error}</div>}
+      {mensaje && <div style={styles.successBox}>{mensaje}</div>}
+      {error && <div style={styles.errorBox}>{error}</div>}
 
-      <div style={infoCard}>
-        <div style={infoGrid}>
+      <div style={styles.infoCard}>
+        <div style={styles.infoGrid}>
           <div>
-            <div style={infoLabel}>Descripción</div>
-            <div style={infoValue}>{almacen.descripcion || "-"}</div>
+            <div style={styles.infoLabel}>Descripción</div>
+            <div style={styles.infoValue}>{almacen.descripcion || "-"}</div>
           </div>
 
           <div>
-            <div style={infoLabel}>Dirección</div>
-            <div style={infoValue}>{almacen.direccion || "-"}</div>
+            <div style={styles.infoLabel}>Dirección</div>
+            <div style={styles.infoValue}>{almacen.direccion || "-"}</div>
           </div>
 
           <div>
-            <div style={infoLabel}>Estado</div>
+            <div style={styles.infoLabel}>Estado</div>
             <span
               style={{
-                ...badge,
+                ...styles.badge,
                 backgroundColor: almacen.activo ? "#dcfce7" : "#fee2e2",
                 color: almacen.activo ? "#166534" : "#991b1b"
               }}
@@ -316,55 +317,55 @@ function AlmacenDetalle() {
           </div>
 
           <div>
-            <div style={infoLabel}>Zonas</div>
-            <div style={infoValue}>{zonas.length}</div>
+            <div style={styles.infoLabel}>Zonas</div>
+            <div style={styles.infoValue}>{zonas.length}</div>
           </div>
         </div>
       </div>
 
-      <div style={section}>
-        <div style={sectionHeader}>
+      <div style={styles.section}>
+        <div style={styles.sectionHeader}>
           <h2 style={{ margin: 0 }}>Zonas y ubicaciones</h2>
 
           {!mostrarFormZona && (
-            <button type="button" style={createButton} onClick={abrirFormZona}>
+            <button type="button" style={styles.createButton} onClick={abrirFormZona}>
               + Nueva zona
             </button>
           )}
         </div>
 
         {mostrarFormZona && (
-          <div style={zoneFormCard}>
-            <h3 style={zoneFormTitle}>Nueva zona</h3>
+          <div style={styles.zoneFormCard}>
+            <h3 style={styles.zoneFormTitle}>Nueva zona</h3>
 
             <form onSubmit={crearZona}>
-              <div style={zoneFormGrid}>
-                <div style={fieldGroup}>
-                  <label style={label}>Nombre</label>
+              <div style={styles.zoneFormGrid}>
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>Nombre</label>
                   <input
                     name="nombre"
                     placeholder="Ej: Recepción, Picking, Reserva..."
                     value={zoneForm.nombre}
                     onChange={handleZoneChange}
                     required
-                    style={input}
+                    style={styles.input}
                     autoFocus
                   />
                 </div>
 
-                <div style={fieldGroup}>
-                  <label style={label}>Descripción</label>
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>Descripción</label>
                   <input
                     name="descripcion"
                     placeholder="Descripción de la zona"
                     value={zoneForm.descripcion}
                     onChange={handleZoneChange}
-                    style={input}
+                    style={styles.input}
                   />
                 </div>
               </div>
 
-              <label style={checkboxCard}>
+              <label style={styles.checkboxCard}>
                 <input
                   type="checkbox"
                   name="activo"
@@ -374,10 +375,10 @@ function AlmacenDetalle() {
                 <span>Zona activa</span>
               </label>
 
-              <div style={modalActions}>
+              <div style={styles.modalActions}>
                 <button
                   type="submit"
-                  style={primaryButton}
+                  style={styles.primaryButton}
                   disabled={guardandoZona}
                 >
                   {guardandoZona ? "Creando..." : "Crear zona"}
@@ -385,7 +386,7 @@ function AlmacenDetalle() {
 
                 <button
                   type="button"
-                  style={secondaryButton}
+                  style={styles.secondaryButton}
                   onClick={cancelarFormZona}
                   disabled={guardandoZona}
                 >
@@ -397,28 +398,28 @@ function AlmacenDetalle() {
         )}
 
         {zonas.length === 0 ? (
-          <div style={emptyBox}>Este almacén todavía no tiene zonas.</div>
+          <div style={styles.emptyBox}>Este almacén todavía no tiene zonas.</div>
         ) : (
-          <div style={zonesGrid}>
+          <div style={styles.zonesGrid}>
             {zonas.map((zona) => {
               const filasZona = filasPorZona.get(zona.id) || [];
 
               return (
-                <div key={zona.id} style={zoneCard}>
-                  <div style={zoneHeader}>
+                <div key={zona.id} style={styles.zoneCard}>
+                  <div style={styles.zoneHeader}>
                     <div>
-                      <span style={zoneLink}>
+                      <span style={styles.zoneLink}>
                         {zona.nombre}
                       </span>
 
-                      <p style={zoneDescription}>
+                      <p style={styles.zoneDescription}>
                         {zona.descripcion || "Sin descripción"}
                       </p>
                     </div>
 
                     <span
                       style={{
-                        ...badge,
+                        ...styles.badge,
                         backgroundColor: zona.activo ? "#dcfce7" : "#fee2e2",
                         color: zona.activo ? "#166534" : "#991b1b"
                       }}
@@ -427,12 +428,12 @@ function AlmacenDetalle() {
                     </span>
                   </div>
 
-                  <div style={locationsHeader}>
-                    <div style={subTitle}>Ubicaciones</div>
+                  <div style={styles.locationsHeader}>
+                    <div style={styles.subTitle}>Ubicaciones</div>
 
                     <button
                       type="button"
-                      style={miniCreateButton}
+                      style={styles.miniCreateButton}
                       onClick={() => abrirModalUbicacion(zona)}
                     >
                       + Nueva ubicación
@@ -440,22 +441,22 @@ function AlmacenDetalle() {
                   </div>
 
                   {filasZona.length === 0 ? (
-                    <div style={emptyMiniBox}>
+                    <div style={styles.emptyMiniBox}>
                       No hay ubicaciones en esta zona.
                     </div>
                   ) : (
-                    <div style={locationsList}>
+                    <div style={styles.locationsList}>
                       {filasZona.map((f) => (
                         <button
                           type="button"
                           key={f.fila ?? f.ubicaciones[0]?.id}
-                          style={locationItemButton}
+                          style={styles.locationItemButton}
                           onClick={() => abrirFila(zona, f)}
                         >
-                          <div style={locationCode}>
+                          <div style={styles.locationCode}>
                             {f.fila != null ? `Fila ${f.fila}` : "Sin fila"}
                           </div>
-                          <div style={locationText}>
+                          <div style={styles.locationText}>
                             {f.ubicaciones.length} altura
                             {f.ubicaciones.length === 1 ? "" : "s"}
                           </div>
@@ -471,34 +472,34 @@ function AlmacenDetalle() {
       </div>
 
       {filaSeleccionada && (
-        <div style={modalOverlay} onClick={cerrarFila}>
-          <div style={modalBox} onClick={(e) => e.stopPropagation()}>
-            <h2 style={modalTitle}>
+        <div style={styles.modalOverlay} onClick={cerrarFila}>
+          <div style={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+            <h2 style={styles.modalTitle}>
               {filaSeleccionada.fila.fila != null
                 ? `Fila ${filaSeleccionada.fila.fila}`
                 : "Sin fila"}
             </h2>
 
-            <p style={modalSubtitle}>
+            <p style={styles.modalSubtitle}>
               Zona: <strong>{filaSeleccionada.zona.nombre}</strong>
             </p>
 
-            <div style={locationsList}>
+            <div style={styles.locationsList}>
               {filaSeleccionada.fila.ubicaciones.map((ubicacion) => {
                 const stockUbicacion = stockPorUbicacion.get(ubicacion.id) || [];
 
                 return (
-                  <div key={ubicacion.id} style={locationItem}>
-                    <div style={locationCode}>
+                  <div key={ubicacion.id} style={styles.locationItem}>
+                    <div style={styles.locationCode}>
                       {ubicacion.eje_y != null
                         ? `Altura ${ubicacion.eje_y}`
                         : ubicacion.codigo || `Ubicación ${ubicacion.id}`}
                     </div>
 
                     {stockUbicacion.length === 0 ? (
-                      <div style={locationText}>Sin productos</div>
+                      <div style={styles.locationText}>Sin productos</div>
                     ) : (
-                      <div style={locationText}>
+                      <div style={styles.locationText}>
                         {stockUbicacion.map((linea) => (
                           <div key={linea.ubicacion_id + "-" + linea.producto_id}>
                             {linea.producto_nombre || `Producto ${linea.producto_id}`}
@@ -513,8 +514,8 @@ function AlmacenDetalle() {
               })}
             </div>
 
-            <div style={modalActions}>
-              <button type="button" style={secondaryButton} onClick={cerrarFila}>
+            <div style={styles.modalActions}>
+              <button type="button" style={styles.secondaryButton} onClick={cerrarFila}>
                 Cerrar
               </button>
             </div>
@@ -523,40 +524,40 @@ function AlmacenDetalle() {
       )}
 
       {mostrarModalUbicacion && (
-        <div style={modalOverlay} onClick={cerrarModalUbicacion}>
-          <div style={modalBox} onClick={(e) => e.stopPropagation()}>
-            <h2 style={modalTitle}>Nueva ubicación</h2>
+        <div style={styles.modalOverlay} onClick={cerrarModalUbicacion}>
+          <div style={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+            <h2 style={styles.modalTitle}>Nueva ubicación</h2>
 
-            <p style={modalSubtitle}>
+            <p style={styles.modalSubtitle}>
               Zona: <strong>{zonaSeleccionada?.nombre}</strong>
             </p>
 
             <form onSubmit={crearUbicacion}>
-              <div style={fieldGroup}>
-                <label style={label}>Código</label>
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>Código</label>
                 <input
                   name="codigo"
                   placeholder="Ej: A1, B3, EST-01..."
                   value={locationForm.codigo}
                   onChange={handleLocationChange}
                   required
-                  style={input}
+                  style={styles.input}
                   autoFocus
                 />
               </div>
 
-              <div style={fieldGroup}>
-                <label style={label}>Descripción</label>
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>Descripción</label>
                 <input
                   name="descripcion"
                   placeholder="Descripción de la ubicación"
                   value={locationForm.descripcion}
                   onChange={handleLocationChange}
-                  style={input}
+                  style={styles.input}
                 />
               </div>
 
-              <label style={checkboxCard}>
+              <label style={styles.checkboxCard}>
                 <input
                   type="checkbox"
                   name="activa"
@@ -566,10 +567,10 @@ function AlmacenDetalle() {
                 <span>Ubicación activa</span>
               </label>
 
-              <div style={modalActions}>
+              <div style={styles.modalActions}>
                 <button
                   type="submit"
-                  style={primaryButton}
+                  style={styles.primaryButton}
                   disabled={guardandoUbicacion}
                 >
                   {guardandoUbicacion ? "Creando..." : "Crear ubicación"}
@@ -577,7 +578,7 @@ function AlmacenDetalle() {
 
                 <button
                   type="button"
-                  style={secondaryButton}
+                  style={styles.secondaryButton}
                   onClick={cerrarModalUbicacion}
                   disabled={guardandoUbicacion}
                 >
@@ -591,320 +592,5 @@ function AlmacenDetalle() {
     </div>
   );
 }
-
-/* ESTILOS */
-
-const sectionHeader = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: "16px"
-};
-
-const createButton = {
-  padding: "10px 14px",
-  borderRadius: "8px",
-  border: "none",
-  textDecoration: "none",
-  backgroundColor: "#2563eb",
-  color: "white",
-  fontWeight: "600",
-  cursor: "pointer"
-};
-
-const header = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: "16px",
-  marginBottom: "24px",
-  flexWrap: "wrap"
-};
-
-const subtitle = {
-  margin: "6px 0 0 0",
-  color: "#64748b"
-};
-
-const backButton = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "10px 14px",
-  borderRadius: "8px",
-  textDecoration: "none",
-  backgroundColor: "white",
-  color: "#0f172a",
-  border: "1px solid #cbd5e1",
-  fontWeight: "600"
-};
-
-const infoCard = {
-  backgroundColor: "white",
-  borderRadius: "12px",
-  boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
-  padding: "20px",
-  marginBottom: "24px"
-};
-
-const infoGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-  gap: "18px"
-};
-
-const infoLabel = {
-  fontSize: "13px",
-  color: "#64748b",
-  marginBottom: "6px",
-  fontWeight: "600"
-};
-
-const infoValue = {
-  color: "#0f172a",
-  fontWeight: "700"
-};
-
-const section = {
-  marginTop: "8px"
-};
-
-const zoneFormCard = {
-  backgroundColor: "white",
-  borderRadius: "12px",
-  boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
-  padding: "20px",
-  marginBottom: "20px"
-};
-
-const zoneFormTitle = {
-  margin: "0 0 16px 0",
-  color: "#0f172a"
-};
-
-const zoneFormGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-  gap: "14px"
-};
-
-const zonesGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-  gap: "20px"
-};
-
-const zoneCard = {
-  backgroundColor: "white",
-  borderRadius: "12px",
-  boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
-  padding: "20px"
-};
-
-const zoneHeader = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "flex-start",
-  gap: "12px",
-  marginBottom: "16px"
-};
-
-const zoneLink = {
-  fontSize: "18px",
-  fontWeight: "700",
-  color: "#2563eb",
-  textDecoration: "none"
-};
-
-const zoneDescription = {
-  margin: "6px 0 0 0",
-  color: "#64748b"
-};
-
-const locationsHeader = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: "10px",
-  marginBottom: "12px"
-};
-
-const subTitle = {
-  fontWeight: "700",
-  color: "#334155"
-};
-
-const miniCreateButton = {
-  padding: "6px 10px",
-  borderRadius: "8px",
-  border: "none",
-  backgroundColor: "#2563eb",
-  color: "white",
-  fontSize: "13px",
-  fontWeight: "600",
-  cursor: "pointer"
-};
-
-const locationsList = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "10px"
-};
-
-const locationItem = {
-  border: "1px solid #e2e8f0",
-  borderRadius: "10px",
-  padding: "12px"
-};
-
-const locationItemButton = {
-  ...locationItem,
-  width: "100%",
-  textAlign: "left",
-  backgroundColor: "white",
-  cursor: "pointer",
-  font: "inherit"
-};
-
-const locationCode = {
-  fontWeight: "700",
-  color: "#0f172a",
-  marginBottom: "4px"
-};
-
-const locationText = {
-  color: "#64748b",
-  fontSize: "14px"
-};
-
-const badge = {
-  display: "inline-block",
-  padding: "4px 10px",
-  borderRadius: "999px",
-  fontSize: "12px",
-  fontWeight: "700",
-  whiteSpace: "nowrap"
-};
-
-const successBox = {
-  padding: "12px",
-  backgroundColor: "#dcfce7",
-  color: "#166534",
-  borderRadius: "8px",
-  fontWeight: "500",
-  marginBottom: "16px"
-};
-
-const errorBox = {
-  padding: "12px",
-  backgroundColor: "#fee2e2",
-  color: "#991b1b",
-  borderRadius: "8px",
-  fontWeight: "500",
-  marginBottom: "16px"
-};
-
-const emptyBox = {
-  backgroundColor: "white",
-  borderRadius: "12px",
-  padding: "20px",
-  color: "#64748b",
-  boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
-};
-
-const emptyMiniBox = {
-  padding: "12px",
-  borderRadius: "10px",
-  backgroundColor: "#f8fafc",
-  color: "#64748b",
-  border: "1px solid #e2e8f0"
-};
-
-const modalOverlay = {
-  position: "fixed",
-  inset: 0,
-  backgroundColor: "rgba(15, 23, 42, 0.45)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-  padding: "20px"
-};
-
-const modalBox = {
-  width: "100%",
-  maxWidth: "440px",
-  backgroundColor: "white",
-  borderRadius: "16px",
-  padding: "22px",
-  boxShadow: "0 20px 50px rgba(0,0,0,0.20)"
-};
-
-const modalTitle = {
-  margin: "0 0 6px 0",
-  color: "#0f172a"
-};
-
-const modalSubtitle = {
-  margin: "0 0 18px 0",
-  color: "#64748b"
-};
-
-const fieldGroup = {
-  display: "grid",
-  gap: "6px",
-  marginBottom: "14px"
-};
-
-const label = {
-  fontWeight: "600",
-  color: "#334155"
-};
-
-const input = {
-  width: "100%",
-  padding: "10px 12px",
-  borderRadius: "8px",
-  border: "1px solid #cbd5e1",
-  outline: "none",
-  backgroundColor: "white",
-  boxSizing: "border-box"
-};
-
-const checkboxCard = {
-  display: "flex",
-  alignItems: "center",
-  gap: "10px",
-  padding: "10px 12px",
-  borderRadius: "8px",
-  border: "1px solid #cbd5e1",
-  marginBottom: "16px"
-};
-
-const modalActions = {
-  display: "flex",
-  gap: "10px",
-  flexWrap: "wrap"
-};
-
-const primaryButton = {
-  padding: "10px 14px",
-  borderRadius: "8px",
-  border: "none",
-  backgroundColor: "#0f172a",
-  color: "white",
-  fontWeight: "600",
-  cursor: "pointer"
-};
-
-const secondaryButton = {
-  padding: "10px 14px",
-  borderRadius: "8px",
-  border: "1px solid #cbd5e1",
-  backgroundColor: "white",
-  color: "#0f172a",
-  fontWeight: "600",
-  cursor: "pointer"
-};
 
 export default AlmacenDetalle;

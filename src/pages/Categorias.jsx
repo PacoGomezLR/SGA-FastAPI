@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../api/api";
 import CrudPage from "../components/CrudPage";
+import * as styles from "./Categorias.styles";
 
 const initialForm = {
   nombre: ""
@@ -96,31 +97,31 @@ function Categorias() {
             value={form.nombre}
             onChange={handleChange}
             required
-            style={inputStyle}
+            style={styles.inputStyle}
           />
 
-          <button type="submit" style={primaryButton}>
+          <button type="submit" style={styles.primaryButton}>
             {editingId ? "Actualizar" : "Crear"}
           </button>
         </>
       }
       tableContent={
-        <table style={table}>
+        <table style={styles.table}>
           <thead>
             <tr>
-              <th style={th}>Nombre</th>
-              <th style={th}>Acciones</th>
+              <th style={styles.th}>Nombre</th>
+              <th style={styles.th}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {categoriasFiltradas.map((c) => (
-              <tr key={c.id} style={tr}>
-                <td style={td}>{c.nombre}</td>
-                <td style={td}>
-                  <button style={editButton} onClick={() => editar(c)}>
+              <tr key={c.id} style={styles.tr}>
+                <td style={styles.td}>{c.nombre}</td>
+                <td style={styles.td}>
+                  <button style={styles.editButton} onClick={() => editar(c)}>
                     Editar
                   </button>
-                  <button style={deleteButton} onClick={() => eliminar(c.id)}>
+                  <button style={styles.deleteButton} onClick={() => eliminar(c.id)}>
                     Eliminar
                   </button>
                 </td>
@@ -132,68 +133,5 @@ function Categorias() {
     />
   );
 }
-
-/* ESTILOS */
-
-const inputStyle = {
-  padding: "10px 12px",
-  borderRadius: "8px",
-  border: "1px solid #cbd5e1",
-  fontSize: "14px",
-  width: "100%"
-};
-
-const primaryButton = {
-  padding: "10px 14px",
-  borderRadius: "8px",
-  backgroundColor: "#2563eb",
-  color: "white",
-  border: "none",
-  fontWeight: "600",
-  cursor: "pointer"
-};
-
-const table = {
-  width: "100%",
-  borderCollapse: "collapse",
-  backgroundColor: "white",
-  borderRadius: "12px",
-  overflow: "hidden",
-  boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
-};
-
-const th = {
-  textAlign: "left",
-  padding: "12px",
-  backgroundColor: "#f1f5f9"
-};
-
-const td = {
-  padding: "12px",
-  borderTop: "1px solid #e2e8f0"
-};
-
-const tr = {
-  transition: "background 0.2s"
-};
-
-const editButton = {
-  padding: "6px 10px",
-  marginRight: "6px",
-  borderRadius: "6px",
-  border: "none",
-  backgroundColor: "#f59e0b",
-  color: "white",
-  cursor: "pointer"
-};
-
-const deleteButton = {
-  padding: "6px 10px",
-  borderRadius: "6px",
-  border: "none",
-  backgroundColor: "#dc2626",
-  color: "white",
-  cursor: "pointer"
-};
 
 export default Categorias;

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import * as styles from "./ConfirmModal.styles";
 
 function ConfirmModal({
   open,
@@ -45,26 +46,26 @@ function ConfirmModal({
   }
 
   return (
-    <div style={overlayStyle} onClick={handleOverlayClick}>
+    <div style={styles.overlayStyle} onClick={handleOverlayClick}>
       <div
-        style={modalStyle}
+        style={styles.modalStyle}
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-modal-title"
       >
-        <h3 id="confirm-modal-title" style={titleStyle}>
+        <h3 id="confirm-modal-title" style={styles.titleStyle}>
           {title}
         </h3>
 
-        <p style={messageStyle}>{message}</p>
+        <p style={styles.messageStyle}>{message}</p>
 
-        <div style={actionsStyle}>
+        <div style={styles.actionsStyle}>
           <button
             type="button"
             onClick={onCancel}
             disabled={loading}
             style={{
-              ...cancelButtonStyle,
+              ...styles.cancelButtonStyle,
               opacity: loading ? 0.7 : 1,
               cursor: loading ? "not-allowed" : "pointer"
             }}
@@ -78,7 +79,7 @@ function ConfirmModal({
             onClick={onConfirm}
             disabled={loading}
             style={{
-              ...confirmButtonStyle,
+              ...styles.confirmButtonStyle,
               opacity: loading ? 0.7 : 1,
               cursor: loading ? "not-allowed" : "pointer"
             }}
@@ -90,63 +91,5 @@ function ConfirmModal({
     </div>
   );
 }
-
-const overlayStyle = {
-  position: "fixed",
-  inset: 0,
-  backgroundColor: "rgba(15, 23, 42, 0.55)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "20px",
-  zIndex: 9999
-};
-
-const modalStyle = {
-  width: "100%",
-  maxWidth: "420px",
-  backgroundColor: "#ffffff",
-  borderRadius: "16px",
-  padding: "24px",
-  boxShadow: "0 20px 50px rgba(0, 0, 0, 0.18)",
-  border: "1px solid #e2e8f0"
-};
-
-const titleStyle = {
-  margin: "0 0 12px 0",
-  fontSize: "20px",
-  color: "#0f172a"
-};
-
-const messageStyle = {
-  margin: "0 0 24px 0",
-  fontSize: "15px",
-  lineHeight: "1.5",
-  color: "#475569"
-};
-
-const actionsStyle = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: "12px"
-};
-
-const cancelButtonStyle = {
-  padding: "10px 14px",
-  borderRadius: "10px",
-  border: "1px solid #cbd5e1",
-  backgroundColor: "#ffffff",
-  color: "#334155",
-  fontWeight: "600"
-};
-
-const confirmButtonStyle = {
-  padding: "10px 14px",
-  borderRadius: "10px",
-  border: "none",
-  backgroundColor: "#dc2626",
-  color: "#ffffff",
-  fontWeight: "600"
-};
 
 export default ConfirmModal;

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import * as styles from "./Auditoria.styles";
 
 function Auditoria() {
   const { token, authFetch } = useAuth();
@@ -126,20 +127,6 @@ function Auditoria() {
     };
   }, [movementsFiltrados]);
 
-  const card = {
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "14px",
-    padding: "16px"
-  };
-
-  const input = {
-    padding: "10px 12px",
-    borderRadius: "10px",
-    border: "1px solid #d1d5db",
-    fontSize: "14px"
-  };
-
   return (
     <div style={{ padding: "30px" }}>
       <h1 style={{ marginTop: 0 }}>Auditoría</h1>
@@ -170,14 +157,14 @@ function Auditoria() {
           marginBottom: "20px"
         }}
       >
-        <div style={card}>
+        <div style={styles.card}>
           <div style={{ color: "#6b7280", fontSize: "13px" }}>Total</div>
           <div style={{ fontSize: "28px", fontWeight: "700" }}>
             {resumen.total}
           </div>
         </div>
 
-        <div style={card}>
+        <div style={styles.card}>
           <div style={{ color: "#6b7280", fontSize: "13px" }}>Entradas</div>
           <div
             style={{
@@ -190,7 +177,7 @@ function Auditoria() {
           </div>
         </div>
 
-        <div style={card}>
+        <div style={styles.card}>
           <div style={{ color: "#6b7280", fontSize: "13px" }}>Salidas</div>
           <div
             style={{
@@ -203,7 +190,7 @@ function Auditoria() {
           </div>
         </div>
 
-        <div style={card}>
+        <div style={styles.card}>
           <div style={{ color: "#6b7280", fontSize: "13px" }}>Traslados</div>
           <div
             style={{
@@ -219,7 +206,7 @@ function Auditoria() {
 
       <div
         style={{
-          ...card,
+          ...styles.card,
           marginBottom: "20px",
           display: "flex",
           gap: "12px",
@@ -231,13 +218,13 @@ function Auditoria() {
           type="date"
           value={fechaBusqueda}
           onChange={(e) => setFechaBusqueda(e.target.value)}
-          style={input}
+          style={styles.input}
         />
 
         <select
           value={tipoFiltro}
           onChange={(e) => setTipoFiltro(e.target.value)}
-          style={input}
+          style={styles.input}
         >
           <option value="">Todos los tipos</option>
           <option value="entrada">Entrada</option>
@@ -252,7 +239,7 @@ function Auditoria() {
           value={busquedaTexto}
           onChange={(e) => setBusquedaTexto(e.target.value)}
           style={{
-            ...input,
+            ...styles.input,
             minWidth: "280px",
             flex: 1
           }}
@@ -281,7 +268,7 @@ function Auditoria() {
 
       <div
         style={{
-          ...card,
+          ...styles.card,
           overflowX: "auto"
         }}
       >
@@ -301,25 +288,25 @@ function Auditoria() {
           >
             <thead>
               <tr style={{ background: "#f9fafb" }}>
-                <th style={th}>Fecha</th>
-                <th style={th}>Tipo</th>
-                <th style={th}>Producto</th>
-                <th style={th}>Cambio</th>
-                <th style={th}>Origen</th>
-                <th style={th}>Destino</th>
-                <th style={th}>Usuario</th>
-                <th style={th}>Descripción</th>
+                <th style={styles.th}>Fecha</th>
+                <th style={styles.th}>Tipo</th>
+                <th style={styles.th}>Producto</th>
+                <th style={styles.th}>Cambio</th>
+                <th style={styles.th}>Origen</th>
+                <th style={styles.th}>Destino</th>
+                <th style={styles.th}>Usuario</th>
+                <th style={styles.th}>Descripción</th>
               </tr>
             </thead>
 
             <tbody>
               {movementsFiltrados.map((m) => (
                 <tr key={m.id}>
-                  <td style={td}>
+                  <td style={styles.td}>
                     {new Date(m.fecha).toLocaleString()}
                   </td>
 
-                  <td style={td}>
+                  <td style={styles.td}>
                     <span
                       style={{
                         background: "#f3f4f6",
@@ -334,13 +321,13 @@ function Auditoria() {
                     </span>
                   </td>
 
-                  <td style={td}>
+                  <td style={styles.td}>
                     {m.producto_nombre ?? m.producto_id}
                   </td>
 
                   <td
                     style={{
-                      ...td,
+                      ...styles.td,
                       fontWeight: "700",
                       color:
                         String(formatearCambio(m)).includes("-")
@@ -351,19 +338,19 @@ function Auditoria() {
                     {formatearCambio(m)}
                   </td>
 
-                  <td style={td}>
+                  <td style={styles.td}>
                     {m.ubicacion_origen_nombre ?? "-"}
                   </td>
 
-                  <td style={td}>
+                  <td style={styles.td}>
                     {m.ubicacion_destino_nombre ?? "-"}
                   </td>
 
-                  <td style={td}>
+                  <td style={styles.td}>
                     {m.usuario_nombre ?? m.usuario_id}
                   </td>
 
-                  <td style={td}>
+                  <td style={styles.td}>
                     {m.observaciones || (
                       <span style={{ color: "#9ca3af" }}>
                         Sin descripción
@@ -379,18 +366,5 @@ function Auditoria() {
     </div>
   );
 }
-
-const th = {
-  textAlign: "left",
-  padding: "12px",
-  borderBottom: "1px solid #e5e7eb",
-  fontSize: "14px"
-};
-
-const td = {
-  padding: "12px",
-  borderBottom: "1px solid #f3f4f6",
-  fontSize: "14px"
-};
 
 export default Auditoria;

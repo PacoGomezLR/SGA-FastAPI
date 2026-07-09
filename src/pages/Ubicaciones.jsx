@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "../api/api";
 import CrudPage from "../components/CrudPage";
 import { useSearchParams, Link } from "react-router-dom";
+import * as styles from "./Ubicaciones.styles";
 
 const initialForm = {
   codigo: "",
@@ -106,16 +107,16 @@ function Ubicaciones() {
   return (
     <div>
       {/* 🔥 HEADER CONSISTENTE */}
-      <div style={header}>
+      <div style={styles.header}>
         <div>
           <h1 style={{ margin: 0 }}>Ubicaciones</h1>
-          <p style={subtitle}>
+          <p style={styles.subtitle}>
             Gestión de ubicaciones dentro de la zona
           </p>
         </div>
 
         {zonaIdFromUrl && (
-          <Link to={`/zonas/${zonaIdFromUrl}`} style={backButton}>
+          <Link to={`/zonas/${zonaIdFromUrl}`} style={styles.backButton}>
             Volver a zona
           </Link>
         )}
@@ -139,7 +140,7 @@ function Ubicaciones() {
               value={form.codigo}
               onChange={handleChange}
               required
-              style={inputStyle}
+              style={styles.inputStyle}
             />
 
             <input
@@ -147,7 +148,7 @@ function Ubicaciones() {
               placeholder="Descripción"
               value={form.descripcion}
               onChange={handleChange}
-              style={inputStyle}
+              style={styles.inputStyle}
             />
 
             {!zonaIdFromUrl && (
@@ -156,7 +157,7 @@ function Ubicaciones() {
                 value={form.zona_id}
                 onChange={handleChange}
                 required
-                style={inputStyle}
+                style={styles.inputStyle}
               >
                 <option value="">Selecciona zona</option>
                 {zonas.map((z) => (
@@ -167,32 +168,32 @@ function Ubicaciones() {
               </select>
             )}
 
-            <button type="submit" style={primaryButton}>
+            <button type="submit" style={styles.primaryButton}>
               {editingId ? "Actualizar" : "Crear"}
             </button>
           </>
         }
         tableContent={
-          <table style={table}>
+          <table style={styles.table}>
             <thead>
               <tr>
-                <th style={th}>Código</th>
-                <th style={th}>Descripción</th>
-                <th style={th}>Zona</th>
-                <th style={th}>Acciones</th>
+                <th style={styles.th}>Código</th>
+                <th style={styles.th}>Descripción</th>
+                <th style={styles.th}>Zona</th>
+                <th style={styles.th}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {ubicacionesFiltradas.map((u) => (
-                <tr key={u.id} style={tr}>
-                  <td style={td}>{u.codigo}</td>
-                  <td style={td}>{u.descripcion}</td>
-                  <td style={td}>{u.zona_nombre}</td>
-                  <td style={td}>
-                    <button style={editButton} onClick={() => editar(u)}>
+                <tr key={u.id} style={styles.tr}>
+                  <td style={styles.td}>{u.codigo}</td>
+                  <td style={styles.td}>{u.descripcion}</td>
+                  <td style={styles.td}>{u.zona_nombre}</td>
+                  <td style={styles.td}>
+                    <button style={styles.editButton} onClick={() => editar(u)}>
                       Editar
                     </button>
-                    <button style={deleteButton} onClick={() => eliminar(u.id)}>
+                    <button style={styles.deleteButton} onClick={() => eliminar(u.id)}>
                       Eliminar
                     </button>
                   </td>
@@ -205,92 +206,5 @@ function Ubicaciones() {
     </div>
   );
 }
-
-/* 🔥 NUEVOS ESTILOS CONSISTENTES */
-
-const header = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: "24px",
-  flexWrap: "wrap"
-};
-
-const subtitle = {
-  margin: "6px 0 0 0",
-  color: "#64748b"
-};
-
-const backButton = {
-  padding: "10px 14px",
-  borderRadius: "8px",
-  textDecoration: "none",
-  backgroundColor: "white",
-  border: "1px solid #cbd5e1",
-  fontWeight: "600"
-};
-
-/* RESTO IGUAL */
-
-const inputStyle = {
-  padding: "10px 12px",
-  borderRadius: "8px",
-  border: "1px solid #cbd5e1",
-  fontSize: "14px",
-  width: "100%"
-};
-
-const primaryButton = {
-  padding: "10px 14px",
-  borderRadius: "8px",
-  backgroundColor: "#2563eb",
-  color: "white",
-  border: "none",
-  fontWeight: "600",
-  cursor: "pointer"
-};
-
-const table = {
-  width: "100%",
-  borderCollapse: "collapse",
-  backgroundColor: "white",
-  borderRadius: "12px",
-  overflow: "hidden",
-  boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
-};
-
-const th = {
-  textAlign: "left",
-  padding: "12px",
-  backgroundColor: "#f1f5f9"
-};
-
-const td = {
-  padding: "12px",
-  borderTop: "1px solid #e2e8f0"
-};
-
-const tr = {
-  transition: "background 0.2s"
-};
-
-const editButton = {
-  padding: "6px 10px",
-  marginRight: "6px",
-  borderRadius: "6px",
-  border: "none",
-  backgroundColor: "#f59e0b",
-  color: "white",
-  cursor: "pointer"
-};
-
-const deleteButton = {
-  padding: "6px 10px",
-  borderRadius: "6px",
-  border: "none",
-  backgroundColor: "#dc2626",
-  color: "white",
-  cursor: "pointer"
-};
 
 export default Ubicaciones;

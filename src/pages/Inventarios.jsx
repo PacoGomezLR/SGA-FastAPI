@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import * as styles from "./Inventarios.styles";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -231,21 +232,6 @@ function Inventarios() {
     }
   }
 
-  const input = {
-    width: "100%",
-    padding: "11px 14px",
-    borderRadius: "10px",
-    border: "1px solid #d1d5db",
-    fontSize: "14px",
-    boxSizing: "border-box"
-  };
-
-  const label = {
-    fontWeight: "700",
-    fontSize: "14px",
-    marginBottom: "6px"
-  };
-
   if (cargandoDatos) {
     return <div style={{ padding: "30px" }}>Cargando...</div>;
   }
@@ -297,11 +283,11 @@ function Inventarios() {
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div>
-            <div style={label}>Producto</div>
+            <div style={styles.label}>Producto</div>
 
             <div style={{ position: "relative" }}>
               <input
-                style={input}
+                style={styles.input}
                 placeholder="Buscar producto..."
                 value={busquedaProducto}
                 onChange={(e) => {
@@ -351,12 +337,12 @@ function Inventarios() {
           </div>
 
           <div>
-            <div style={label}>Almacén</div>
+            <div style={styles.label}>Almacén</div>
             <select
               name="almacen_id"
               value={form.almacen_id}
               onChange={handleChange}
-              style={input}
+              style={styles.input}
               required
               disabled={!form.producto_id}
             >
@@ -370,12 +356,12 @@ function Inventarios() {
           </div>
 
           <div>
-            <div style={label}>Zona</div>
+            <div style={styles.label}>Zona</div>
             <select
               name="zona_id"
               value={form.zona_id}
               onChange={handleChange}
-              style={input}
+              style={styles.input}
               required
               disabled={!form.almacen_id}
             >
@@ -389,12 +375,12 @@ function Inventarios() {
           </div>
 
           <div>
-            <div style={label}>Ubicación</div>
+            <div style={styles.label}>Ubicación</div>
             <select
               name="ubicacion_id"
               value={form.ubicacion_id}
               onChange={handleChange}
-              style={input}
+              style={styles.input}
               required
               disabled={!form.zona_id}
             >
@@ -410,34 +396,34 @@ function Inventarios() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div>
-            <div style={label}>Stock sistema</div>
+            <div style={styles.label}>Stock sistema</div>
             <input
               value={stockSistema ? stockSistema.cantidad : ""}
               disabled
-              style={{ ...input, background: "#f3f4f6" }}
+              style={{ ...styles.input, background: "#f3f4f6" }}
             />
           </div>
 
           <div>
-            <div style={label}>Cantidad real</div>
+            <div style={styles.label}>Cantidad real</div>
             <input
               type="number"
               name="cantidad_real"
               value={form.cantidad_real}
               onChange={handleChange}
-              style={input}
+              style={styles.input}
               required
               disabled={!form.ubicacion_id}
             />
           </div>
 
           <div>
-            <div style={label}>Diferencia</div>
+            <div style={styles.label}>Diferencia</div>
             <input
               value={diferencia}
               disabled
               style={{
-                ...input,
+                ...styles.input,
                 background:
                   diferencia > 0
                     ? "#dcfce7"
@@ -449,13 +435,13 @@ function Inventarios() {
           </div>
 
           <div>
-            <div style={label}>Observaciones</div>
+            <div style={styles.label}>Observaciones</div>
             <input
               type="text"
               name="observaciones"
               value={form.observaciones}
               onChange={handleChange}
-              style={input}
+              style={styles.input}
             />
           </div>
         </div>

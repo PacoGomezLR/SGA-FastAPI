@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { apiFetch } from "../api/api";
+import * as styles from "./ZonaDetalle.styles";
 
 function ZonaDetalle() {
   const { id } = useParams();
@@ -51,34 +52,34 @@ function ZonaDetalle() {
   }
 
   if (error) {
-    return <div style={errorBox}>{error}</div>;
+    return <div style={styles.errorBox}>{error}</div>;
   }
 
   return (
     <div>
-      <div style={header}>
+      <div style={styles.header}>
         <div>
           <h1 style={{ margin: 0 }}>{zona.nombre}</h1>
-          <p style={subtitle}>Detalle de la zona y sus ubicaciones</p>
+          <p style={styles.subtitle}>Detalle de la zona y sus ubicaciones</p>
         </div>
 
-        <Link to={`/almacenes/${zona.almacen_id}`} style={backButton}>
+        <Link to={`/almacenes/${zona.almacen_id}`} style={styles.backButton}>
           Volver al almacén
         </Link>
       </div>
 
-      <div style={infoCard}>
-        <div style={infoGrid}>
+      <div style={styles.infoCard}>
+        <div style={styles.infoGrid}>
           <div>
-            <div style={infoLabel}>Descripción</div>
-            <div style={infoValue}>{zona.descripcion || "-"}</div>
+            <div style={styles.infoLabel}>Descripción</div>
+            <div style={styles.infoValue}>{zona.descripcion || "-"}</div>
           </div>
 
           <div>
-            <div style={infoLabel}>Estado</div>
+            <div style={styles.infoLabel}>Estado</div>
             <span
               style={{
-                ...badge,
+                ...styles.badge,
                 backgroundColor: zona.activo ? "#dcfce7" : "#fee2e2",
                 color: zona.activo ? "#166534" : "#991b1b"
               }}
@@ -88,35 +89,35 @@ function ZonaDetalle() {
           </div>
 
           <div>
-            <div style={infoLabel}>Ubicaciones</div>
-            <div style={infoValue}>{ubicaciones.length}</div>
+            <div style={styles.infoLabel}>Ubicaciones</div>
+            <div style={styles.infoValue}>{ubicaciones.length}</div>
           </div>
         </div>
       </div>
 
-      <div style={section}>
+      <div style={styles.section}>
         {/* 🔥 CABECERA CON BOTÓN */}
-        <div style={sectionHeader}>
+        <div style={styles.sectionHeader}>
           <h2 style={{ margin: 0 }}>Ubicaciones</h2>
 
           <Link
             to={`/ubicaciones?nuevo=1&zona_id=${id}`}
-            style={createButton}
+            style={styles.createButton}
           >
             + Nueva ubicación
           </Link>
         </div>
 
         {ubicaciones.length === 0 ? (
-          <div style={emptyBox}>No hay ubicaciones en esta zona.</div>
+          <div style={styles.emptyBox}>No hay ubicaciones en esta zona.</div>
         ) : (
-          <div style={grid}>
+          <div style={styles.grid}>
             {ubicaciones.map((u) => (
-              <div key={u.id} style={card}>
-                <div style={code}>
+              <div key={u.id} style={styles.card}>
+                <div style={styles.code}>
                   {u.codigo || `Ubicación ${u.id}`}
                 </div>
-                <div style={text}>
+                <div style={styles.text}>
                   {u.descripcion || "Sin descripción"}
                 </div>
               </div>
@@ -127,114 +128,5 @@ function ZonaDetalle() {
     </div>
   );
 }
-
-/* ESTILOS */
-
-const sectionHeader = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: "16px"
-};
-
-const createButton = {
-  padding: "10px 14px",
-  borderRadius: "8px",
-  textDecoration: "none",
-  backgroundColor: "#2563eb",
-  color: "white",
-  fontWeight: "600"
-};
-
-const header = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: "24px"
-};
-
-const subtitle = {
-  margin: "6px 0 0 0",
-  color: "#64748b"
-};
-
-const backButton = {
-  padding: "10px 14px",
-  borderRadius: "8px",
-  textDecoration: "none",
-  backgroundColor: "white",
-  border: "1px solid #cbd5e1",
-  fontWeight: "600"
-};
-
-const infoCard = {
-  backgroundColor: "white",
-  borderRadius: "12px",
-  padding: "20px",
-  marginBottom: "24px",
-  boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
-};
-
-const infoGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-  gap: "16px"
-};
-
-const infoLabel = {
-  fontSize: "13px",
-  color: "#64748b",
-  marginBottom: "6px"
-};
-
-const infoValue = {
-  fontWeight: "700"
-};
-
-const badge = {
-  padding: "4px 10px",
-  borderRadius: "999px",
-  fontSize: "12px",
-  fontWeight: "700"
-};
-
-const section = {
-  marginTop: "16px"
-};
-
-const grid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-  gap: "16px"
-};
-
-const card = {
-  backgroundColor: "white",
-  padding: "16px",
-  borderRadius: "10px",
-  border: "1px solid #e2e8f0"
-};
-
-const code = {
-  fontWeight: "700",
-  marginBottom: "6px"
-};
-
-const text = {
-  color: "#64748b"
-};
-
-const emptyBox = {
-  padding: "16px",
-  backgroundColor: "white",
-  borderRadius: "10px"
-};
-
-const errorBox = {
-  padding: "12px",
-  backgroundColor: "#fee2e2",
-  color: "#991b1b",
-  borderRadius: "8px"
-};
 
 export default ZonaDetalle;

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../api/api";
+import * as styles from "./Recepciones.styles";
 
 const initialForm = {
   producto_id: "",
@@ -155,26 +156,26 @@ function Recepciones() {
 
   return (
     <div>
-      <div style={header}>
+      <div style={styles.header}>
         <div>
           <h1 style={{ margin: 0 }}>Recepciones</h1>
-          <p style={subtitle}>
+          <p style={styles.subtitle}>
             Registra la entrada de mercancía y confirma automáticamente su stock.
           </p>
         </div>
       </div>
 
-      {mensaje && <div style={successBox}>{mensaje}</div>}
-      {error && <div style={errorBox}>{error}</div>}
+      {mensaje && <div style={styles.successBox}>{mensaje}</div>}
+      {error && <div style={styles.errorBox}>{error}</div>}
 
       <form onSubmit={handleSubmit}>
-        <div style={topGrid}>
-          <section style={card}>
-            <div style={stepBadge}>1</div>
-            <h2 style={cardTitle}>Datos de la recepción</h2>
+        <div style={styles.topGrid}>
+          <section style={styles.card}>
+            <div style={styles.stepBadge}>1</div>
+            <h2 style={styles.cardTitle}>Datos de la recepción</h2>
 
-            <div style={fieldGroup}>
-              <label htmlFor="producto_id" style={label}>
+            <div style={styles.fieldGroup}>
+              <label htmlFor="producto_id" style={styles.label}>
                 Producto
               </label>
               <select
@@ -183,7 +184,7 @@ function Recepciones() {
                 value={form.producto_id}
                 onChange={handleChange}
                 required
-                style={input}
+                style={styles.input}
                 disabled={cargandoDatos || cargando}
               >
                 <option value="">Selecciona un producto</option>
@@ -195,8 +196,8 @@ function Recepciones() {
               </select>
             </div>
 
-            <div style={fieldGroup}>
-              <label htmlFor="cantidad" style={label}>
+            <div style={styles.fieldGroup}>
+              <label htmlFor="cantidad" style={styles.label}>
                 Cantidad
               </label>
               <input
@@ -208,13 +209,13 @@ function Recepciones() {
                 onChange={handleChange}
                 required
                 min="1"
-                style={input}
+                style={styles.input}
                 disabled={cargando}
               />
             </div>
 
-            <div style={fieldGroup}>
-              <label htmlFor="observaciones" style={label}>
+            <div style={styles.fieldGroup}>
+              <label htmlFor="observaciones" style={styles.label}>
                 Observaciones
               </label>
               <textarea
@@ -224,18 +225,18 @@ function Recepciones() {
                 value={form.observaciones}
                 onChange={handleChange}
                 rows="4"
-                style={textarea}
+                style={styles.textarea}
                 disabled={cargando}
               />
             </div>
           </section>
 
-          <section style={card}>
-            <div style={stepBadge}>2</div>
-            <h2 style={cardTitle}>Destino</h2>
+          <section style={styles.card}>
+            <div style={styles.stepBadge}>2</div>
+            <h2 style={styles.cardTitle}>Destino</h2>
 
-            <div style={fieldGroup}>
-              <label htmlFor="almacen_id" style={label}>
+            <div style={styles.fieldGroup}>
+              <label htmlFor="almacen_id" style={styles.label}>
                 Almacén
               </label>
               <select
@@ -244,7 +245,7 @@ function Recepciones() {
                 value={form.almacen_id}
                 onChange={handleChange}
                 required
-                style={input}
+                style={styles.input}
                 disabled={cargandoDatos || cargando}
               >
                 <option value="">Selecciona un almacén</option>
@@ -256,8 +257,8 @@ function Recepciones() {
               </select>
             </div>
 
-            <div style={fieldGroup}>
-              <label htmlFor="zona_id" style={label}>
+            <div style={styles.fieldGroup}>
+              <label htmlFor="zona_id" style={styles.label}>
                 Zona
               </label>
               <select
@@ -266,7 +267,7 @@ function Recepciones() {
                 value={form.zona_id}
                 onChange={handleChange}
                 required
-                style={input}
+                style={styles.input}
                 disabled={!form.almacen_id || cargandoDatos || cargando}
               >
                 <option value="">Selecciona una zona</option>
@@ -278,8 +279,8 @@ function Recepciones() {
               </select>
             </div>
 
-            <div style={fieldGroup}>
-              <label htmlFor="ubicacion_destino_id" style={label}>
+            <div style={styles.fieldGroup}>
+              <label htmlFor="ubicacion_destino_id" style={styles.label}>
                 Ubicación
               </label>
               <select
@@ -288,7 +289,7 @@ function Recepciones() {
                 value={form.ubicacion_destino_id}
                 onChange={handleChange}
                 required
-                style={input}
+                style={styles.input}
                 disabled={!form.zona_id || cargandoDatos || cargando}
               >
                 <option value="">Selecciona una ubicación</option>
@@ -302,49 +303,49 @@ function Recepciones() {
           </section>
         </div>
 
-        <section style={summaryCard}>
-          <div style={stepBadge}>3</div>
-          <h2 style={cardTitle}>Resumen</h2>
+        <section style={styles.summaryCard}>
+          <div style={styles.stepBadge}>3</div>
+          <h2 style={styles.cardTitle}>Resumen</h2>
 
-          <div style={summaryGrid}>
-            <div style={summaryItem}>
-              <span style={summaryLabel}>Producto</span>
-              <strong style={summaryValue}>
+          <div style={styles.summaryGrid}>
+            <div style={styles.summaryItem}>
+              <span style={styles.summaryLabel}>Producto</span>
+              <strong style={styles.summaryValue}>
                 {productoSeleccionado?.nombre || "-"}
               </strong>
             </div>
 
-            <div style={summaryItem}>
-              <span style={summaryLabel}>Cantidad</span>
-              <strong style={summaryValue}>{form.cantidad || "-"}</strong>
+            <div style={styles.summaryItem}>
+              <span style={styles.summaryLabel}>Cantidad</span>
+              <strong style={styles.summaryValue}>{form.cantidad || "-"}</strong>
             </div>
 
-            <div style={summaryItem}>
-              <span style={summaryLabel}>Almacén</span>
-              <strong style={summaryValue}>
+            <div style={styles.summaryItem}>
+              <span style={styles.summaryLabel}>Almacén</span>
+              <strong style={styles.summaryValue}>
                 {almacenSeleccionado?.nombre || "-"}
               </strong>
             </div>
 
-            <div style={summaryItem}>
-              <span style={summaryLabel}>Zona</span>
-              <strong style={summaryValue}>{zonaSeleccionada?.nombre || "-"}</strong>
+            <div style={styles.summaryItem}>
+              <span style={styles.summaryLabel}>Zona</span>
+              <strong style={styles.summaryValue}>{zonaSeleccionada?.nombre || "-"}</strong>
             </div>
 
-            <div style={summaryItem}>
-              <span style={summaryLabel}>Ubicación</span>
-              <strong style={summaryValue}>
+            <div style={styles.summaryItem}>
+              <span style={styles.summaryLabel}>Ubicación</span>
+              <strong style={styles.summaryValue}>
                 {ubicacionSeleccionada?.codigo || "-"}
               </strong>
             </div>
           </div>
 
-          <div style={actions}>
+          <div style={styles.actions}>
             <button
               type="submit"
               disabled={cargando || cargandoDatos}
               style={{
-                ...primaryButton,
+                ...styles.primaryButton,
                 backgroundColor:
                   cargando || cargandoDatos ? "#94a3b8" : "#0f172a",
                 cursor: cargando || cargandoDatos ? "not-allowed" : "pointer"
@@ -356,7 +357,7 @@ function Recepciones() {
             <button
               type="button"
               onClick={limpiarFormulario}
-              style={secondaryButton}
+              style={styles.secondaryButton}
               disabled={cargando}
             >
               Limpiar
@@ -367,169 +368,5 @@ function Recepciones() {
     </div>
   );
 }
-
-const header = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: "16px",
-  marginBottom: "20px",
-  flexWrap: "wrap"
-};
-
-const subtitle = {
-  margin: "6px 0 0 0",
-  color: "#64748b"
-};
-
-const successBox = {
-  backgroundColor: "#dcfce7",
-  color: "#166534",
-  border: "1px solid #86efac",
-  padding: "12px 14px",
-  borderRadius: "10px",
-  marginBottom: "16px",
-  fontWeight: "500"
-};
-
-const errorBox = {
-  backgroundColor: "#fee2e2",
-  color: "#991b1b",
-  border: "1px solid #fca5a5",
-  padding: "12px 14px",
-  borderRadius: "10px",
-  marginBottom: "16px",
-  fontWeight: "500"
-};
-
-const topGrid = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr",
-  gap: "20px",
-  alignItems: "stretch",
-  marginBottom: "20px"
-};
-
-const card = {
-  position: "relative",
-  backgroundColor: "white",
-  borderRadius: "16px",
-  boxShadow: "0 8px 20px rgba(15, 23, 42, 0.06)",
-  padding: "28px 24px 24px",
-  border: "1px solid #e2e8f0"
-};
-
-const summaryCard = {
-  position: "relative",
-  backgroundColor: "white",
-  borderRadius: "16px",
-  boxShadow: "0 8px 20px rgba(15, 23, 42, 0.06)",
-  padding: "28px 24px 24px",
-  border: "1px solid #e2e8f0",
-  minHeight: "230px"
-};
-
-const stepBadge = {
-  position: "absolute",
-  top: "-14px",
-  left: "20px",
-  width: "34px",
-  height: "34px",
-  borderRadius: "999px",
-  backgroundColor: "#0f172a",
-  color: "white",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontWeight: "800",
-  boxShadow: "0 6px 14px rgba(15, 23, 42, 0.22)"
-};
-
-const cardTitle = {
-  marginTop: 0,
-  marginBottom: "20px",
-  fontSize: "24px",
-  color: "#0f172a"
-};
-
-const fieldGroup = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "8px",
-  marginBottom: "16px"
-};
-
-const label = {
-  fontWeight: "700",
-  color: "#334155"
-};
-
-const input = {
-  width: "100%",
-  padding: "11px 12px",
-  borderRadius: "9px",
-  border: "1px solid #cbd5e1",
-  outline: "none",
-  backgroundColor: "#fff",
-  color: "#0f172a"
-};
-
-const textarea = {
-  ...input,
-  resize: "vertical",
-  minHeight: "108px"
-};
-
-const summaryGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-  gap: "14px",
-  marginBottom: "22px"
-};
-
-const summaryItem = {
-  backgroundColor: "#f8fafc",
-  border: "1px solid #e2e8f0",
-  borderRadius: "12px",
-  padding: "14px",
-  display: "flex",
-  flexDirection: "column",
-  gap: "6px"
-};
-
-const summaryLabel = {
-  color: "#64748b",
-  fontSize: "14px",
-  fontWeight: "700"
-};
-
-const summaryValue = {
-  color: "#0f172a",
-  fontSize: "17px"
-};
-
-const actions = {
-  display: "flex",
-  gap: "10px",
-  flexWrap: "wrap"
-};
-
-const primaryButton = {
-  padding: "11px 16px",
-  border: "none",
-  borderRadius: "9px",
-  color: "white",
-  fontWeight: "700"
-};
-
-const secondaryButton = {
-  padding: "11px 16px",
-  border: "1px solid #cbd5e1",
-  borderRadius: "9px",
-  backgroundColor: "white",
-  color: "#0f172a",
-  cursor: "pointer",
-  fontWeight: "700"
-};
 
 export default Recepciones;

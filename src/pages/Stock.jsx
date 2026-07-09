@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../api/api";
+import * as styles from "./Stock.styles";
 
 function Stock() {
   const [stock, setStock] = useState([]);
@@ -92,17 +93,17 @@ function Stock() {
 
   return (
     <div>
-      <div style={header}>
+      <div style={styles.header}>
         <div>
           <h1 style={{ margin: 0 }}>Stock</h1>
-          <p style={subtitle}>
+          <p style={styles.subtitle}>
             Consulta de existencias por producto, almacén, zona y ubicación.
           </p>
         </div>
       </div>
 
-      <section style={filtersCard}>
-        <label style={checkboxFilter}>
+      <section style={styles.filtersCard}>
+        <label style={styles.checkboxFilter}>
           <input
             type="checkbox"
             checked={soloBajo}
@@ -111,15 +112,15 @@ function Stock() {
           Solo stock bajo
         </label>
 
-        <div style={filterGroup}>
-          <label htmlFor="almacen" style={filterLabel}>
+        <div style={styles.filterGroup}>
+          <label htmlFor="almacen" style={styles.filterLabel}>
             Almacén
           </label>
           <select
             id="almacen"
             value={almacenId}
             onChange={(e) => setAlmacenId(e.target.value)}
-            style={select}
+            style={styles.select}
           >
             <option value="">Todos</option>
             {almacenes.map((almacen) => (
@@ -130,15 +131,15 @@ function Stock() {
           </select>
         </div>
 
-        <div style={filterGroup}>
-          <label htmlFor="categoria" style={filterLabel}>
+        <div style={styles.filterGroup}>
+          <label htmlFor="categoria" style={styles.filterLabel}>
             Categoría
           </label>
           <select
             id="categoria"
             value={categoria}
             onChange={(e) => setCategoria(e.target.value)}
-            style={select}
+            style={styles.select}
           >
             <option value="">Todas</option>
             {categorias.map((cat) => (
@@ -154,28 +155,28 @@ function Stock() {
           placeholder="Buscar producto, almacén, zona o ubicación..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          style={searchInput}
+          style={styles.searchInput}
         />
       </section>
 
-      {error && <div style={errorBox}>{error}</div>}
+      {error && <div style={styles.errorBox}>{error}</div>}
 
-      <section style={tableCard}>
+      <section style={styles.tableCard}>
         {cargando ? (
-          <div style={emptyBox}>Cargando stock...</div>
+          <div style={styles.emptyBox}>Cargando stock...</div>
         ) : stockFiltrado.length === 0 ? (
-          <div style={emptyBox}>No hay registros de stock</div>
+          <div style={styles.emptyBox}>No hay registros de stock</div>
         ) : (
-          <table style={table}>
+          <table style={styles.table}>
             <thead>
               <tr>
-                <th style={th}>Producto</th>
-                <th style={th}>Categoría</th>
-                <th style={th}>Almacén</th>
-                <th style={th}>Zona</th>
-                <th style={th}>Ubicación</th>
-                <th style={th}>Cantidad</th>
-                <th style={th}>Stock mínimo</th>
+                <th style={styles.th}>Producto</th>
+                <th style={styles.th}>Categoría</th>
+                <th style={styles.th}>Almacén</th>
+                <th style={styles.th}>Zona</th>
+                <th style={styles.th}>Ubicación</th>
+                <th style={styles.th}>Cantidad</th>
+                <th style={styles.th}>Stock mínimo</th>
               </tr>
             </thead>
 
@@ -187,28 +188,28 @@ function Stock() {
                     backgroundColor: item.bajo_stock ? "#fff1f2" : "white"
                   }}
                 >
-                  <td style={td}>{item.producto_nombre || item.producto_id}</td>
-                  <td style={td}>{item.categoria_nombre || "-"}</td>
-                  <td style={td}>{item.almacen_nombre || "-"}</td>
-                  <td style={td}>{item.zona_nombre || "-"}</td>
-                  <td style={td}>{item.ubicacion_nombre || "-"}</td>
+                  <td style={styles.td}>{item.producto_nombre || item.producto_id}</td>
+                  <td style={styles.td}>{item.categoria_nombre || "-"}</td>
+                  <td style={styles.td}>{item.almacen_nombre || "-"}</td>
+                  <td style={styles.td}>{item.zona_nombre || "-"}</td>
+                  <td style={styles.td}>{item.ubicacion_nombre || "-"}</td>
 
-                  <td style={tdCantidad}>
+                  <td style={styles.tdCantidad}>
                     <span
                       style={{
-                        ...cantidadTexto,
+                        ...styles.cantidadTexto,
                         color: item.bajo_stock ? "#dc2626" : "#0f172a"
                       }}
                     >
                       {formatearCantidad(item.cantidad)}
                     </span>
 
-                    <span style={badgeWrapper}>
-                      {item.bajo_stock && <span style={badgeBajo}>BAJO</span>}
+                    <span style={styles.badgeWrapper}>
+                      {item.bajo_stock && <span style={styles.badgeBajo}>BAJO</span>}
                     </span>
                   </td>
 
-                  <td style={td}>{formatearCantidad(item.stock_minimo)}</td>
+                  <td style={styles.td}>{formatearCantidad(item.stock_minimo)}</td>
                 </tr>
               ))}
             </tbody>
@@ -218,143 +219,5 @@ function Stock() {
     </div>
   );
 }
-
-const header = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: "16px",
-  marginBottom: "20px",
-  flexWrap: "wrap"
-};
-
-const subtitle = {
-  margin: "6px 0 0 0",
-  color: "#64748b"
-};
-
-const filtersCard = {
-  display: "flex",
-  gap: "12px",
-  flexWrap: "wrap",
-  alignItems: "center",
-  backgroundColor: "white",
-  borderRadius: "14px",
-  padding: "16px",
-  marginBottom: "20px",
-  border: "1px solid #e2e8f0",
-  boxShadow: "0 5px 15px rgba(15, 23, 42, 0.05)"
-};
-
-const checkboxFilter = {
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  fontWeight: "700",
-  color: "#0f172a"
-};
-
-const filterGroup = {
-  display: "flex",
-  alignItems: "center",
-  gap: "8px"
-};
-
-const filterLabel = {
-  fontWeight: "700",
-  color: "#334155"
-};
-
-const select = {
-  padding: "9px 10px",
-  borderRadius: "9px",
-  border: "1px solid #cbd5e1",
-  backgroundColor: "white",
-  color: "#0f172a",
-  outline: "none"
-};
-
-const searchInput = {
-  minWidth: "330px",
-  padding: "10px 12px",
-  borderRadius: "9px",
-  border: "1px solid #cbd5e1",
-  outline: "none",
-  backgroundColor: "white"
-};
-
-const errorBox = {
-  marginBottom: "16px",
-  padding: "12px 14px",
-  backgroundColor: "#fee2e2",
-  color: "#991b1b",
-  border: "1px solid #fca5a5",
-  borderRadius: "10px",
-  fontWeight: "600"
-};
-
-const tableCard = {
-  backgroundColor: "white",
-  borderRadius: "14px",
-  boxShadow: "0 5px 15px rgba(15, 23, 42, 0.05)",
-  border: "1px solid #e2e8f0",
-  overflow: "hidden"
-};
-
-const emptyBox = {
-  padding: "20px",
-  color: "#64748b",
-  fontWeight: "600"
-};
-
-const table = {
-  width: "100%",
-  borderCollapse: "collapse"
-};
-
-const th = {
-  textAlign: "left",
-  padding: "14px 12px",
-  borderBottom: "1px solid #e2e8f0",
-  backgroundColor: "#f8fafc",
-  color: "#0f172a",
-  fontWeight: "800"
-};
-
-const td = {
-  padding: "13px 12px",
-  borderBottom: "1px solid #f1f5f9",
-  color: "#0f172a"
-};
-
-const tdCantidad = {
-  ...td,
-  whiteSpace: "nowrap"
-};
-
-const cantidadTexto = {
-  display: "inline-block",
-  width: "40px",
-  fontFamily: "monospace",
-  fontWeight: "800",
-  letterSpacing: "1px",
-  textAlign: "right"
-};
-
-const badgeWrapper = {
-  display: "inline-block",
-  width: "60px",
-  marginLeft: "10px"
-};
-
-const badgeBajo = {
-  display: "inline-block",
-  padding: "3px 7px",
-  fontSize: "11px",
-  backgroundColor: "#dc2626",
-  color: "white",
-  borderRadius: "999px",
-  fontWeight: "800"
-};
 
 export default Stock;

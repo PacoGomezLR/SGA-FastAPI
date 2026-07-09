@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../api/api";
+import * as styles from "./Dashboard.styles";
 
 function Dashboard() {
   const [totalProductos, setTotalProductos] = useState(0);
@@ -75,19 +76,11 @@ function Dashboard() {
     return "";
   }
 
-  const cardBase = {
-    background: "#fff",
-    borderRadius: "14px",
-    padding: "20px",
-    border: "1px solid #e5e7eb",
-    boxShadow: "0 6px 18px rgba(0,0,0,0.04)"
-  };
-
   if (cargando) {
     return (
       <div style={{ padding: "30px" }}>
         <h1>Resumen Almacén</h1>
-        <div style={cardBase}>Cargando datos...</div>
+        <div style={styles.cardBase}>Cargando datos...</div>
       </div>
     );
   }
@@ -128,7 +121,7 @@ function Dashboard() {
         <Card title="Productos en riesgo" value={productosEnRiesgo} color="#991b1b" />
       </div>
 
-      <div style={{ ...cardBase, marginBottom: "24px" }}>
+      <div style={{ ...styles.cardBase, marginBottom: "24px" }}>
         <h3 style={{ marginTop: 0, marginBottom: "16px" }}>Accesos rápidos</h3>
 
         <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
@@ -139,7 +132,7 @@ function Dashboard() {
         </div>
       </div>
 
-      <div style={{ ...cardBase, marginBottom: "24px" }}>
+      <div style={{ ...styles.cardBase, marginBottom: "24px" }}>
         <h3 style={{ marginTop: 0, marginBottom: "16px" }}>
           Alertas de stock bajo
         </h3>
@@ -164,20 +157,20 @@ function Dashboard() {
             >
               <thead>
                 <tr>
-                  <th style={alertTh}>Producto</th>
-                  <th style={alertThCenter}>Stock</th>
-                  <th style={alertThCenter}>Mínimo</th>
-                  <th style={alertThCenter}>Ubicación</th>
+                  <th style={styles.alertTh}>Producto</th>
+                  <th style={styles.alertThCenter}>Stock</th>
+                  <th style={styles.alertThCenter}>Mínimo</th>
+                  <th style={styles.alertThCenter}>Ubicación</th>
                 </tr>
               </thead>
 
               <tbody>
                 {alertasStock.map((item, index) => (
                   <tr key={index}>
-                    <td style={alertTdStrong}>{item.producto_nombre}</td>
-                    <td style={alertTdCenter}>{item.cantidad}</td>
-                    <td style={alertTdCenter}>{item.stock_minimo}</td>
-                    <td style={alertTdCenter}>{item.ubicacion_nombre || "-"}</td>
+                    <td style={styles.alertTdStrong}>{item.producto_nombre}</td>
+                    <td style={styles.alertTdCenter}>{item.cantidad}</td>
+                    <td style={styles.alertTdCenter}>{item.stock_minimo}</td>
+                    <td style={styles.alertTdCenter}>{item.ubicacion_nombre || "-"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -186,7 +179,7 @@ function Dashboard() {
         )}
       </div>
 
-      <div style={cardBase}>
+      <div style={styles.cardBase}>
         <h3 style={{ marginTop: 0, marginBottom: "16px" }}>
           Últimos movimientos
         </h3>
@@ -206,25 +199,25 @@ function Dashboard() {
             >
               <thead>
                 <tr style={{ background: "#f9fafb" }}>
-                  <th style={th}>Fecha</th>
-                  <th style={th}>Producto</th>
-                  <th style={th}>Cantidad</th>
-                  <th style={th}>Tipo</th>
-                  <th style={th}>Origen</th>
-                  <th style={th}>Destino</th>
-                  <th style={th}>Usuario</th>
+                  <th style={styles.th}>Fecha</th>
+                  <th style={styles.th}>Producto</th>
+                  <th style={styles.th}>Cantidad</th>
+                  <th style={styles.th}>Tipo</th>
+                  <th style={styles.th}>Origen</th>
+                  <th style={styles.th}>Destino</th>
+                  <th style={styles.th}>Usuario</th>
                 </tr>
               </thead>
 
               <tbody>
                 {ultimosMovimientos.map((mov) => (
                   <tr key={mov.id}>
-                    <td style={td}>{new Date(mov.fecha).toLocaleString()}</td>
-                    <td style={td}>{mov.producto_nombre || mov.producto_id}</td>
+                    <td style={styles.td}>{new Date(mov.fecha).toLocaleString()}</td>
+                    <td style={styles.td}>{mov.producto_nombre || mov.producto_id}</td>
 
                     <td
                       style={{
-                        ...td,
+                        ...styles.td,
                         fontWeight: "700",
                         color:
                           mov.tipo_movimiento === "salida"
@@ -236,7 +229,7 @@ function Dashboard() {
                       {mov.cantidad}
                     </td>
 
-                    <td style={td}>
+                    <td style={styles.td}>
                       <span
                         style={{
                           padding: "4px 10px",
@@ -251,9 +244,9 @@ function Dashboard() {
                       </span>
                     </td>
 
-                    <td style={td}>{mov.ubicacion_origen_nombre || "-"}</td>
-                    <td style={td}>{mov.ubicacion_destino_nombre || "-"}</td>
-                    <td style={td}>{mov.usuario_nombre || mov.usuario_id}</td>
+                    <td style={styles.td}>{mov.ubicacion_origen_nombre || "-"}</td>
+                    <td style={styles.td}>{mov.ubicacion_destino_nombre || "-"}</td>
+                    <td style={styles.td}>{mov.usuario_nombre || mov.usuario_id}</td>
                   </tr>
                 ))}
               </tbody>
@@ -303,51 +296,5 @@ function QuickButton({ text }) {
     </button>
   );
 }
-
-const alertTh = {
-  textAlign: "left",
-  padding: "12px",
-  borderBottom: "1px solid #fed7aa",
-  fontSize: "14px",
-  fontWeight: "700",
-  color: "#111827"
-};
-
-const alertThCenter = {
-  ...alertTh,
-  textAlign: "center",
-  width: "160px"
-};
-
-const alertTd = {
-  padding: "12px",
-  borderBottom: "1px solid #ffedd5",
-  fontSize: "14px",
-  color: "#111827"
-};
-
-const alertTdStrong = {
-  ...alertTd,
-  fontWeight: "700"
-};
-
-const alertTdCenter = {
-  ...alertTd,
-  textAlign: "center",
-  width: "160px"
-};
-
-const th = {
-  textAlign: "left",
-  padding: "12px",
-  borderBottom: "1px solid #e5e7eb",
-  fontSize: "14px"
-};
-
-const td = {
-  padding: "12px",
-  borderBottom: "1px solid #f3f4f6",
-  fontSize: "14px"
-};
 
 export default Dashboard;

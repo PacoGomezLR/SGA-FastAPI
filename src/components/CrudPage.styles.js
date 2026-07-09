@@ -1,0 +1,56 @@
+export const pageTitle = {
+  marginBottom: "24px"
+};
+
+export const card = {
+  padding: "28px",
+  backgroundColor: "white",
+  borderRadius: "16px",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+  marginBottom: "24px"
+};
+
+export const cardTitleStyle = {
+  marginTop: 0,
+  marginBottom: "20px"
+};
+
+export const formGrid = {
+  display: "grid",
+  gap: "14px",
+  maxWidth: "720px"
+};
+
+export const successBox = {
+  backgroundColor: "#dcfce7",
+  color: "#166534",
+  padding: "12px 14px",
+  borderRadius: "10px",
+  marginBottom: "14px",
+  border: "1px solid #bbf7d0"
+};
+
+export const errorBox = {
+  backgroundColor: "#fee2e2",
+  color: "#991b1b",
+  padding: "12px 14px",
+  borderRadius: "10px",
+  marginBottom: "14px",
+  border: "1px solid #fecaca"
+};
+
+export const searchInput = {
+  marginBottom: "18px",
+  padding: "12px 14px",
+  width: "100%",
+  maxWidth: "400px",
+  borderRadius: "10px",
+  border: "1px solid #cbd5e1",
+  outline: "none",
+  backgroundColor: "white"
+};
+
+export const infoText = {
+  color: "#64748b",
+  marginBottom: "16px"
+};

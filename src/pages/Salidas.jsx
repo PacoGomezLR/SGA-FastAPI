@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import * as styles from "./Salidas.styles";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -201,27 +202,6 @@ function Salidas() {
     }
   }
 
-  const input = {
-    width: "100%",
-    padding: "11px 14px",
-    borderRadius: "10px",
-    border: "1px solid #d1d5db",
-    fontSize: "14px",
-    boxSizing: "border-box"
-  };
-
-  const label = {
-    fontWeight: "700",
-    fontSize: "14px",
-    marginBottom: "6px"
-  };
-
-  const fieldBox = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px"
-  };
-
   if (cargandoDatos) {
     return <div style={{ padding: "30px" }}>Cargando...</div>;
   }
@@ -272,10 +252,10 @@ function Salidas() {
         }}
       >
         <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-          <div style={label}>Producto</div>
+          <div style={styles.label}>Producto</div>
 
           <input
-            style={input}
+            style={styles.input}
             placeholder="Buscar producto..."
             value={busquedaProducto}
             onChange={(e) => {
@@ -313,13 +293,13 @@ function Salidas() {
           )}
         </div>
 
-        <div style={fieldBox}>
-          <div style={label}>Almacén</div>
+        <div style={styles.fieldBox}>
+          <div style={styles.label}>Almacén</div>
           <select
             name="almacen_id"
             value={form.almacen_id}
             onChange={handleChange}
-            style={input}
+            style={styles.input}
             required
           >
             <option value="">Seleccionar</option>
@@ -329,13 +309,13 @@ function Salidas() {
           </select>
         </div>
 
-        <div style={fieldBox}>
-          <div style={label}>Motivo</div>
+        <div style={styles.fieldBox}>
+          <div style={styles.label}>Motivo</div>
           <select
             name="motivo"
             value={form.motivo}
             onChange={handleChange}
-            style={input}
+            style={styles.input}
             required
           >
             <option value="venta">Venta</option>
@@ -347,13 +327,13 @@ function Salidas() {
           </select>
         </div>
 
-        <div style={fieldBox}>
-          <div style={label}>Zona</div>
+        <div style={styles.fieldBox}>
+          <div style={styles.label}>Zona</div>
           <select
             name="zona_id"
             value={form.zona_id}
             onChange={handleChange}
-            style={input}
+            style={styles.input}
             required
           >
             <option value="">Seleccionar</option>
@@ -363,24 +343,24 @@ function Salidas() {
           </select>
         </div>
 
-        <div style={fieldBox}>
-          <div style={label}>Observaciones</div>
+        <div style={styles.fieldBox}>
+          <div style={styles.label}>Observaciones</div>
           <input
             type="text"
             name="observaciones"
             value={form.observaciones}
             onChange={handleChange}
-            style={input}
+            style={styles.input}
           />
         </div>
 
-        <div style={fieldBox}>
-          <div style={label}>Ubicación origen</div>
+        <div style={styles.fieldBox}>
+          <div style={styles.label}>Ubicación origen</div>
           <select
             name="ubicacion_origen_id"
             value={form.ubicacion_origen_id}
             onChange={handleChange}
-            style={input}
+            style={styles.input}
             required
           >
             <option value="">Seleccionar</option>
@@ -390,23 +370,23 @@ function Salidas() {
           </select>
         </div>
 
-        <div style={fieldBox}>
-          <div style={label}>Stock disponible</div>
+        <div style={styles.fieldBox}>
+          <div style={styles.label}>Stock disponible</div>
           <input
             value={stockSeleccionado ? stockSeleccionado.cantidad : ""}
             disabled
-            style={{ ...input, background: "#f3f4f6" }}
+            style={{ ...styles.input, background: "#f3f4f6" }}
           />
         </div>
 
-        <div style={fieldBox}>
-          <div style={label}>Cantidad</div>
+        <div style={styles.fieldBox}>
+          <div style={styles.label}>Cantidad</div>
           <input
             type="number"
             name="cantidad"
             value={form.cantidad}
             onChange={handleChange}
-            style={input}
+            style={styles.input}
             required
           />
         </div>
