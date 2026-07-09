@@ -10,8 +10,11 @@ __pycache__/
 
 # Variables sensibles
 .env
+.env.*
 *.env
 backend/.env
+backend/.env.*
+!backend/.env.example
 
 # Bases de datos
 *.sqlite3
