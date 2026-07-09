@@ -161,3 +161,80 @@ export const secondaryButton = {
   cursor: "pointer",
   fontWeight: "700"
 };
+
+export const ubicacionButton = {
+  ...input,
+  textAlign: "left",
+  cursor: "pointer"
+};
+
+export const modalOverlay = {
+  position: "fixed",
+  inset: 0,
+  backgroundColor: "rgba(15, 23, 42, 0.45)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 1000,
+  padding: "20px"
+};
+
+export const modalBox = {
+  width: "100%",
+  maxWidth: "440px",
+  maxHeight: "80vh",
+  overflowY: "auto",
+  backgroundColor: "white",
+  borderRadius: "16px",
+  padding: "22px",
+  boxShadow: "0 20px 50px rgba(0,0,0,0.20)"
+};
+
+export const modalTitle = {
+  margin: "0 0 6px 0",
+  color: "#0f172a"
+};
+
+export const modalSubtitle = {
+  margin: "0 0 18px 0",
+  color: "#64748b"
+};
+
+export const locationsList = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "10px"
+};
+
+export const locationItem = {
+  border: "1px solid #e2e8f0",
+  borderRadius: "10px",
+  padding: "12px"
+};
+
+export const locationItemButton = {
+  ...locationItem,
+  width: "100%",
+  textAlign: "left",
+  backgroundColor: "white",
+  cursor: "pointer",
+  font: "inherit"
+};
+
+export const locationCode = {
+  fontWeight: "700",
+  color: "#0f172a",
+  marginBottom: "4px"
+};
+
+export const locationText = {
+  color: "#64748b",
+  fontSize: "14px"
+};
+
+export const modalActions = {
+  display: "flex",
+  gap: "10px",
+  flexWrap: "wrap",
+  marginTop: "16px"
+};

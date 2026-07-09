@@ -23,6 +23,9 @@ function Recepciones() {
   const [zonas, setZonas] = useState([]);
   const [ubicaciones, setUbicaciones] = useState([]);
 
+  const [mostrarSelectorUbicacion, setMostrarSelectorUbicacion] = useState(false);
+  const [filaSeleccionada, setFilaSeleccionada] = useState(null);
+
   useEffect(() => {
     cargarDatosFormulario();
   }, []);
@@ -71,6 +74,21 @@ function Recepciones() {
     }));
   }
 
+  function abrirSelectorUbicacion() {
+    setFilaSeleccionada(null);
+    setMostrarSelectorUbicacion(true);
+  }
+
+  function cerrarSelectorUbicacion() {
+    setMostrarSelectorUbicacion(false);
+    setFilaSeleccionada(null);
+  }
+
+  function elegirUbicacion(ubicacion) {
+    setForm((prev) => ({ ...prev, ubicacion_destino_id: ubicacion.id }));
+    cerrarSelectorUbicacion();
+  }
+
   const zonasFiltradas = useMemo(() => {
     if (!form.almacen_id) return [];
 
@@ -86,6 +104,31 @@ function Recepciones() {
       (ubicacion) => String(ubicacion.zona_id) === String(form.zona_id)
     );
   }, [ubicaciones, form.zona_id]);
+
+  const filasDeZona = useMemo(() => {
+    const filas = new Map();
+
+    ubicacionesFiltradas.forEach((ubicacion) => {
+      const clave = ubicacion.eje_x ?? ubicacion.codigo;
+
+      if (!filas.has(clave)) {
+        filas.set(clave, { fila: ubicacion.eje_x, ubicaciones: [] });
+      }
+      filas.get(clave).ubicaciones.push(ubicacion);
+    });
+
+    const lista = Array.from(filas.values()).sort((a, b) => {
+      if (a.fila == null) return 1;
+      if (b.fila == null) return -1;
+      return a.fila - b.fila;
+    });
+
+    lista.forEach((f) => {
+      f.ubicaciones.sort((a, b) => (a.eje_y ?? 0) - (b.eje_y ?? 0));
+    });
+
+    return lista;
+  }, [ubicacionesFiltradas]);
 
   const productoSeleccionado = useMemo(() => {
     return productos.find(
@@ -114,6 +157,12 @@ function Recepciones() {
 
     setMensaje("");
     setError("");
+
+    if (!form.ubicacion_destino_id) {
+      setError("Debes seleccionar una ubicación de destino");
+      return;
+    }
+
     setCargando(true);
 
     const payload = {
@@ -280,25 +329,20 @@ function Recepciones() {
             </div>
 
             <div style={styles.fieldGroup}>
-              <label htmlFor="ubicacion_destino_id" style={styles.label}>
-                Ubicación
-              </label>
-              <select
-                id="ubicacion_destino_id"
-                name="ubicacion_destino_id"
-                value={form.ubicacion_destino_id}
-                onChange={handleChange}
-                required
-                style={styles.input}
+              <label style={styles.label}>Ubicación</label>
+              <button
+                type="button"
+                style={styles.ubicacionButton}
+                onClick={abrirSelectorUbicacion}
                 disabled={!form.zona_id || cargandoDatos || cargando}
               >
-                <option value="">Selecciona una ubicación</option>
-                {ubicacionesFiltradas.map((ubicacion) => (
-                  <option key={ubicacion.id} value={ubicacion.id}>
-                    {ubicacion.codigo}
-                  </option>
-                ))}
-              </select>
+                {ubicacionSeleccionada?.codigo || "Selecciona una ubicación"}
+              </button>
+              <input
+                type="hidden"
+                name="ubicacion_destino_id"
+                value={form.ubicacion_destino_id}
+              />
             </div>
           </section>
         </div>
@@ -365,6 +409,88 @@ function Recepciones() {
           </div>
         </section>
       </form>
+
+      {mostrarSelectorUbicacion && (
+        <div style={styles.modalOverlay} onClick={cerrarSelectorUbicacion}>
+          <div style={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+            {!filaSeleccionada ? (
+              <>
+                <h2 style={styles.modalTitle}>Selecciona una fila</h2>
+                <p style={styles.modalSubtitle}>
+                  Zona: <strong>{zonaSeleccionada?.nombre}</strong>
+                </p>
+
+                {filasDeZona.length === 0 ? (
+                  <p style={styles.locationText}>
+                    Esta zona todavía no tiene ubicaciones.
+                  </p>
+                ) : (
+                  <div style={styles.locationsList}>
+                    {filasDeZona.map((f) => (
+                      <button
+                        type="button"
+                        key={f.fila ?? f.ubicaciones[0]?.id}
+                        style={styles.locationItemButton}
+                        onClick={() => setFilaSeleccionada(f)}
+                      >
+                        <div style={styles.locationCode}>
+                          {f.fila != null ? `Fila ${f.fila}` : "Sin fila"}
+                        </div>
+                        <div style={styles.locationText}>
+                          {f.ubicaciones.length} altura
+                          {f.ubicaciones.length === 1 ? "" : "s"}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <h2 style={styles.modalTitle}>
+                  {filaSeleccionada.fila != null
+                    ? `Fila ${filaSeleccionada.fila}`
+                    : "Sin fila"}
+                </h2>
+                <p style={styles.modalSubtitle}>
+                  Zona: <strong>{zonaSeleccionada?.nombre}</strong>
+                </p>
+
+                <div style={styles.locationsList}>
+                  {filaSeleccionada.ubicaciones.map((ubicacion) => (
+                    <button
+                      type="button"
+                      key={ubicacion.id}
+                      style={styles.locationItemButton}
+                      onClick={() => elegirUbicacion(ubicacion)}
+                    >
+                      <div style={styles.locationCode}>
+                        {ubicacion.eje_y != null
+                          ? `Altura ${ubicacion.eje_y}`
+                          : ubicacion.codigo}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <div style={styles.modalActions}>
+              <button
+                type="button"
+                style={styles.secondaryButton}
+                onClick={
+                  filaSeleccionada
+                    ? () => setFilaSeleccionada(null)
+                    : cerrarSelectorUbicacion
+                }
+              >
+                {filaSeleccionada ? "Volver" : "Cerrar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

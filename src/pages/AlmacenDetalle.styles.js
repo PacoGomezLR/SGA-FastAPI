@@ -238,6 +238,8 @@ export const modalOverlay = {
 export const modalBox = {
   width: "100%",
   maxWidth: "440px",
+  maxHeight: "80vh",
+  overflowY: "auto",
   backgroundColor: "white",
   borderRadius: "16px",
   padding: "22px",
