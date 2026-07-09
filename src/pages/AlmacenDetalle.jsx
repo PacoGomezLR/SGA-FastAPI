@@ -514,7 +514,7 @@ function AlmacenDetalle() {
               })}
             </div>
 
-            <div style={styles.modalActions}>
+            <div style={{ ...styles.modalActions, marginTop: "16px" }}>
               <button type="button" style={styles.secondaryButton} onClick={cerrarFila}>
                 Cerrar
               </button>
