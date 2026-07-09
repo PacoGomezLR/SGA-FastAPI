@@ -37,7 +37,7 @@ def _construir_zonas_y_ubicaciones(almacen_id: int, pasillos: list[PasilloLayout
 
             ubicaciones = [
                 Location(
-                    codigo=f"Y{y}-X{x}",
+                    codigo=f"A{y}-F{x}",
                     activa=True,
                     eje_y=y,
                     eje_x=x,

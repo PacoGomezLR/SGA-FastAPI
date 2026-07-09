@@ -358,7 +358,7 @@ function Almacenes() {
                     name="eje_y_max"
                     type="number"
                     min="1"
-                    placeholder="Filas (Y)"
+                    placeholder="Altura (Y)"
                     value={p.eje_y_max}
                     onChange={(e) => handlePasilloChange(index, e)}
                     style={{ ...input, width: "110px" }}
@@ -369,7 +369,7 @@ function Almacenes() {
                     name="eje_x_max"
                     type="number"
                     min="1"
-                    placeholder="Columnas (X)"
+                    placeholder="Fila (X)"
                     value={p.eje_x_max}
                     onChange={(e) => handlePasilloChange(index, e)}
                     style={{ ...input, width: "120px" }}
