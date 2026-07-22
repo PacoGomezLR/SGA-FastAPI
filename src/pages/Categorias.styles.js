@@ -6,14 +6,46 @@ export const inputStyle = {
   width: "100%"
 };
 
+export const formActions = {
+  display: "flex",
+  gap: "10px",
+  flexWrap: "wrap"
+};
+
 export const primaryButton = {
   padding: "10px 14px",
   borderRadius: "8px",
-  backgroundColor: "#2563eb",
+  backgroundColor: "#0f172a",
   color: "white",
   border: "none",
   fontWeight: "600",
   cursor: "pointer"
+};
+
+export const secondaryButton = {
+  padding: "10px 14px",
+  borderRadius: "8px",
+  backgroundColor: "white",
+  color: "#0f172a",
+  border: "1px solid #cbd5e1",
+  fontWeight: "600",
+  cursor: "pointer"
+};
+
+export const dangerButton = {
+  padding: "10px 14px",
+  border: "none",
+  borderRadius: "8px",
+  backgroundColor: "#dc2626",
+  color: "white",
+  cursor: "pointer",
+  fontWeight: "600"
+};
+
+export const accionesTabla = {
+  display: "flex",
+  gap: "8px",
+  flexWrap: "wrap"
 };
 
 export const tableWrapper = {
@@ -44,21 +76,3 @@ export const tr = {
   transition: "background 0.2s"
 };
 
-export const editButton = {
-  padding: "6px 10px",
-  marginRight: "6px",
-  borderRadius: "6px",
-  border: "none",
-  backgroundColor: "#f59e0b",
-  color: "white",
-  cursor: "pointer"
-};
-
-export const deleteButton = {
-  padding: "6px 10px",
-  borderRadius: "6px",
-  border: "none",
-  backgroundColor: "#dc2626",
-  color: "white",
-  cursor: "pointer"
-};

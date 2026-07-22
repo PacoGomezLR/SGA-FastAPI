@@ -22,6 +22,7 @@ function Productos() {
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [busqueda, setBusqueda] = useState("");
+  const [filtroCategoria, setFiltroCategoria] = useState("");
 
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
@@ -231,6 +232,10 @@ function Productos() {
   }
 
   const productosFiltrados = productos.filter((p) => {
+    if (filtroCategoria && String(p.categoria_id) !== filtroCategoria) {
+      return false;
+    }
+
     const texto = busqueda.toLowerCase().trim();
     if (!texto) return true;
 
@@ -310,25 +315,25 @@ function Productos() {
         onSearchChange={(e) => setBusqueda(e.target.value)}
         loading={cargando}
         emptyMessage="No hay productos"
+        showForm={mostrarFormulario}
+        onShowForm={nuevoProducto}
+        showFormButtonText="+ Crear producto"
+        extraToolbarContent={
+          <select
+            value={filtroCategoria}
+            onChange={(e) => setFiltroCategoria(e.target.value)}
+            style={styles.categoriaFiltro}
+          >
+            <option value="">Todas las categorías</option>
+            {categorias.map((categoria) => (
+              <option key={categoria.id} value={categoria.id}>
+                {categoria.nombre}
+              </option>
+            ))}
+          </select>
+        }
         formContent={
-          <>
-            <div style={styles.accionesSuperiores}>
-              {!mostrarFormulario ? (
-                <button type="button" style={styles.primaryButton} onClick={nuevoProducto}>
-                  Crear producto
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  style={styles.secondaryButton}
-                  onClick={limpiarFormulario}
-                >
-                  Ocultar formulario
-                </button>
-              )}
-            </div>
-
-            {mostrarFormulario && (
+          mostrarFormulario && (
               <div style={styles.formWrapper}>
                 <div style={styles.bloque}>
                   <div style={styles.bloqueTitulo}>Datos principales</div>
@@ -464,8 +469,7 @@ function Productos() {
                   </button>
                 </div>
               </div>
-            )}
-          </>
+            )
         }
         tableContent={tablaProductos}
       />

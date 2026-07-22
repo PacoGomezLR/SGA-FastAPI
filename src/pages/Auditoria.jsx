@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ArrowDownCircle, ArrowLeftRight, ArrowUpCircle, ListChecks } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useIsMobile } from "../hooks/useMediaQuery";
 import * as styles from "./Auditoria.styles";
@@ -152,59 +153,11 @@ function Auditoria() {
         </div>
       )}
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "14px",
-          marginBottom: "20px"
-        }}
-      >
-        <div style={styles.card}>
-          <div style={{ color: "#6b7280", fontSize: "13px" }}>Total</div>
-          <div style={{ fontSize: "28px", fontWeight: "700" }}>
-            {resumen.total}
-          </div>
-        </div>
-
-        <div style={styles.card}>
-          <div style={{ color: "#6b7280", fontSize: "13px" }}>Entradas</div>
-          <div
-            style={{
-              fontSize: "28px",
-              fontWeight: "700",
-              color: "#166534"
-            }}
-          >
-            {resumen.entradas}
-          </div>
-        </div>
-
-        <div style={styles.card}>
-          <div style={{ color: "#6b7280", fontSize: "13px" }}>Salidas</div>
-          <div
-            style={{
-              fontSize: "28px",
-              fontWeight: "700",
-              color: "#991b1b"
-            }}
-          >
-            {resumen.salidas}
-          </div>
-        </div>
-
-        <div style={styles.card}>
-          <div style={{ color: "#6b7280", fontSize: "13px" }}>Traslados</div>
-          <div
-            style={{
-              fontSize: "28px",
-              fontWeight: "700",
-              color: "#1d4ed8"
-            }}
-          >
-            {resumen.traslados}
-          </div>
-        </div>
+      <div style={styles.statsGrid}>
+        <Card title="Total" value={resumen.total} icon={ListChecks} color="#374151" />
+        <Card title="Entradas" value={resumen.entradas} icon={ArrowDownCircle} color="#166534" />
+        <Card title="Salidas" value={resumen.salidas} icon={ArrowUpCircle} color="#991b1b" />
+        <Card title="Traslados" value={resumen.traslados} icon={ArrowLeftRight} color="#1d4ed8" />
       </div>
 
       <div
@@ -366,6 +319,23 @@ function Auditoria() {
           </table>
         )}
       </div>
+    </div>
+  );
+}
+
+function Card({ title, value, color = "#0f172a", icon: Icon }) {
+  return (
+    <div style={styles.statCard}>
+      <div>
+        <h3 style={styles.statCardTitle}>{title}</h3>
+        <p style={{ ...styles.statCardValue, color }}>{value}</p>
+      </div>
+
+      {Icon && (
+        <div style={{ ...styles.statCardIconWrapper, backgroundColor: `${color}1a` }}>
+          <Icon size={20} color={color} strokeWidth={2} />
+        </div>
+      )}
     </div>
   );
 }

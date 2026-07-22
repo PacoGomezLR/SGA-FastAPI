@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { CheckCircle2, Warehouse, XCircle } from "lucide-react";
 import { apiFetch } from "../api/api";
 import { useConfirm } from "../context/ConfirmContext";
 import CrudPage from "../components/CrudPage";
@@ -31,6 +32,7 @@ function Almacenes() {
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
   const [pasillos, setPasillos] = useState([]);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
   const { confirm } = useConfirm();
 
@@ -67,6 +69,7 @@ function Almacenes() {
     setPasillos([]);
     setError("");
     setMensaje("");
+    setMostrarFormulario(false);
   }
 
   function editarAlmacen(almacen) {
@@ -74,6 +77,7 @@ function Almacenes() {
     setMensaje("");
     setError("");
     setPasillos([]);
+    setMostrarFormulario(true);
 
     setForm({
       nombre: almacen.nombre ?? "",
@@ -278,6 +282,9 @@ function Almacenes() {
       onSearchChange={(e) => setBusqueda(e.target.value)}
       loading={cargando}
       emptyMessage="No hay almacenes"
+      showForm={mostrarFormulario}
+      onShowForm={() => setMostrarFormulario(true)}
+      showFormButtonText="+ Crear almacén"
       formContent={
         <>
           <div style={styles.sectionTitle}>Datos principales</div>
@@ -398,7 +405,7 @@ function Almacenes() {
               {guardando ? "Guardando..." : editingId ? "Actualizar" : "Crear"}
             </button>
 
-            {editingId && (
+            {(editingId || mostrarFormulario) && (
               <button type="button" onClick={limpiarFormulario} style={styles.secondaryButton}>
                 Cancelar
               </button>
@@ -409,39 +416,30 @@ function Almacenes() {
       tableContent={
         <>
           <div style={styles.statsGrid}>
-            <Card title="Total almacenes" value={almacenes.length} />
-            <Card title="Activos" value={totalActivos} />
-            <Card title="Inactivos" value={totalInactivos} />
+            <Card title="Total almacenes" value={almacenes.length} icon={Warehouse} color="#1baf7a" />
+            <Card title="Activos" value={totalActivos} icon={CheckCircle2} color="#2a78d6" />
+            <Card title="Inactivos" value={totalInactivos} icon={XCircle} color="#991b1b" />
           </div>
           {tablaAlmacenes}
         </>
       }
-    >
-      <div style={styles.statsGrid}>
-        <Card title="Total almacenes" value={almacenes.length} />
-        <Card title="Activos" value={totalActivos} />
-        <Card title="Inactivos" value={totalInactivos} />
-      </div>
-
-      {tablaAlmacenes}
-    </CrudPage>
+    />
   );
 }
 
-function Card({ title, value }) {
+function Card({ title, value, color = "#0f172a", icon: Icon }) {
   return (
-    <div style={styles.card}>
-      <h3 style={{ margin: 0, color: "#334155", fontSize: "16px" }}>{title}</h3>
-      <p
-        style={{
-          fontSize: "32px",
-          fontWeight: "700",
-          margin: "10px 0 0 0",
-          color: "#0f172a"
-        }}
-      >
-        {value}
-      </p>
+    <div style={styles.statCard}>
+      <div>
+        <h3 style={styles.statCardTitle}>{title}</h3>
+        <p style={{ ...styles.statCardValue, color }}>{value}</p>
+      </div>
+
+      {Icon && (
+        <div style={{ ...styles.statCardIconWrapper, backgroundColor: `${color}1a` }}>
+          <Icon size={22} color={color} strokeWidth={2} />
+        </div>
+      )}
     </div>
   );
 }

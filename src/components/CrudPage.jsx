@@ -12,7 +12,11 @@ function CrudPage({
   loading,
   emptyMessage,
   formContent,
-  tableContent
+  tableContent,
+  showForm = true,
+  onShowForm,
+  showFormButtonText,
+  extraToolbarContent
 }) {
   const esMobile = useIsMobile();
 
@@ -23,23 +27,59 @@ function CrudPage({
       {message && <div style={styles.successBox}>{message}</div>}
       {error && <div style={styles.errorBox}>{error}</div>}
 
-      <div style={esMobile ? styles.cardMobile : styles.card}>
-        <h2 style={styles.cardTitleStyle}>{cardTitle}</h2>
+      {!showForm && onShowForm ? (
+        <div style={styles.toolbar}>
+          <button
+            type="button"
+            onClick={onShowForm}
+            style={styles.toggleFormButton}
+          >
+            {showFormButtonText || cardTitle}
+          </button>
 
-        <form onSubmit={onSubmit}>
-          <div style={styles.formGrid}>
-            {formContent}
-          </div>
-        </form>
-      </div>
+          <input
+            type="text"
+            placeholder="Buscar..."
+            value={searchValue}
+            onChange={onSearchChange}
+            style={styles.searchInputInToolbar}
+          />
 
-      <input
-        type="text"
-        placeholder="Buscar..."
-        value={searchValue}
-        onChange={onSearchChange}
-        style={styles.searchInput}
-      />
+          {extraToolbarContent}
+        </div>
+      ) : extraToolbarContent ? (
+        <div style={styles.toolbar}>
+          <input
+            type="text"
+            placeholder="Buscar..."
+            value={searchValue}
+            onChange={onSearchChange}
+            style={styles.searchInputInToolbar}
+          />
+
+          {extraToolbarContent}
+        </div>
+      ) : (
+        <input
+          type="text"
+          placeholder="Buscar..."
+          value={searchValue}
+          onChange={onSearchChange}
+          style={styles.searchInput}
+        />
+      )}
+
+      {showForm && (
+        <div style={esMobile ? styles.cardMobile : styles.card}>
+          <h2 style={styles.cardTitleStyle}>{cardTitle}</h2>
+
+          <form onSubmit={onSubmit}>
+            <div style={styles.formGrid}>
+              {formContent}
+            </div>
+          </form>
+        </div>
+      )}
 
       {loading ? (
         <p style={styles.infoText}>Cargando...</p>

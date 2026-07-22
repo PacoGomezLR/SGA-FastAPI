@@ -1,16 +1,45 @@
-export const card = {
-  padding: "20px",
-  backgroundColor: "white",
-  borderRadius: "12px",
-  boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
-  minWidth: "220px"
-};
-
 export const statsGrid = {
   display: "flex",
   gap: "20px",
   flexWrap: "wrap",
   marginBottom: "24px"
+};
+
+export const statCard = {
+  backgroundColor: "white",
+  borderRadius: "14px",
+  padding: "20px",
+  border: "1px solid #e5e7eb",
+  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: "12px",
+  minWidth: "220px",
+  flex: "1 1 220px"
+};
+
+export const statCardTitle = {
+  margin: 0,
+  color: "#6b7280",
+  fontSize: "14px",
+  marginBottom: "8px"
+};
+
+export const statCardValue = {
+  fontSize: "32px",
+  fontWeight: "700",
+  margin: 0
+};
+
+export const statCardIconWrapper = {
+  width: "44px",
+  height: "44px",
+  borderRadius: "12px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0
 };
 
 export const sectionTitle = {

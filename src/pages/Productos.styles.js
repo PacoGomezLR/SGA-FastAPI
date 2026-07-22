@@ -1,7 +1,3 @@
-export const accionesSuperiores = {
-  marginBottom: "6px"
-};
-
 export const formWrapper = {
   display: "grid",
   gap: "18px"
@@ -46,6 +42,16 @@ export const input = {
   backgroundColor: "white",
   outline: "none",
   boxSizing: "border-box"
+};
+
+export const categoriaFiltro = {
+  padding: "12px 14px",
+  borderRadius: "10px",
+  border: "1px solid #cbd5e1",
+  backgroundColor: "white",
+  outline: "none",
+  boxSizing: "border-box",
+  flex: "1 1 220px"
 };
 
 export const select = {
@@ -110,9 +116,9 @@ export const secondaryButton = {
 export const dangerButton = {
   padding: "10px 16px",
   borderRadius: "10px",
-  border: "1px solid #fecaca",
-  backgroundColor: "#fff1f2",
-  color: "#b91c1c",
+  border: "none",
+  backgroundColor: "#dc2626",
+  color: "white",
   fontWeight: "600",
   cursor: "pointer"
 };

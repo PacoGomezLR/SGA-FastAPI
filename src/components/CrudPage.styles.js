@@ -15,6 +15,26 @@ export const cardMobile = {
   padding: "18px"
 };
 
+export const toolbar = {
+  display: "flex",
+  alignItems: "center",
+  gap: "14px",
+  flexWrap: "wrap",
+  marginBottom: "24px"
+};
+
+export const toggleFormButton = {
+  padding: "12px 20px",
+  backgroundColor: "#0f172a",
+  color: "white",
+  border: "none",
+  borderRadius: "10px",
+  cursor: "pointer",
+  fontWeight: "600",
+  fontSize: "14px",
+  whiteSpace: "nowrap"
+};
+
 export const cardTitleStyle = {
   marginTop: 0,
   marginBottom: "20px"
@@ -54,6 +74,12 @@ export const searchInput = {
   outline: "none",
   backgroundColor: "white",
   boxSizing: "border-box"
+};
+
+export const searchInputInToolbar = {
+  ...searchInput,
+  margin: 0,
+  flex: "1 1 260px"
 };
 
 export const infoText = {
