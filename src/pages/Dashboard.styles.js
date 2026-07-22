@@ -6,6 +6,22 @@ export const cardBase = {
   boxShadow: "0 6px 18px rgba(0,0,0,0.04)"
 };
 
+export const mapaHeader = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
+  flexWrap: "wrap",
+  marginBottom: "16px"
+};
+
+export const mapaLink = {
+  fontSize: "14px",
+  fontWeight: "600",
+  color: "#2a78d6",
+  textDecoration: "none"
+};
+
 export const alertTh = {
   textAlign: "left",
   padding: "12px",

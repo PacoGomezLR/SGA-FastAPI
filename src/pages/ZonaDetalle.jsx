@@ -63,8 +63,8 @@ function ZonaDetalle() {
           <p style={styles.subtitle}>Detalle de la zona y sus ubicaciones</p>
         </div>
 
-        <Link to={`/almacenes/${zona.almacen_id}`} style={styles.backButton}>
-          Volver al almacén
+        <Link to={`/secciones/${zona.seccion_id}`} style={styles.backButton}>
+          Volver a la sección
         </Link>
       </div>
 

@@ -4,66 +4,66 @@ from sqlalchemy.orm import Session
 
 from app.models.location import Location
 from app.models.stock import Stock
-from app.models.warehouse import Warehouse
+from app.models.section import Section
 from app.models.zone import Zone
-from app.repositories.warehouse_repository import WarehouseRepository
-from app.schemas.warehouse import WarehouseCreate, WarehouseUpdate
+from app.repositories.section_repository import SectionRepository
+from app.schemas.section import SectionCreate, SectionUpdate
 
 
-class WarehouseService:
+class SectionService:
     def __init__(self, db: Session):
         self.db = db
-        self.repository = WarehouseRepository(db)
+        self.repository = SectionRepository(db)
 
-    def get_all_warehouses(self):
+    def get_all_sections(self):
         return self.repository.get_all()
 
-    def get_warehouse_by_id(self, warehouse_id: int):
-        warehouse = self.repository.get_by_id(warehouse_id)
-        if not warehouse:
+    def get_section_by_id(self, section_id: int):
+        section = self.repository.get_by_id(section_id)
+        if not section:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Almacén no encontrado"
+                detail="Sección no encontrada"
             )
-        return warehouse
+        return section
 
-    def create_warehouse(self, warehouse_data: WarehouseCreate):
-        existing = self.repository.get_by_name(warehouse_data.nombre)
+    def create_section(self, section_data: SectionCreate):
+        existing = self.repository.get_by_name(section_data.nombre)
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Ya existe un almacén con ese nombre"
+                detail="Ya existe una sección con ese nombre"
             )
-        return self.repository.create(warehouse_data)
+        return self.repository.create(section_data)
 
-    def update_warehouse(self, warehouse_id: int, warehouse_data: WarehouseUpdate):
-        warehouse = self.repository.get_by_id(warehouse_id)
-        if not warehouse:
+    def update_section(self, section_id: int, section_data: SectionUpdate):
+        section = self.repository.get_by_id(section_id)
+        if not section:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Almacén no encontrado"
+                detail="Sección no encontrada"
             )
 
-        if warehouse_data.nombre:
-            existing = self.repository.get_by_name(warehouse_data.nombre)
-            if existing and existing.id != warehouse_id:
+        if section_data.nombre:
+            existing = self.repository.get_by_name(section_data.nombre)
+            if existing and existing.id != section_id:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Ya existe otro almacén con ese nombre"
+                    detail="Ya existe otra sección con ese nombre"
                 )
 
-        return self.repository.update(warehouse, warehouse_data)
+        return self.repository.update(section, section_data)
 
-    def delete_warehouse(self, warehouse_id: int):
-        warehouse = self.repository.get_by_id(warehouse_id)
-        if not warehouse:
+    def delete_section(self, section_id: int):
+        section = self.repository.get_by_id(section_id)
+        if not section:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Almacén no encontrado"
+                detail="Sección no encontrada"
             )
 
-        self.repository.delete(warehouse)
-        return {"message": "Almacén eliminado correctamente"}
+        self.repository.delete(section)
+        return {"message": "Sección eliminada correctamente"}
 
     def get_occupancy(self):
         ubicacion_ocupada = (
@@ -75,15 +75,15 @@ class WarehouseService:
 
         query = (
             select(
-                Warehouse.id.label("almacen_id"),
-                Warehouse.nombre.label("almacen_nombre"),
+                Section.id.label("seccion_id"),
+                Section.nombre.label("seccion_nombre"),
                 func.count(Location.id).label("ubicaciones_totales"),
                 func.count(
                     case((ubicacion_ocupada.c.ubicacion_id.isnot(None), 1))
                 ).label("ubicaciones_ocupadas"),
             )
-            .select_from(Warehouse)
-            .join(Zone, Zone.almacen_id == Warehouse.id)
+            .select_from(Section)
+            .join(Zone, Zone.seccion_id == Section.id)
             .join(Location, Location.zona_id == Zone.id)
             .join(
                 ubicacion_ocupada,
@@ -91,16 +91,16 @@ class WarehouseService:
                 isouter=True,
             )
             .where(Location.activa.is_(True))
-            .group_by(Warehouse.id, Warehouse.nombre)
-            .order_by(Warehouse.nombre)
+            .group_by(Section.id, Section.nombre)
+            .order_by(Section.nombre)
         )
 
         filas = self.db.execute(query).all()
 
         return [
             {
-                "almacen_id": fila.almacen_id,
-                "almacen_nombre": fila.almacen_nombre,
+                "seccion_id": fila.seccion_id,
+                "seccion_nombre": fila.seccion_nombre,
                 "ubicaciones_totales": fila.ubicaciones_totales,
                 "ubicaciones_ocupadas": fila.ubicaciones_ocupadas,
                 "porcentaje_ocupacion": (

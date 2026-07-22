@@ -6,11 +6,11 @@ import * as styles from "./Stock.styles";
 function Stock() {
   const esMobile = useIsMobile();
   const [stock, setStock] = useState([]);
-  const [almacenes, setAlmacenes] = useState([]);
+  const [secciones, setSecciones] = useState([]);
   const [categorias, setCategorias] = useState([]);
 
   const [soloBajo, setSoloBajo] = useState(false);
-  const [almacenId, setAlmacenId] = useState("");
+  const [seccionId, setSeccionId] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [categoria, setCategoria] = useState("");
   const [cargando, setCargando] = useState(true);
@@ -24,7 +24,7 @@ function Stock() {
       const params = new URLSearchParams();
 
       if (soloBajo) params.append("low", "true");
-      if (almacenId !== "") params.append("almacen_id", almacenId);
+      if (seccionId !== "") params.append("seccion_id", seccionId);
 
       const endpoint = params.toString()
         ? `/stock?${params.toString()}`
@@ -40,13 +40,13 @@ function Stock() {
     }
   }
 
-  async function cargarAlmacenes() {
+  async function cargarSecciones() {
     try {
-      const data = await apiFetch("/warehouses/");
-      setAlmacenes(Array.isArray(data) ? data : []);
+      const data = await apiFetch("/sections/");
+      setSecciones(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError((prev) => prev || err.message || "Error al cargar almacenes");
-      setAlmacenes([]);
+      setError((prev) => prev || err.message || "Error al cargar secciones");
+      setSecciones([]);
     }
   }
 
@@ -61,13 +61,13 @@ function Stock() {
   }
 
   useEffect(() => {
-    cargarAlmacenes();
+    cargarSecciones();
     cargarCategorias();
   }, []);
 
   useEffect(() => {
     cargarStock();
-  }, [soloBajo, almacenId]);
+  }, [soloBajo, seccionId]);
 
   const stockFiltrado = useMemo(() => {
     const texto = busqueda.trim().toLowerCase();
@@ -79,7 +79,7 @@ function Stock() {
         String(item.producto_id || "").includes(texto) ||
         (item.ubicacion_nombre || "").toLowerCase().includes(texto) ||
         (item.zona_nombre || "").toLowerCase().includes(texto) ||
-        (item.almacen_nombre || "").toLowerCase().includes(texto) ||
+        (item.seccion_nombre || "").toLowerCase().includes(texto) ||
         (item.categoria_nombre || "").toLowerCase().includes(texto);
 
       const coincideCategoria =
@@ -99,7 +99,7 @@ function Stock() {
         <div>
           <h1 style={{ margin: 0 }}>Stock</h1>
           <p style={styles.subtitle}>
-            Consulta de existencias por producto, almacén, zona y ubicación.
+            Consulta de existencias por producto, sección, zona y ubicación.
           </p>
         </div>
       </div>
@@ -115,19 +115,19 @@ function Stock() {
         </label>
 
         <div style={styles.filterGroup}>
-          <label htmlFor="almacen" style={styles.filterLabel}>
-            Almacén
+          <label htmlFor="seccion" style={styles.filterLabel}>
+            Sección
           </label>
           <select
-            id="almacen"
-            value={almacenId}
-            onChange={(e) => setAlmacenId(e.target.value)}
+            id="seccion"
+            value={seccionId}
+            onChange={(e) => setSeccionId(e.target.value)}
             style={styles.select}
           >
-            <option value="">Todos</option>
-            {almacenes.map((almacen) => (
-              <option key={almacen.id} value={almacen.id}>
-                {almacen.nombre}
+            <option value="">Todas</option>
+            {secciones.map((seccion) => (
+              <option key={seccion.id} value={seccion.id}>
+                {seccion.nombre}
               </option>
             ))}
           </select>
@@ -154,7 +154,7 @@ function Stock() {
 
         <input
           type="text"
-          placeholder="Buscar producto, almacén, zona o ubicación..."
+          placeholder="Buscar producto, sección, zona o ubicación..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           style={esMobile ? styles.searchInputMobile : styles.searchInput}
@@ -175,7 +175,7 @@ function Stock() {
                 <tr>
                   <th style={styles.th}>Producto</th>
                   <th style={styles.th}>Categoría</th>
-                  <th style={styles.th}>Almacén</th>
+                  <th style={styles.th}>Sección</th>
                   <th style={styles.th}>Zona</th>
                   <th style={styles.th}>Ubicación</th>
                   <th style={styles.th}>Cantidad</th>
@@ -193,7 +193,7 @@ function Stock() {
                   >
                     <td style={styles.td}>{item.producto_nombre || item.producto_id}</td>
                     <td style={styles.td}>{item.categoria_nombre || "-"}</td>
-                    <td style={styles.td}>{item.almacen_nombre || "-"}</td>
+                    <td style={styles.td}>{item.seccion_nombre || "-"}</td>
                     <td style={styles.td}>{item.zona_nombre || "-"}</td>
                     <td style={styles.td}>{item.ubicacion_nombre || "-"}</td>
 

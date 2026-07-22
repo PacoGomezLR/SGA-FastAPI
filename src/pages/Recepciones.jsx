@@ -7,7 +7,7 @@ const initialForm = {
   producto_id: "",
   cantidad: "",
   observaciones: "",
-  almacen_id: "",
+  seccion_id: "",
   zona_id: "",
   ubicacion_destino_id: ""
 };
@@ -21,7 +21,7 @@ function Recepciones() {
   const [cargandoDatos, setCargandoDatos] = useState(true);
 
   const [productos, setProductos] = useState([]);
-  const [almacenes, setAlmacenes] = useState([]);
+  const [secciones, setSecciones] = useState([]);
   const [zonas, setZonas] = useState([]);
   const [ubicaciones, setUbicaciones] = useState([]);
 
@@ -37,22 +37,22 @@ function Recepciones() {
       setCargandoDatos(true);
       setError("");
 
-      const [productosData, almacenesData, zonasData, ubicacionesData] =
+      const [productosData, seccionesData, zonasData, ubicacionesData] =
         await Promise.all([
           apiFetch("/products/"),
-          apiFetch("/warehouses/"),
+          apiFetch("/sections/"),
           apiFetch("/zones/"),
           apiFetch("/locations/")
         ]);
 
       setProductos(Array.isArray(productosData) ? productosData : []);
-      setAlmacenes(Array.isArray(almacenesData) ? almacenesData : []);
+      setSecciones(Array.isArray(seccionesData) ? seccionesData : []);
       setZonas(Array.isArray(zonasData) ? zonasData : []);
       setUbicaciones(Array.isArray(ubicacionesData) ? ubicacionesData : []);
     } catch (err) {
       setError(err.message || "Error al cargar los datos del formulario");
       setProductos([]);
-      setAlmacenes([]);
+      setSecciones([]);
       setZonas([]);
       setUbicaciones([]);
     } finally {
@@ -66,7 +66,7 @@ function Recepciones() {
     setForm((prev) => ({
       ...prev,
       [name]: value,
-      ...(name === "almacen_id" && {
+      ...(name === "seccion_id" && {
         zona_id: "",
         ubicacion_destino_id: ""
       }),
@@ -92,12 +92,12 @@ function Recepciones() {
   }
 
   const zonasFiltradas = useMemo(() => {
-    if (!form.almacen_id) return [];
+    if (!form.seccion_id) return [];
 
     return zonas.filter(
-      (zona) => String(zona.almacen_id) === String(form.almacen_id)
+      (zona) => String(zona.seccion_id) === String(form.seccion_id)
     );
-  }, [zonas, form.almacen_id]);
+  }, [zonas, form.seccion_id]);
 
   const ubicacionesFiltradas = useMemo(() => {
     if (!form.zona_id) return [];
@@ -138,11 +138,11 @@ function Recepciones() {
     );
   }, [productos, form.producto_id]);
 
-  const almacenSeleccionado = useMemo(() => {
-    return almacenes.find(
-      (almacen) => String(almacen.id) === String(form.almacen_id)
+  const seccionSeleccionada = useMemo(() => {
+    return secciones.find(
+      (seccion) => String(seccion.id) === String(form.seccion_id)
     );
-  }, [almacenes, form.almacen_id]);
+  }, [secciones, form.seccion_id]);
 
   const zonaSeleccionada = useMemo(() => {
     return zonas.find((zona) => String(zona.id) === String(form.zona_id));
@@ -168,7 +168,7 @@ function Recepciones() {
     setCargando(true);
 
     const payload = {
-      almacen_id: Number(form.almacen_id),
+      seccion_id: Number(form.seccion_id),
       observaciones: form.observaciones.trim() || null,
       lineas: [
         {
@@ -287,24 +287,24 @@ function Recepciones() {
             <h2 style={styles.cardTitle}>Destino</h2>
 
             <div style={styles.fieldGroup}>
-              <label htmlFor="almacen_id" style={styles.label}>
-                Almacén
+              <label htmlFor="seccion_id" style={styles.label}>
+                Sección
               </label>
               <select
-                id="almacen_id"
-                name="almacen_id"
-                value={form.almacen_id}
+                id="seccion_id"
+                name="seccion_id"
+                value={form.seccion_id}
                 onChange={handleChange}
                 required
                 style={styles.input}
                 disabled={cargandoDatos || cargando}
               >
-                <option value="">Selecciona un almacén</option>
-                {almacenes.map((almacen) => (
-                  <option key={almacen.id} value={almacen.id}>
-                    {almacen.descripcion
-                      ? `${almacen.nombre} — ${almacen.descripcion}`
-                      : almacen.nombre}
+                <option value="">Selecciona una sección</option>
+                {secciones.map((seccion) => (
+                  <option key={seccion.id} value={seccion.id}>
+                    {seccion.descripcion
+                      ? `${seccion.nombre} — ${seccion.descripcion}`
+                      : seccion.nombre}
                   </option>
                 ))}
               </select>
@@ -321,7 +321,7 @@ function Recepciones() {
                 onChange={handleChange}
                 required
                 style={styles.input}
-                disabled={!form.almacen_id || cargandoDatos || cargando}
+                disabled={!form.seccion_id || cargandoDatos || cargando}
               >
                 <option value="">Selecciona una zona</option>
                 {zonasFiltradas.map((zona) => (
@@ -369,9 +369,9 @@ function Recepciones() {
             </div>
 
             <div style={styles.summaryItem}>
-              <span style={styles.summaryLabel}>Almacén</span>
+              <span style={styles.summaryLabel}>Sección</span>
               <strong style={styles.summaryValue}>
-                {almacenSeleccionado?.nombre || "-"}
+                {seccionSeleccionada?.nombre || "-"}
               </strong>
             </div>
 

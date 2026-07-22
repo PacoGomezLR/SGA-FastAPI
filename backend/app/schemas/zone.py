@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class ZoneBase(BaseModel):
-    almacen_id: int
+    seccion_id: int
     nombre: str = Field(..., min_length=1)
     descripcion: Optional[str] = None
     activo: bool = True
@@ -31,7 +31,7 @@ class ZoneCreate(ZoneBase):
 
 
 class ZoneUpdate(BaseModel):
-    almacen_id: Optional[int] = None
+    seccion_id: Optional[int] = None
     nombre: Optional[str] = None
     descripcion: Optional[str] = None
     activo: Optional[bool] = None

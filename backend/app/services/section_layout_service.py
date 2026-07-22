@@ -2,9 +2,9 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.location import Location
-from app.models.warehouse import Warehouse
+from app.models.section import Section
 from app.models.zone import Zone
-from app.schemas.warehouse_layout import PasilloLayout, WarehouseLayoutCreate
+from app.schemas.section_layout import PasilloLayout, SectionLayoutCreate
 
 
 def _zona_nombre(numero_pasillo: int, lado: str | None) -> str:
@@ -13,7 +13,7 @@ def _zona_nombre(numero_pasillo: int, lado: str | None) -> str:
     return f"Pasillo {numero_pasillo}"
 
 
-def _construir_zonas_y_ubicaciones(almacen_id: int, pasillos: list[PasilloLayout]):
+def _construir_zonas_y_ubicaciones(seccion_id: int, pasillos: list[PasilloLayout]):
     """Construye (sin persistir) las instancias de Zone/Location para los pasillos dados."""
     zonas: list[Zone] = []
 
@@ -28,7 +28,7 @@ def _construir_zonas_y_ubicaciones(almacen_id: int, pasillos: list[PasilloLayout
 
         for lado in lados:
             zona = Zone(
-                almacen_id=almacen_id,
+                seccion_id=seccion_id,
                 nombre=_zona_nombre(pasillo.numero_pasillo, lado),
                 activo=True,
                 numero_pasillo=pasillo.numero_pasillo,
@@ -52,62 +52,62 @@ def _construir_zonas_y_ubicaciones(almacen_id: int, pasillos: list[PasilloLayout
     return zonas
 
 
-class WarehouseLayoutService:
+class SectionLayoutService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_warehouse_with_layout(self, data: WarehouseLayoutCreate):
+    def create_section_with_layout(self, data: SectionLayoutCreate):
         existing = (
-            self.db.query(Warehouse)
-            .filter(Warehouse.nombre == data.warehouse.nombre)
+            self.db.query(Section)
+            .filter(Section.nombre == data.seccion.nombre)
             .first()
         )
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Ya existe un almacén con ese nombre",
+                detail="Ya existe una sección con ese nombre",
             )
 
-        almacen = Warehouse(**data.warehouse.model_dump())
-        self.db.add(almacen)
+        seccion = Section(**data.seccion.model_dump())
+        self.db.add(seccion)
         self.db.flush()
 
-        self._agregar_pasillos(almacen.id, data.pasillos)
+        self._agregar_pasillos(seccion.id, data.pasillos)
 
         self.db.commit()
-        self.db.refresh(almacen)
-        return almacen
+        self.db.refresh(seccion)
+        return seccion
 
-    def generate_layout(self, warehouse_id: int, pasillos: list[PasilloLayout]):
-        almacen = self.db.query(Warehouse).filter(Warehouse.id == warehouse_id).first()
-        if not almacen:
+    def generate_layout(self, section_id: int, pasillos: list[PasilloLayout]):
+        seccion = self.db.query(Section).filter(Section.id == section_id).first()
+        if not seccion:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Almacén no encontrado",
+                detail="Sección no encontrada",
             )
 
-        self._agregar_pasillos(warehouse_id, pasillos)
+        self._agregar_pasillos(section_id, pasillos)
 
         self.db.commit()
         return {"message": "Pasillos generados correctamente"}
 
-    def _agregar_pasillos(self, almacen_id: int, pasillos: list[PasilloLayout]):
+    def _agregar_pasillos(self, seccion_id: int, pasillos: list[PasilloLayout]):
         if not pasillos:
             return
 
-        nuevas_zonas = _construir_zonas_y_ubicaciones(almacen_id, pasillos)
+        nuevas_zonas = _construir_zonas_y_ubicaciones(seccion_id, pasillos)
 
         nombres_nuevos = [zona.nombre for zona in nuevas_zonas]
         existentes = (
             self.db.query(Zone.nombre)
-            .filter(Zone.almacen_id == almacen_id, Zone.nombre.in_(nombres_nuevos))
+            .filter(Zone.seccion_id == seccion_id, Zone.nombre.in_(nombres_nuevos))
             .all()
         )
         if existentes:
             nombres_repetidos = ", ".join(nombre for (nombre,) in existentes)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Ya existen zonas con ese nombre en este almacén: {nombres_repetidos}",
+                detail=f"Ya existen zonas con ese nombre en esta sección: {nombres_repetidos}",
             )
 
         self.db.add_all(nuevas_zonas)

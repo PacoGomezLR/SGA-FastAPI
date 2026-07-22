@@ -16,13 +16,17 @@ function CrudPage({
   showForm = true,
   onShowForm,
   showFormButtonText,
-  extraToolbarContent
+  extraToolbarContent,
+  headerAction
 }) {
   const esMobile = useIsMobile();
 
   return (
     <div>
-      <h1 style={styles.pageTitle}>{title}</h1>
+      <div style={styles.headerRow}>
+        <h1 style={styles.pageTitle}>{title}</h1>
+        {headerAction}
+      </div>
 
       {message && <div style={styles.successBox}>{message}</div>}
       {error && <div style={styles.errorBox}>{error}</div>}

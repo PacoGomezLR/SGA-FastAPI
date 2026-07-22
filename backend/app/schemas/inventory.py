@@ -39,7 +39,7 @@ class InventoryLineResponse(BaseModel):
 # =========================
 
 class InventoryBase(BaseModel):
-    almacen_id: int
+    seccion_id: int
     observaciones: Optional[str] = None
 
 
@@ -56,7 +56,7 @@ class InventoryResponse(BaseModel):
     id: int
     fecha: datetime
     usuario_id: int
-    almacen_id: int
+    seccion_id: int
     estado: str
     observaciones: Optional[str] = None
     creado_en: datetime

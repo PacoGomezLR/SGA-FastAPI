@@ -17,8 +17,8 @@ class StockService:
     def get_all_stock(self):
         return self.repository.get_all()
 
-    def get_all_stock_detailed(self, low: bool = False, almacen_id: int | None = None):
-        data = self.repository.get_all_with_details(low=low, almacen_id=almacen_id)
+    def get_all_stock_detailed(self, low: bool = False, seccion_id: int | None = None):
+        data = self.repository.get_all_with_details(low=low, seccion_id=seccion_id)
 
         return [
             {
@@ -28,10 +28,9 @@ class StockService:
                 "categoria_nombre": item.categoria_nombre,
                 "ubicacion_id": item.ubicacion_id,
                 "ubicacion_nombre": item.ubicacion_nombre,
-                "almacen_id": item.almacen_id,
-                "almacen_nombre": item.almacen_nombre,
+                "seccion_id": item.seccion_id,
+                "seccion_nombre": item.seccion_nombre,
 
-                # 🔥 NUEVO
                 "zona_id": getattr(item, "zona_id", None),
                 "zona_nombre": getattr(item, "zona_nombre", None),
 

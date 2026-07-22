@@ -6,12 +6,12 @@ import * as styles from "./Zonas.styles";
 
 const initialForm = {
   nombre: "",
-  almacen_id: ""
+  seccion_id: ""
 };
 
 function Zonas() {
   const [zonas, setZonas] = useState([]);
-  const [almacenes, setAlmacenes] = useState([]);
+  const [secciones, setSecciones] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
 
@@ -21,32 +21,32 @@ function Zonas() {
   const [busqueda, setBusqueda] = useState("");
 
   const [searchParams] = useSearchParams();
-  const almacenIdFromUrl = searchParams.get("almacen_id");
+  const seccionIdFromUrl = searchParams.get("seccion_id");
 
   useEffect(() => {
     cargarDatos();
   }, []);
 
   useEffect(() => {
-    if (almacenIdFromUrl) {
+    if (seccionIdFromUrl) {
       setForm((prev) => ({
         ...prev,
-        almacen_id: almacenIdFromUrl
+        seccion_id: seccionIdFromUrl
       }));
     }
-  }, [almacenIdFromUrl]);
+  }, [seccionIdFromUrl]);
 
   async function cargarDatos() {
     try {
       setCargando(true);
 
-      const [zonasData, almacenesData] = await Promise.all([
+      const [zonasData, seccionesData] = await Promise.all([
         apiFetch("/zones/"),
-        apiFetch("/warehouses/")
+        apiFetch("/sections/")
       ]);
 
       setZonas(zonasData);
-      setAlmacenes(almacenesData);
+      setSecciones(seccionesData);
     } catch {
       setError("Error al cargar zonas");
     } finally {
@@ -67,7 +67,7 @@ function Zonas() {
     try {
       const payload = {
         nombre: form.nombre,
-        almacen_id: Number(form.almacen_id || almacenIdFromUrl)
+        seccion_id: Number(form.seccion_id || seccionIdFromUrl)
       };
 
       await apiFetch(editingId ? `/zones/${editingId}` : "/zones/", {
@@ -88,7 +88,7 @@ function Zonas() {
     setEditingId(zona.id);
     setForm({
       nombre: zona.nombre,
-      almacen_id: zona.almacen_id
+      seccion_id: zona.seccion_id
     });
   }
 
@@ -123,17 +123,16 @@ function Zonas() {
             style={styles.inputStyle}
           />
 
-          {/* 🔥 SOLO SI NO VIENES DE UN ALMACÉN */}
-          {!almacenIdFromUrl && (
+          {!seccionIdFromUrl && (
             <select
-              name="almacen_id"
-              value={form.almacen_id}
+              name="seccion_id"
+              value={form.seccion_id}
               onChange={handleChange}
               required
               style={styles.inputStyle}
             >
-              <option value="">Selecciona almacén</option>
-              {almacenes.map((a) => (
+              <option value="">Selecciona sección</option>
+              {secciones.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.nombre}
                 </option>
@@ -152,7 +151,7 @@ function Zonas() {
             <thead>
               <tr>
                 <th style={styles.th}>Zona</th>
-                <th style={styles.th}>Almacén</th>
+                <th style={styles.th}>Sección</th>
                 <th style={styles.th}>Acciones</th>
               </tr>
             </thead>
@@ -160,7 +159,7 @@ function Zonas() {
               {zonasFiltradas.map((z) => (
                 <tr key={z.id} style={styles.tr}>
                   <td style={styles.td}>{z.nombre}</td>
-                  <td style={styles.td}>{z.almacen_nombre}</td>
+                  <td style={styles.td}>{z.seccion_nombre}</td>
                   <td style={styles.td}>
                     <button style={styles.editButton} onClick={() => editar(z)}>
                       Editar

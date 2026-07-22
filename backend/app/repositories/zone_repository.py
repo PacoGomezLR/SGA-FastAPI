@@ -14,10 +14,10 @@ class ZoneRepository:
     def get_by_id(self, zone_id: int):
         return self.db.query(Zone).filter(Zone.id == zone_id).first()
 
-    def get_by_warehouse_and_name(self, almacen_id: int, nombre: str):
+    def get_by_section_and_name(self, seccion_id: int, nombre: str):
         return (
             self.db.query(Zone)
-            .filter(Zone.almacen_id == almacen_id, Zone.nombre == nombre)
+            .filter(Zone.seccion_id == seccion_id, Zone.nombre == nombre)
             .first()
         )
 

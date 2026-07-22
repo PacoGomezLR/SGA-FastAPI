@@ -8,7 +8,7 @@ from app.repositories.location_repository import LocationRepository
 from app.repositories.product_repository import ProductRepository
 from app.repositories.shipment_repository import ShipmentRepository
 from app.repositories.stock_repository import StockRepository
-from app.repositories.warehouse_repository import WarehouseRepository
+from app.repositories.section_repository import SectionRepository
 from app.schemas.shipment import ShipmentCreate
 from app.services.audit_service import AuditService
 
@@ -20,7 +20,7 @@ class ShipmentService:
         self.product_repository = ProductRepository(db)
         self.location_repository = LocationRepository(db)
         self.stock_repository = StockRepository(db)
-        self.warehouse_repository = WarehouseRepository(db)
+        self.section_repository = SectionRepository(db)
 
     def get_all_shipments(self):
         return self.repository.get_all()
@@ -43,14 +43,14 @@ class ShipmentService:
                 detail="La salida debe contener al menos una línea"
             )
 
-        almacen = self.warehouse_repository.get_by_id(
-            shipment_data.almacen_id
+        seccion = self.section_repository.get_by_id(
+            shipment_data.seccion_id
         )
 
-        if not almacen:
+        if not seccion:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Almacén con id {shipment_data.almacen_id} no encontrado"
+                detail=f"Sección con id {shipment_data.seccion_id} no encontrada"
             )
 
         lineas_modelo = []
@@ -82,12 +82,12 @@ class ShipmentService:
                     detail="La cantidad debe ser mayor que 0"
                 )
 
-            if ubicacion.zona.almacen_id != shipment_data.almacen_id:
+            if ubicacion.zona.seccion_id != shipment_data.seccion_id:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=(
                         f"La ubicación {linea.ubicacion_origen_id} no pertenece "
-                        f"al almacén {shipment_data.almacen_id}"
+                        f"a la sección {shipment_data.seccion_id}"
                     )
                 )
 
@@ -102,7 +102,7 @@ class ShipmentService:
 
         nueva_salida = Shipment(
             usuario_id=usuario_id,
-            almacen_id=shipment_data.almacen_id,
+            seccion_id=shipment_data.seccion_id,
             observaciones=shipment_data.observaciones,
             estado="borrador",
             lineas=lineas_modelo

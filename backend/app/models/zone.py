@@ -10,11 +10,11 @@ class Zone(Base):
     __tablename__ = "zonas"
 
     __table_args__ = (
-        UniqueConstraint("almacen_id", "nombre", name="uq_zona_almacen_nombre"),
+        UniqueConstraint("seccion_id", "nombre", name="uq_zona_seccion_nombre"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    almacen_id: Mapped[int] = mapped_column(ForeignKey("almacenes.id"), nullable=False)
+    seccion_id: Mapped[int] = mapped_column(ForeignKey("secciones.id"), nullable=False)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     descripcion: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -23,8 +23,8 @@ class Zone(Base):
     numero_pasillo: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     lado: Mapped[Optional[str]] = mapped_column(String(1), nullable=True)
 
-    # Relación: cada zona pertenece a un almacén
-    almacen = relationship("Warehouse", back_populates="zonas")
+    # Relación: cada zona pertenece a una sección
+    seccion = relationship("Section", back_populates="zonas")
 
     # Relación: una zona puede tener muchas ubicaciones
     ubicaciones = relationship("Location", back_populates="zona")

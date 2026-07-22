@@ -1,3 +1,11 @@
+export const headerRow = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "14px",
+  flexWrap: "wrap"
+};
+
 export const pageTitle = {
   marginBottom: "24px"
 };

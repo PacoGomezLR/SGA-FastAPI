@@ -3,7 +3,7 @@ Script de seed idempotente para poblar el entorno con datos de demostración
 (catálogo de instrumentos musicales) para que la app se vea con contenido
 realista de cara a un reclutador.
 
-Reutiliza los servicios reales de la aplicación (WarehouseLayoutService,
+Reutiliza los servicios reales de la aplicación (SectionLayoutService,
 ReceptionService, ShipmentService) para que el layout, el stock y los
 movimientos generados respeten las mismas reglas de negocio que la API.
 
@@ -19,15 +19,15 @@ from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
 from app.models.category import Category
 from app.models.product import Product
-from app.models.warehouse import Warehouse
+from app.models.section import Section
 from app.models.zone import Zone
 from app.models.user import User
 from app.schemas.reception import ReceptionCreate, ReceptionLineCreate
 from app.schemas.shipment import ShipmentCreate, ShipmentLineCreate
-from app.schemas.warehouse_layout import PasilloLayout
+from app.schemas.section_layout import PasilloLayout
 from app.services.reception_service import ReceptionService
 from app.services.shipment_service import ShipmentService
-from app.services.warehouse_layout_service import WarehouseLayoutService
+from app.services.section_layout_service import SectionLayoutService
 
 PRODUCTOS = [
     ("Guitarra Gibson Les Paul", "SEED-PROD-100", "Guitarras eléctricas", 15),
@@ -48,7 +48,7 @@ PRODUCTOS = [
 ]
 
 # (numero_pasillo, lado_d, lado_i, eje_y_max, eje_x_max)
-LAYOUT_ALMACEN = [
+LAYOUT_SECCION = [
     PasilloLayout(numero_pasillo=1, lado_d=True, lado_i=True, eje_y_max=4, eje_x_max=5),
     PasilloLayout(numero_pasillo=2, lado_d=True, lado_i=True, eje_y_max=4, eje_x_max=5),
 ]
@@ -87,14 +87,14 @@ def get_or_create_product(db: Session, nombre: str, sku: str, categoria_nombre: 
     return producto
 
 
-def ensure_layout(db: Session, almacen: Warehouse) -> None:
-    tiene_zonas = db.query(Zone).filter(Zone.almacen_id == almacen.id).first()
+def ensure_layout(db: Session, seccion: Section) -> None:
+    tiene_zonas = db.query(Zone).filter(Zone.seccion_id == seccion.id).first()
     if tiene_zonas:
-        print(f"Almacén '{almacen.nombre}' ya tiene layout. No se genera de nuevo.")
+        print(f"Sección '{seccion.nombre}' ya tiene layout. No se genera de nuevo.")
         return
 
-    WarehouseLayoutService(db).generate_layout(almacen.id, LAYOUT_ALMACEN)
-    print(f"Layout generado para almacén '{almacen.nombre}'.")
+    SectionLayoutService(db).generate_layout(seccion.id, LAYOUT_SECCION)
+    print(f"Layout generado para sección '{seccion.nombre}'.")
 
 
 def get_admin_user(db: Session) -> User:
@@ -108,23 +108,23 @@ RECEPTION_SEED_MARK = "Recepción de demostración (seed)"
 SHIPMENT_SEED_MARK = "Salida de demostración (seed)"
 
 
-def seed_receptions(db: Session, almacen: Warehouse, productos: list[Product], usuario_id: int) -> None:
+def seed_receptions(db: Session, seccion: Section, productos: list[Product], usuario_id: int) -> None:
     from app.models.reception import Reception
 
     ya_sembrado = (
         db.query(Reception)
-        .filter(Reception.almacen_id == almacen.id, Reception.observaciones == RECEPTION_SEED_MARK)
+        .filter(Reception.seccion_id == seccion.id, Reception.observaciones == RECEPTION_SEED_MARK)
         .first()
     )
     if ya_sembrado:
-        print(f"Ya existen recepciones de seed en '{almacen.nombre}'. No se crean de nuevo.")
+        print(f"Ya existen recepciones de seed en '{seccion.nombre}'. No se crean de nuevo.")
         return
 
-    zonas = db.query(Zone).filter(Zone.almacen_id == almacen.id).order_by(Zone.id).all()
+    zonas = db.query(Zone).filter(Zone.seccion_id == seccion.id).order_by(Zone.id).all()
     ubicaciones = [ubicacion for zona in zonas for ubicacion in zona.ubicaciones]
 
     if not ubicaciones:
-        print(f"Sin ubicaciones en '{almacen.nombre}', se omite la carga de stock.")
+        print(f"Sin ubicaciones en '{seccion.nombre}', se omite la carga de stock.")
         return
 
     service = ReceptionService(db)
@@ -133,7 +133,7 @@ def seed_receptions(db: Session, almacen: Warehouse, productos: list[Product], u
         ubicacion = ubicaciones[index % len(ubicaciones)]
 
         reception_data = ReceptionCreate(
-            almacen_id=almacen.id,
+            seccion_id=seccion.id,
             observaciones=RECEPTION_SEED_MARK,
             lineas=[
                 ReceptionLineCreate(
@@ -147,20 +147,20 @@ def seed_receptions(db: Session, almacen: Warehouse, productos: list[Product], u
         recepcion = service.create_reception(reception_data, usuario_id)
         service.confirm_reception(recepcion.id)
 
-    print(f"{len(productos)} recepciones creadas y confirmadas en '{almacen.nombre}'.")
+    print(f"{len(productos)} recepciones creadas y confirmadas en '{seccion.nombre}'.")
 
 
-def seed_shipments(db: Session, almacen: Warehouse, productos: list[Product], usuario_id: int) -> None:
+def seed_shipments(db: Session, seccion: Section, productos: list[Product], usuario_id: int) -> None:
     from app.models.shipment import Shipment
     from app.models.stock import Stock
 
     ya_sembrado = (
         db.query(Shipment)
-        .filter(Shipment.almacen_id == almacen.id, Shipment.observaciones == SHIPMENT_SEED_MARK)
+        .filter(Shipment.seccion_id == seccion.id, Shipment.observaciones == SHIPMENT_SEED_MARK)
         .first()
     )
     if ya_sembrado:
-        print(f"Ya existen salidas de seed en '{almacen.nombre}'. No se crean de nuevo.")
+        print(f"Ya existen salidas de seed en '{seccion.nombre}'. No se crean de nuevo.")
         return
 
     service = ShipmentService(db)
@@ -179,7 +179,7 @@ def seed_shipments(db: Session, almacen: Warehouse, productos: list[Product], us
         cantidad_salida = max(1, stock_item.cantidad // 3)
 
         shipment_data = ShipmentCreate(
-            almacen_id=almacen.id,
+            seccion_id=seccion.id,
             observaciones=SHIPMENT_SEED_MARK,
             lineas=[
                 ShipmentLineCreate(
@@ -193,7 +193,7 @@ def seed_shipments(db: Session, almacen: Warehouse, productos: list[Product], us
         service.create_shipment(shipment_data, usuario_id)
         creadas += 1
 
-    print(f"{creadas} salidas creadas y confirmadas en '{almacen.nombre}'.")
+    print(f"{creadas} salidas creadas y confirmadas en '{seccion.nombre}'.")
 
 
 def main() -> None:
@@ -208,16 +208,16 @@ def main() -> None:
         ]
         db.commit()
 
-        almacen = db.query(Warehouse).filter(Warehouse.nombre == "Almacén 1").first()
-        if not almacen:
-            raise RuntimeError("No existe el almacén 'Almacén 1' en este entorno.")
+        seccion = db.query(Section).filter(Section.nombre == "Almacén 1").first()
+        if not seccion:
+            raise RuntimeError("No existe la sección 'Almacén 1' en este entorno.")
 
-        ensure_layout(db, almacen)
+        ensure_layout(db, seccion)
         db.commit()
-        db.refresh(almacen)
+        db.refresh(seccion)
 
-        seed_receptions(db, almacen, productos, admin.id)
-        seed_shipments(db, almacen, productos, admin.id)
+        seed_receptions(db, seccion, productos, admin.id)
+        seed_shipments(db, seccion, productos, admin.id)
 
     finally:
         db.close()

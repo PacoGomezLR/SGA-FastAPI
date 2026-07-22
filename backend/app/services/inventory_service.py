@@ -7,7 +7,7 @@ from app.models.location import Location
 from app.models.movement import Movement
 from app.models.product import Product
 from app.models.user import User
-from app.models.warehouse import Warehouse
+from app.models.section import Section
 from app.repositories.inventory_repository import InventoryRepository
 from app.repositories.stock_repository import StockRepository
 from app.schemas.inventory import InventoryCreate, InventoryLineCreate, InventoryUpdate
@@ -44,12 +44,12 @@ class InventoryService:
 
     def create_inventory(self, inventory_data: InventoryCreate, usuario_id: int):
         self._validate_user(usuario_id)
-        self._validate_warehouse(inventory_data.almacen_id)
+        self._validate_section(inventory_data.seccion_id)
 
         try:
             inventario = Inventory(
                 usuario_id=usuario_id,
-                almacen_id=inventory_data.almacen_id,
+                seccion_id=inventory_data.seccion_id,
                 observaciones=inventory_data.observaciones,
                 estado="borrador"
             )
@@ -66,7 +66,7 @@ class InventoryService:
                 entidad="inventario",
                 entidad_id=inventario.id,
                 detalle=(
-                    f"Inventario creado en almacén {inventario.almacen_id} "
+                    f"Inventario creado en sección {inventario.seccion_id} "
                     f"con estado {inventario.estado}"
                 )
             )
@@ -558,12 +558,12 @@ class InventoryService:
                 detail="Usuario no encontrado"
             )
 
-    def _validate_warehouse(self, almacen_id: int):
-        almacen = self.db.query(Warehouse).filter(Warehouse.id == almacen_id).first()
-        if not almacen:
+    def _validate_section(self, seccion_id: int):
+        seccion = self.db.query(Section).filter(Section.id == seccion_id).first()
+        if not seccion:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Almacén no encontrado"
+                detail="Sección no encontrada"
             )
 
     def _validate_product(self, producto_id: int):

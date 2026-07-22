@@ -9,7 +9,7 @@ function Movimientos() {
   const paddingPagina = esMobile ? "16px" : "30px";
 
   const [productos, setProductos] = useState([]);
-  const [almacenes, setAlmacenes] = useState([]);
+  const [secciones, setSecciones] = useState([]);
   const [zonas, setZonas] = useState([]);
   const [ubicaciones, setUbicaciones] = useState([]);
   const [stock, setStock] = useState([]);
@@ -18,10 +18,10 @@ function Movimientos() {
 
   const [form, setForm] = useState({
     producto_id: "",
-    almacen_origen_id: "",
+    seccion_origen_id: "",
     zona_origen_id: "",
     ubicacion_origen_id: "",
-    almacen_destino_id: "",
+    seccion_destino_id: "",
     zona_destino_id: "",
     ubicacion_destino_id: "",
     cantidad: "",
@@ -43,20 +43,20 @@ function Movimientos() {
 
       const [
         productosData,
-        almacenesData,
+        seccionesData,
         zonasData,
         ubicacionesData,
         stockData
       ] = await Promise.all([
         authFetch("/products/").then(r => r.json()),
-        authFetch("/warehouses/").then(r => r.json()),
+        authFetch("/sections/").then(r => r.json()),
         authFetch("/zones/").then(r => r.json()),
         authFetch("/locations/").then(r => r.json()),
         authFetch("/stock?detailed=true").then(r => r.json())
       ]);
 
       setProductos(Array.isArray(productosData) ? productosData : []);
-      setAlmacenes(Array.isArray(almacenesData) ? almacenesData : []);
+      setSecciones(Array.isArray(seccionesData) ? seccionesData : []);
       setZonas(Array.isArray(zonasData) ? zonasData : []);
       setUbicaciones(Array.isArray(ubicacionesData) ? ubicacionesData : []);
       setStock(Array.isArray(stockData) ? stockData : []);
@@ -70,10 +70,10 @@ function Movimientos() {
   function handleChange(e) {
     const { name, value } = e.target;
 
-    if (name === "almacen_origen_id") {
+    if (name === "seccion_origen_id") {
       setForm({
         ...form,
-        almacen_origen_id: value,
+        seccion_origen_id: value,
         zona_origen_id: "",
         ubicacion_origen_id: ""
       });
@@ -89,10 +89,10 @@ function Movimientos() {
       return;
     }
 
-    if (name === "almacen_destino_id") {
+    if (name === "seccion_destino_id") {
       setForm({
         ...form,
-        almacen_destino_id: value,
+        seccion_destino_id: value,
         zona_destino_id: "",
         ubicacion_destino_id: ""
       });
@@ -119,10 +119,10 @@ function Movimientos() {
 
     setForm({
       producto_id: producto.id,
-      almacen_origen_id: "",
+      seccion_origen_id: "",
       zona_origen_id: "",
       ubicacion_origen_id: "",
-      almacen_destino_id: "",
+      seccion_destino_id: "",
       zona_destino_id: "",
       ubicacion_destino_id: "",
       cantidad: "",
@@ -146,13 +146,13 @@ function Movimientos() {
       Number(s.cantidad) > 0
   );
 
-  const almacenesOrigen = almacenes.filter(a =>
-    stockProducto.some(s => String(s.almacen_id) === String(a.id))
+  const seccionesOrigen = secciones.filter(a =>
+    stockProducto.some(s => String(s.seccion_id) === String(a.id))
   );
 
   const zonasOrigen = zonas.filter(
     z =>
-      String(z.almacen_id) === String(form.almacen_origen_id) &&
+      String(z.seccion_id) === String(form.seccion_origen_id) &&
       stockProducto.some(s => String(s.zona_id) === String(z.id))
   );
 
@@ -163,7 +163,7 @@ function Movimientos() {
   );
 
   const zonasDestino = zonas.filter(
-    z => String(z.almacen_id) === String(form.almacen_destino_id)
+    z => String(z.seccion_id) === String(form.seccion_destino_id)
   );
 
   const ubicacionesDestino = ubicaciones.filter(
@@ -216,10 +216,10 @@ function Movimientos() {
 
       setForm({
         producto_id: "",
-        almacen_origen_id: "",
+        seccion_origen_id: "",
         zona_origen_id: "",
         ubicacion_origen_id: "",
-        almacen_destino_id: "",
+        seccion_destino_id: "",
         zona_destino_id: "",
         ubicacion_destino_id: "",
         cantidad: "",
@@ -303,32 +303,32 @@ function Movimientos() {
         <div><strong>DESTINO</strong></div>
 
         <div>
-          <div style={styles.label}>Almacén origen</div>
+          <div style={styles.label}>Sección origen</div>
           <select
-            name="almacen_origen_id"
-            value={form.almacen_origen_id}
+            name="seccion_origen_id"
+            value={form.seccion_origen_id}
             onChange={handleChange}
             style={styles.input}
             required
           >
             <option value="">Seleccionar</option>
-            {almacenesOrigen.map(a => (
+            {seccionesOrigen.map(a => (
               <option key={a.id} value={a.id}>{a.nombre}</option>
             ))}
           </select>
         </div>
 
         <div>
-          <div style={styles.label}>Almacén destino</div>
+          <div style={styles.label}>Sección destino</div>
           <select
-            name="almacen_destino_id"
-            value={form.almacen_destino_id}
+            name="seccion_destino_id"
+            value={form.seccion_destino_id}
             onChange={handleChange}
             style={styles.input}
             required
           >
             <option value="">Seleccionar</option>
-            {almacenes.map(a => (
+            {secciones.map(a => (
               <option key={a.id} value={a.id}>{a.nombre}</option>
             ))}
           </select>

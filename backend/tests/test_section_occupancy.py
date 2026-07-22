@@ -1,8 +1,8 @@
-def _crear_almacen_con_layout(client, auth_headers, nombre, eje_y_max, eje_x_max):
+def _crear_seccion_con_layout(client, auth_headers, nombre, eje_y_max, eje_x_max):
     r = client.post(
-        "/warehouse-layout/",
+        "/section-layout/",
         json={
-            "warehouse": {
+            "seccion": {
                 "nombre": nombre,
                 "descripcion": "x",
                 "direccion": "x",
@@ -48,57 +48,57 @@ def _crear_producto(client, auth_headers, nombre):
 
 
 def test_occupancy_sin_stock_devuelve_cero_por_ciento(client, auth_headers):
-    _crear_almacen_con_layout(client, auth_headers, "Almacen Vacio", 2, 2)
+    _crear_seccion_con_layout(client, auth_headers, "Seccion Vacia", 2, 2)
 
-    r = client.get("/warehouses/occupancy", headers=auth_headers)
+    r = client.get("/sections/occupancy", headers=auth_headers)
     assert r.status_code == 200
 
     datos = r.json()
-    almacen = next(a for a in datos if a["almacen_nombre"] == "Almacen Vacio")
-    assert almacen["ubicaciones_totales"] == 4
-    assert almacen["ubicaciones_ocupadas"] == 0
-    assert almacen["porcentaje_ocupacion"] == 0.0
+    seccion = next(a for a in datos if a["seccion_nombre"] == "Seccion Vacia")
+    assert seccion["ubicaciones_totales"] == 4
+    assert seccion["ubicaciones_ocupadas"] == 0
+    assert seccion["porcentaje_ocupacion"] == 0.0
 
 
 def test_occupancy_calcula_porcentaje_correctamente(client, auth_headers):
-    almacen_id = _crear_almacen_con_layout(client, auth_headers, "Almacen Parcial", 2, 2)
+    seccion_id = _crear_seccion_con_layout(client, auth_headers, "Seccion Parcial", 2, 2)
     producto_id = _crear_producto(client, auth_headers, "Producto Test")
 
     ubicaciones = client.get("/locations/", headers=auth_headers).json()
-    ubicaciones_almacen = [
+    ubicaciones_seccion = [
         u for u in ubicaciones if u["zona_id"] in
         [z["id"] for z in client.get("/zones/", headers=auth_headers).json()
-         if z["almacen_id"] == almacen_id]
+         if z["seccion_id"] == seccion_id]
     ]
-    assert len(ubicaciones_almacen) == 4
+    assert len(ubicaciones_seccion) == 4
 
     # Ocupa 1 de las 4 ubicaciones
     r = client.post(
         "/stock/",
         json={
             "producto_id": producto_id,
-            "ubicacion_id": ubicaciones_almacen[0]["id"],
+            "ubicacion_id": ubicaciones_seccion[0]["id"],
             "cantidad": 5,
         },
         headers=auth_headers,
     )
     assert r.status_code == 201
 
-    r = client.get("/warehouses/occupancy", headers=auth_headers)
+    r = client.get("/sections/occupancy", headers=auth_headers)
     datos = r.json()
-    almacen = next(a for a in datos if a["almacen_nombre"] == "Almacen Parcial")
+    seccion = next(a for a in datos if a["seccion_nombre"] == "Seccion Parcial")
 
-    assert almacen["ubicaciones_totales"] == 4
-    assert almacen["ubicaciones_ocupadas"] == 1
-    assert almacen["porcentaje_ocupacion"] == 25.0
+    assert seccion["ubicaciones_totales"] == 4
+    assert seccion["ubicaciones_ocupadas"] == 1
+    assert seccion["porcentaje_ocupacion"] == 25.0
 
 
 def test_occupancy_ignora_stock_con_cantidad_cero(client, auth_headers):
-    almacen_id = _crear_almacen_con_layout(client, auth_headers, "Almacen Cero", 1, 1)
+    seccion_id = _crear_seccion_con_layout(client, auth_headers, "Seccion Cero", 1, 1)
     producto_id = _crear_producto(client, auth_headers, "Producto Cero")
 
     zonas = client.get("/zones/", headers=auth_headers).json()
-    zona_id = next(z["id"] for z in zonas if z["almacen_id"] == almacen_id)
+    zona_id = next(z["id"] for z in zonas if z["seccion_id"] == seccion_id)
     ubicaciones = client.get("/locations/", headers=auth_headers).json()
     ubicacion = next(u for u in ubicaciones if u["zona_id"] == zona_id)
 
@@ -112,15 +112,15 @@ def test_occupancy_ignora_stock_con_cantidad_cero(client, auth_headers):
         headers=auth_headers,
     )
 
-    r = client.get("/warehouses/occupancy", headers=auth_headers)
+    r = client.get("/sections/occupancy", headers=auth_headers)
     datos = r.json()
-    almacen = next(a for a in datos if a["almacen_nombre"] == "Almacen Cero")
+    seccion = next(a for a in datos if a["seccion_nombre"] == "Seccion Cero")
 
-    assert almacen["ubicaciones_ocupadas"] == 0
-    assert almacen["porcentaje_ocupacion"] == 0.0
+    assert seccion["ubicaciones_ocupadas"] == 0
+    assert seccion["porcentaje_ocupacion"] == 0.0
 
 
-def test_occupancy_sin_almacenes_devuelve_lista_vacia(client, auth_headers):
-    r = client.get("/warehouses/occupancy", headers=auth_headers)
+def test_occupancy_sin_secciones_devuelve_lista_vacia(client, auth_headers):
+    r = client.get("/sections/occupancy", headers=auth_headers)
     assert r.status_code == 200
     assert r.json() == []

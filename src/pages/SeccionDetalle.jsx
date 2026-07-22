@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api/api";
-import * as styles from "./AlmacenDetalle.styles";
+import * as styles from "./SeccionDetalle.styles";
 
 const initialLocationForm = {
   codigo: "",
@@ -15,10 +15,10 @@ const initialZoneForm = {
   activo: true
 };
 
-function AlmacenDetalle() {
+function SeccionDetalle() {
   const { id } = useParams();
 
-  const [almacen, setAlmacen] = useState(null);
+  const [seccion, setSeccion] = useState(null);
   const [zonas, setZonas] = useState([]);
   const [ubicaciones, setUbicaciones] = useState([]);
   const [stock, setStock] = useState([]);
@@ -46,25 +46,25 @@ function AlmacenDetalle() {
       setCargando(true);
       setError("");
 
-      const [almacenData, zonasData, ubicacionesData, stockData] = await Promise.all([
-        apiFetch(`/warehouses/${id}`),
+      const [seccionData, zonasData, ubicacionesData, stockData] = await Promise.all([
+        apiFetch(`/sections/${id}`),
         apiFetch("/zones/"),
         apiFetch("/locations/"),
-        apiFetch("/stock/", { params: { almacen_id: id } })
+        apiFetch("/stock/", { params: { seccion_id: id } })
       ]);
 
-      setAlmacen(almacenData || null);
+      setSeccion(seccionData || null);
 
-      const zonasDelAlmacen = Array.isArray(zonasData)
-        ? zonasData.filter((zona) => String(zona.almacen_id) === String(id))
+      const zonasDeSeccion = Array.isArray(zonasData)
+        ? zonasData.filter((zona) => String(zona.seccion_id) === String(id))
         : [];
 
-      setZonas(zonasDelAlmacen);
+      setZonas(zonasDeSeccion);
       setUbicaciones(Array.isArray(ubicacionesData) ? ubicacionesData : []);
       setStock(Array.isArray(stockData) ? stockData : []);
     } catch (err) {
-      setError(err.message || "Error al cargar el detalle del almacén");
-      setAlmacen(null);
+      setError(err.message || "Error al cargar el detalle de la sección");
+      setSeccion(null);
       setZonas([]);
       setUbicaciones([]);
       setStock([]);
@@ -110,7 +110,7 @@ function AlmacenDetalle() {
       setMensaje("");
 
       const payload = {
-        almacen_id: Number(id),
+        seccion_id: Number(id),
         nombre: zoneForm.nombre.trim(),
         descripcion: zoneForm.descripcion.trim() || null,
         activo: zoneForm.activo
@@ -266,25 +266,25 @@ function AlmacenDetalle() {
   }
 
   if (cargando) {
-    return <p>Cargando detalle del almacén...</p>;
+    return <p>Cargando detalle de la sección...</p>;
   }
 
-  if (!almacen) {
-    return <p>No se ha encontrado el almacén.</p>;
+  if (!seccion) {
+    return <p>No se ha encontrado la sección.</p>;
   }
 
   return (
     <div>
       <div style={styles.header}>
         <div>
-          <h1 style={{ margin: 0 }}>{almacen.nombre}</h1>
+          <h1 style={{ margin: 0 }}>{seccion.nombre}</h1>
           <p style={styles.subtitle}>
-            Vista jerárquica del almacén, sus zonas y sus ubicaciones
+            Vista jerárquica de la sección, sus zonas y sus ubicaciones
           </p>
         </div>
 
-        <Link to="/almacenes" style={styles.backButton}>
-          Volver a almacenes
+        <Link to="/secciones" style={styles.backButton}>
+          Volver a secciones
         </Link>
       </div>
 
@@ -295,12 +295,12 @@ function AlmacenDetalle() {
         <div style={styles.infoGrid}>
           <div>
             <div style={styles.infoLabel}>Descripción</div>
-            <div style={styles.infoValue}>{almacen.descripcion || "-"}</div>
+            <div style={styles.infoValue}>{seccion.descripcion || "-"}</div>
           </div>
 
           <div>
             <div style={styles.infoLabel}>Dirección</div>
-            <div style={styles.infoValue}>{almacen.direccion || "-"}</div>
+            <div style={styles.infoValue}>{seccion.direccion || "-"}</div>
           </div>
 
           <div>
@@ -308,11 +308,11 @@ function AlmacenDetalle() {
             <span
               style={{
                 ...styles.badge,
-                backgroundColor: almacen.activo ? "#dcfce7" : "#fee2e2",
-                color: almacen.activo ? "#166534" : "#991b1b"
+                backgroundColor: seccion.activo ? "#dcfce7" : "#fee2e2",
+                color: seccion.activo ? "#166534" : "#991b1b"
               }}
             >
-              {almacen.activo ? "Activo" : "Inactivo"}
+              {seccion.activo ? "Activo" : "Inactivo"}
             </span>
           </div>
 
@@ -398,7 +398,7 @@ function AlmacenDetalle() {
         )}
 
         {zonas.length === 0 ? (
-          <div style={styles.emptyBox}>Este almacén todavía no tiene zonas.</div>
+          <div style={styles.emptyBox}>Esta sección todavía no tiene zonas.</div>
         ) : (
           <div style={styles.zonesGrid}>
             {zonas.map((zona) => {
@@ -593,4 +593,4 @@ function AlmacenDetalle() {
   );
 }
 
-export default AlmacenDetalle;
+export default SeccionDetalle;

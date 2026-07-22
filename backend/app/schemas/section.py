@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 
 
-class WarehouseBase(BaseModel):
+class SectionBase(BaseModel):
     nombre: str = Field(..., min_length=1)
     descripcion: Optional[str] = None
     direccion: Optional[str] = None
@@ -17,11 +17,11 @@ class WarehouseBase(BaseModel):
         return value
 
 
-class WarehouseCreate(WarehouseBase):
+class SectionCreate(SectionBase):
     pass
 
 
-class WarehouseUpdate(BaseModel):
+class SectionUpdate(BaseModel):
     nombre: Optional[str] = None
     descripcion: Optional[str] = None
     direccion: Optional[str] = None
@@ -35,16 +35,16 @@ class WarehouseUpdate(BaseModel):
         return value
 
 
-class WarehouseResponse(WarehouseBase):
+class SectionResponse(SectionBase):
     id: int
 
     class Config:
         from_attributes = True
 
 
-class WarehouseOccupancyResponse(BaseModel):
-    almacen_id: int
-    almacen_nombre: str
+class SectionOccupancyResponse(BaseModel):
+    seccion_id: int
+    seccion_nombre: str
     ubicaciones_totales: int
     ubicaciones_ocupadas: int
     porcentaje_ocupacion: float

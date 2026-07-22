@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.models.location import Location
 from app.models.movement import Movement
 from app.models.product import Product
-from app.models.warehouse import Warehouse
+from app.models.section import Section
 from app.repositories.reception_repository import ReceptionRepository
 from app.repositories.stock_repository import StockRepository
 from app.schemas.reception import ReceptionCreate, ReceptionUpdate
@@ -36,10 +36,10 @@ class ReceptionService:
                 detail="La recepción debe tener al menos una línea"
             )
 
-        self._validate_almacen(reception_data.almacen_id)
+        self._validate_seccion(reception_data.seccion_id)
 
         for linea in reception_data.lineas:
-            self._validate_line(linea, reception_data.almacen_id)
+            self._validate_line(linea, reception_data.seccion_id)
 
         try:
             recepcion_creada = self.repository.create(reception_data, usuario_id)
@@ -50,7 +50,7 @@ class ReceptionService:
                 accion="create",
                 entidad="recepcion",
                 entidad_id=recepcion_creada.id,
-                detalle=f"Recepción creada en almacén {recepcion_creada.almacen_id}"
+                detalle=f"Recepción creada en sección {recepcion_creada.seccion_id}"
             )
 
             self.db.commit()
@@ -76,10 +76,10 @@ class ReceptionService:
         if recepcion.estado != "borrador":
             raise HTTPException(400, "Solo se puede editar en borrador")
 
-        self._validate_almacen(reception_data.almacen_id)
+        self._validate_seccion(reception_data.seccion_id)
 
         for linea in reception_data.lineas:
-            self._validate_line(linea, reception_data.almacen_id)
+            self._validate_line(linea, reception_data.seccion_id)
 
         try:
             recepcion = self.repository.update(recepcion, reception_data)
@@ -122,12 +122,12 @@ class ReceptionService:
         if not recepcion.lineas:
             raise HTTPException(400, "Sin líneas")
 
-        self._validate_almacen(recepcion.almacen_id)
+        self._validate_seccion(recepcion.seccion_id)
 
         try:
             for linea in recepcion.lineas:
 
-                self._validate_line(linea, recepcion.almacen_id)
+                self._validate_line(linea, recepcion.seccion_id)
 
                 # 🔥 SUMA DE STOCK
                 self.stock_repository.add_stock(
@@ -179,16 +179,16 @@ class ReceptionService:
                 detail="Error interno al confirmar la recepción"
             )
 
-    def _validate_almacen(self, almacen_id: int):
-        almacen = self.db.query(Warehouse).filter(Warehouse.id == almacen_id).first()
+    def _validate_seccion(self, seccion_id: int):
+        seccion = self.db.query(Section).filter(Section.id == seccion_id).first()
 
-        if not almacen:
-            raise HTTPException(404, "Almacén no existe")
+        if not seccion:
+            raise HTTPException(404, "Sección no existe")
 
-        if not almacen.activo:
-            raise HTTPException(400, "Almacén inactivo")
+        if not seccion.activo:
+            raise HTTPException(400, "Sección inactiva")
 
-    def _validate_line(self, linea, almacen_id: int):
+    def _validate_line(self, linea, seccion_id: int):
 
         if linea.cantidad <= 0:
             raise HTTPException(400, "Cantidad inválida")
@@ -211,5 +211,5 @@ class ReceptionService:
         if not ubicacion.activa:
             raise HTTPException(400, "Ubicación inactiva")
 
-        if not ubicacion.zona or ubicacion.zona.almacen_id != almacen_id:
-            raise HTTPException(400, "Ubicación no pertenece al almacén")
+        if not ubicacion.zona or ubicacion.zona.seccion_id != seccion_id:
+            raise HTTPException(400, "Ubicación no pertenece a la sección")

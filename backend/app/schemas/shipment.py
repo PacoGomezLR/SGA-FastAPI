@@ -23,7 +23,7 @@ class ShipmentLineResponse(ShipmentLineBase):
 
 
 class ShipmentBase(BaseModel):
-    almacen_id: int
+    seccion_id: int
     observaciones: Optional[str] = None
 
 

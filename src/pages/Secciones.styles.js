@@ -1,3 +1,14 @@
+export const mapaButton = {
+  padding: "10px 16px",
+  borderRadius: "10px",
+  border: "1px solid #cbd5e1",
+  backgroundColor: "white",
+  color: "#0f172a",
+  fontWeight: "600",
+  textDecoration: "none",
+  whiteSpace: "nowrap"
+};
+
 export const statsGrid = {
   display: "flex",
   gap: "20px",

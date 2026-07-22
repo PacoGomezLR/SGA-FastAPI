@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.schemas.warehouse import WarehouseCreate
+from app.schemas.section import SectionCreate
 
 
 class PasilloLayout(BaseModel):
@@ -20,8 +20,8 @@ class PasilloLayout(BaseModel):
         return value
 
 
-class WarehouseLayoutCreate(BaseModel):
-    warehouse: WarehouseCreate
+class SectionLayoutCreate(BaseModel):
+    seccion: SectionCreate
     pasillos: list[PasilloLayout] = Field(default_factory=list)
 
 

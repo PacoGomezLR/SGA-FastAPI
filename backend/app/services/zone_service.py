@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.models.warehouse import Warehouse
+from app.models.section import Section
 from app.repositories.zone_repository import ZoneRepository
 from app.schemas.zone import ZoneCreate, ZoneUpdate
 
@@ -24,20 +24,20 @@ class ZoneService:
         return zone
 
     def create_zone(self, zone_data: ZoneCreate):
-        almacen = self.db.query(Warehouse).filter(Warehouse.id == zone_data.almacen_id).first()
-        if not almacen:
+        seccion = self.db.query(Section).filter(Section.id == zone_data.seccion_id).first()
+        if not seccion:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="El almacén no existe"
+                detail="La sección no existe"
             )
 
-        existing = self.repository.get_by_warehouse_and_name(
-            zone_data.almacen_id, zone_data.nombre
+        existing = self.repository.get_by_section_and_name(
+            zone_data.seccion_id, zone_data.nombre
         )
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Ya existe una zona con ese nombre en ese almacén"
+                detail="Ya existe una zona con ese nombre en esa sección"
             )
 
         return self.repository.create(zone_data)
@@ -50,27 +50,27 @@ class ZoneService:
                 detail="Zona no encontrada"
             )
 
-        nuevo_almacen_id = (
-            zone_data.almacen_id if zone_data.almacen_id is not None else zone.almacen_id
+        nueva_seccion_id = (
+            zone_data.seccion_id if zone_data.seccion_id is not None else zone.seccion_id
         )
         nuevo_nombre = (
             zone_data.nombre if zone_data.nombre is not None else zone.nombre
         )
 
-        almacen = self.db.query(Warehouse).filter(Warehouse.id == nuevo_almacen_id).first()
-        if not almacen:
+        seccion = self.db.query(Section).filter(Section.id == nueva_seccion_id).first()
+        if not seccion:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="El almacén no existe"
+                detail="La sección no existe"
             )
 
-        existing = self.repository.get_by_warehouse_and_name(
-            nuevo_almacen_id, nuevo_nombre
+        existing = self.repository.get_by_section_and_name(
+            nueva_seccion_id, nuevo_nombre
         )
         if existing and existing.id != zone_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Ya existe otra zona con ese nombre en ese almacén"
+                detail="Ya existe otra zona con ese nombre en esa sección"
             )
 
         return self.repository.update(zone, zone_data)

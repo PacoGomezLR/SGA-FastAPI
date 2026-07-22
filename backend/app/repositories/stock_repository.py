@@ -8,7 +8,7 @@ from app.models.product import Product
 from app.models.category import Category
 from app.models.location import Location
 from app.models.zone import Zone
-from app.models.warehouse import Warehouse
+from app.models.section import Section
 
 from app.schemas.stock import StockCreate, StockUpdate
 
@@ -20,7 +20,7 @@ class StockRepository:
     def get_all(self):
         return self.db.query(Stock).all()
 
-    def get_all_with_details(self, low: bool = False, almacen_id: int | None = None):
+    def get_all_with_details(self, low: bool = False, seccion_id: int | None = None):
         cantidad_expr = func.coalesce(Stock.cantidad, 0)
         bajo_stock_expr = cantidad_expr <= Product.stock_minimo
 
@@ -34,11 +34,11 @@ class StockRepository:
 
                 Product.stock_minimo.label("stock_minimo"),
 
-                Warehouse.id.label("almacen_id"),
-                Warehouse.nombre.label("almacen_nombre"),
+                Section.id.label("seccion_id"),
+                Section.nombre.label("seccion_nombre"),
 
                 Zone.id.label("zona_id"),
-                Zone.nombre.label("zona_nombre"),  # 👈 AÑADIDO
+                Zone.nombre.label("zona_nombre"),
 
                 Stock.ubicacion_id.label("ubicacion_id"),
                 Location.codigo.label("ubicacion_nombre"),
@@ -51,21 +51,21 @@ class StockRepository:
             .outerjoin(Category, Category.id == Product.categoria_id)
             .outerjoin(Location, Location.id == Stock.ubicacion_id)
             .outerjoin(Zone, Zone.id == Location.zona_id)
-            .outerjoin(Warehouse, Warehouse.id == Zone.almacen_id)
+            .outerjoin(Section, Section.id == Zone.seccion_id)
         )
 
         if low:
             query = query.filter(bajo_stock_expr)
 
-        if almacen_id is not None:
-            query = query.filter(Warehouse.id == almacen_id)
+        if seccion_id is not None:
+            query = query.filter(Section.id == seccion_id)
 
         return (
             query.order_by(
                 bajo_stock_expr.desc(),
                 Product.nombre.asc(),
-                Warehouse.nombre.asc().nulls_last(),
-                Zone.nombre.asc().nulls_last(),      # 👈 ORDEN POR ZONA
+                Section.nombre.asc().nulls_last(),
+                Zone.nombre.asc().nulls_last(),
                 Location.codigo.asc().nulls_last()
             )
             .all()

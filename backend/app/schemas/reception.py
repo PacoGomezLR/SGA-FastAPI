@@ -27,7 +27,7 @@ class ReceptionLineResponse(ReceptionLineBase):
 
 
 class ReceptionBase(BaseModel):
-    almacen_id: int
+    seccion_id: int
     observaciones: Optional[str] = None
 
 

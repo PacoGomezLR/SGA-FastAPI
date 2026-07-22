@@ -4,7 +4,7 @@ import { CheckCircle2, Warehouse, XCircle } from "lucide-react";
 import { apiFetch } from "../api/api";
 import { useConfirm } from "../context/ConfirmContext";
 import CrudPage from "../components/CrudPage";
-import * as styles from "./Almacenes.styles";
+import * as styles from "./Secciones.styles";
 
 const initialForm = {
   nombre: "",
@@ -21,8 +21,8 @@ const nuevoPasillo = () => ({
   eje_x_max: ""
 });
 
-function Almacenes() {
-  const [almacenes, setAlmacenes] = useState([]);
+function Secciones() {
+  const [secciones, setSecciones] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
@@ -36,22 +36,22 @@ function Almacenes() {
 
   const { confirm } = useConfirm();
 
-  async function cargarAlmacenes() {
+  async function cargarSecciones() {
     try {
       setCargando(true);
       setError("");
 
-      const data = await apiFetch("/warehouses/");
-      setAlmacenes(Array.isArray(data) ? data : []);
+      const data = await apiFetch("/sections/");
+      setSecciones(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err.message || "Error al cargar almacenes");
+      setError(err.message || "Error al cargar secciones");
     } finally {
       setCargando(false);
     }
   }
 
   useEffect(() => {
-    cargarAlmacenes();
+    cargarSecciones();
   }, []);
 
   function handleChange(e) {
@@ -72,18 +72,18 @@ function Almacenes() {
     setMostrarFormulario(false);
   }
 
-  function editarAlmacen(almacen) {
-    setEditingId(almacen.id);
+  function editarSeccion(seccion) {
+    setEditingId(seccion.id);
     setMensaje("");
     setError("");
     setPasillos([]);
     setMostrarFormulario(true);
 
     setForm({
-      nombre: almacen.nombre ?? "",
-      descripcion: almacen.descripcion ?? "",
-      direccion: almacen.direccion ?? "",
-      activo: almacen.activo ?? true
+      nombre: seccion.nombre ?? "",
+      descripcion: seccion.descripcion ?? "",
+      direccion: seccion.direccion ?? "",
+      activo: seccion.activo ?? true
     });
   }
 
@@ -113,7 +113,7 @@ function Almacenes() {
       setError("");
       setMensaje("");
 
-      const warehousePayload = {
+      const seccionPayload = {
         nombre: form.nombre.trim(),
         descripcion: form.descripcion.trim(),
         direccion: form.direccion.trim(),
@@ -121,15 +121,15 @@ function Almacenes() {
       };
 
       if (editingId) {
-        await apiFetch(`/warehouses/${editingId}`, {
+        await apiFetch(`/sections/${editingId}`, {
           method: "PUT",
-          body: warehousePayload
+          body: seccionPayload
         });
       } else {
-        await apiFetch("/warehouse-layout/", {
+        await apiFetch("/section-layout/", {
           method: "POST",
           body: {
-            warehouse: warehousePayload,
+            seccion: seccionPayload,
             pasillos: pasillos.map((p) => ({
               numero_pasillo: Number(p.numero_pasillo),
               lado_d: p.lado_d,
@@ -143,73 +143,73 @@ function Almacenes() {
 
       setMensaje(
         editingId
-          ? "Almacén actualizado correctamente"
-          : "Almacén creado correctamente"
+          ? "Sección actualizada correctamente"
+          : "Sección creada correctamente"
       );
 
       limpiarFormulario();
-      await cargarAlmacenes();
+      await cargarSecciones();
     } catch (err) {
-      setError(err.message || "Error al guardar el almacén");
+      setError(err.message || "Error al guardar la sección");
     } finally {
       setGuardando(false);
     }
   }
 
-  async function eliminarAlmacen(almacen) {
+  async function eliminarSeccion(seccion) {
     try {
       setError("");
       setMensaje("");
 
-      await apiFetch(`/warehouses/${almacen.id}`, {
+      await apiFetch(`/sections/${seccion.id}`, {
         method: "DELETE"
       });
 
-      if (editingId === almacen.id) {
+      if (editingId === seccion.id) {
         limpiarFormulario();
       }
 
-      setMensaje("Almacén eliminado correctamente");
-      await cargarAlmacenes();
+      setMensaje("Sección eliminada correctamente");
+      await cargarSecciones();
     } catch (err) {
-      setError(err.message || "Error al eliminar el almacén");
+      setError(err.message || "Error al eliminar la sección");
     }
   }
 
-  function solicitarEliminacion(almacen) {
+  function solicitarEliminacion(seccion) {
     setError("");
     setMensaje("");
 
     confirm({
-      title: "Eliminar almacén",
-      message: `¿Seguro que quieres eliminar el almacén "${almacen.nombre}"? Esta acción no se puede deshacer.`,
+      title: "Eliminar sección",
+      message: `¿Seguro que quieres eliminar la sección "${seccion.nombre}"? Esta acción no se puede deshacer.`,
       confirmText: "Eliminar",
       cancelText: "Cancelar",
-      onConfirm: () => eliminarAlmacen(almacen)
+      onConfirm: () => eliminarSeccion(seccion)
     });
   }
 
-  const almacenesFiltrados = almacenes.filter((a) => {
+  const seccionesFiltradas = secciones.filter((s) => {
     const texto = busqueda.toLowerCase().trim();
     if (!texto) return true;
 
     return (
-      String(a.nombre ?? "").toLowerCase().includes(texto) ||
-      String(a.descripcion ?? "").toLowerCase().includes(texto) ||
-      String(a.direccion ?? "").toLowerCase().includes(texto)
+      String(s.nombre ?? "").toLowerCase().includes(texto) ||
+      String(s.descripcion ?? "").toLowerCase().includes(texto) ||
+      String(s.direccion ?? "").toLowerCase().includes(texto)
     );
   });
 
   const totalActivos = useMemo(() => {
-    return almacenes.filter((a) => a.activo).length;
-  }, [almacenes]);
+    return secciones.filter((s) => s.activo).length;
+  }, [secciones]);
 
   const totalInactivos = useMemo(() => {
-    return almacenes.filter((a) => !a.activo).length;
-  }, [almacenes]);
+    return secciones.filter((s) => !s.activo).length;
+  }, [secciones]);
 
-  const tablaAlmacenes =
-    almacenesFiltrados.length === 0 ? null : (
+  const tablaSecciones =
+    seccionesFiltradas.length === 0 ? null : (
       <div style={styles.tableWrapper}>
         <table style={styles.table}>
           <thead>
@@ -224,25 +224,25 @@ function Almacenes() {
             </tr>
           </thead>
           <tbody>
-            {almacenesFiltrados.map((a) => (
-              <tr key={a.id} style={styles.row}>
-                <td style={styles.td}>{a.id}</td>
-                <td style={styles.tdStrong}>{a.nombre}</td>
-                <td style={styles.td}>{a.descripcion || "-"}</td>
-                <td style={styles.td}>{a.direccion || "-"}</td>
+            {seccionesFiltradas.map((s) => (
+              <tr key={s.id} style={styles.row}>
+                <td style={styles.td}>{s.id}</td>
+                <td style={styles.tdStrong}>{s.nombre}</td>
+                <td style={styles.td}>{s.descripcion || "-"}</td>
+                <td style={styles.td}>{s.direccion || "-"}</td>
                 <td style={styles.td}>
                   <span
                     style={{
                       ...styles.badge,
-                      backgroundColor: a.activo ? "#dcfce7" : "#fee2e2",
-                      color: a.activo ? "#166534" : "#991b1b"
+                      backgroundColor: s.activo ? "#dcfce7" : "#fee2e2",
+                      color: s.activo ? "#166534" : "#991b1b"
                     }}
                   >
-                    {a.activo ? "Activo" : "Inactivo"}
+                    {s.activo ? "Activo" : "Inactivo"}
                   </span>
                 </td>
                 <td style={styles.td}>
-                  <Link to={`/almacenes/${a.id}`} style={styles.detailLink}>
+                  <Link to={`/secciones/${s.id}`} style={styles.detailLink}>
                     Ver detalle
                   </Link>
                 </td>
@@ -250,14 +250,14 @@ function Almacenes() {
                   <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                     <button
                       type="button"
-                      onClick={() => editarAlmacen(a)}
+                      onClick={() => editarSeccion(s)}
                       style={styles.secondaryButton}
                     >
                       Editar
                     </button>
                     <button
                       type="button"
-                      onClick={() => solicitarEliminacion(a)}
+                      onClick={() => solicitarEliminacion(s)}
                       style={styles.dangerButton}
                     >
                       Eliminar
@@ -273,25 +273,30 @@ function Almacenes() {
 
   return (
     <CrudPage
-      title="Almacenes"
+      title="Secciones"
       message={mensaje}
       error={error}
-      cardTitle={editingId ? "Editar almacén" : "Nuevo almacén"}
+      cardTitle={editingId ? "Editar sección" : "Nueva sección"}
       onSubmit={handleSubmit}
       searchValue={busqueda}
       onSearchChange={(e) => setBusqueda(e.target.value)}
       loading={cargando}
-      emptyMessage="No hay almacenes"
+      emptyMessage="No hay secciones"
       showForm={mostrarFormulario}
       onShowForm={() => setMostrarFormulario(true)}
-      showFormButtonText="+ Crear almacén"
+      showFormButtonText="+ Crear sección"
+      headerAction={
+        <Link to="/secciones/mapa" style={styles.mapaButton}>
+          Mapa 2D
+        </Link>
+      }
       formContent={
         <>
           <div style={styles.sectionTitle}>Datos principales</div>
 
           <input
             name="nombre"
-            placeholder="Nombre del almacén"
+            placeholder="Nombre de la sección"
             value={form.nombre}
             onChange={handleChange}
             required
@@ -416,11 +421,11 @@ function Almacenes() {
       tableContent={
         <>
           <div style={styles.statsGrid}>
-            <Card title="Total almacenes" value={almacenes.length} icon={Warehouse} color="#1baf7a" />
-            <Card title="Activos" value={totalActivos} icon={CheckCircle2} color="#2a78d6" />
-            <Card title="Inactivos" value={totalInactivos} icon={XCircle} color="#991b1b" />
+            <Card title="Total secciones" value={secciones.length} icon={Warehouse} color="#1baf7a" />
+            <Card title="Activas" value={totalActivos} icon={CheckCircle2} color="#2a78d6" />
+            <Card title="Inactivas" value={totalInactivos} icon={XCircle} color="#991b1b" />
           </div>
-          {tablaAlmacenes}
+          {tablaSecciones}
         </>
       }
     />
@@ -444,4 +449,4 @@ function Card({ title, value, color = "#0f172a", icon: Icon }) {
   );
 }
 
-export default Almacenes;
+export default Secciones;

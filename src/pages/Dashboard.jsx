@@ -1,19 +1,22 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { AlertTriangle, Boxes, Package, Warehouse } from "lucide-react";
 import { apiFetch } from "../api/api";
 import { useIsMobile } from "../hooks/useMediaQuery";
+import SectionMap from "../components/SectionMap/SectionMap";
 import * as styles from "./Dashboard.styles";
 import DashboardCharts from "./DashboardCharts";
 
 function Dashboard() {
   const esMobile = useIsMobile();
   const [totalProductos, setTotalProductos] = useState(0);
-  const [totalAlmacenes, setTotalAlmacenes] = useState(0);
+  const [totalSecciones, setTotalSecciones] = useState(0);
   const [stockTotal, setStockTotal] = useState(0);
   const [productosEnRiesgo, setProductosEnRiesgo] = useState(0);
 
   const [ultimosMovimientos, setUltimosMovimientos] = useState([]);
   const [alertasStock, setAlertasStock] = useState([]);
+  const [seccionConMapa, setSeccionConMapa] = useState(null);
 
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -27,20 +30,25 @@ function Dashboard() {
       setCargando(true);
       setError("");
 
-      const [productos, almacenes, stock, movimientos] = await Promise.all([
+      const [productos, secciones, stock, movimientos, zonas] = await Promise.all([
         apiFetch("/products/"),
-        apiFetch("/warehouses/"),
+        apiFetch("/sections/"),
         apiFetch("/stock?detailed=true"),
-        apiFetch("/movements/")
+        apiFetch("/movements/"),
+        apiFetch("/zones/")
       ]);
 
       const productosArray = Array.isArray(productos) ? productos : [];
-      const almacenesArray = Array.isArray(almacenes) ? almacenes : [];
+      const seccionesArray = Array.isArray(secciones) ? secciones : [];
       const stockArray = Array.isArray(stock) ? stock : [];
       const movimientosArray = Array.isArray(movimientos) ? movimientos : [];
+      const zonasArray = Array.isArray(zonas) ? zonas : [];
 
       setTotalProductos(productosArray.length);
-      setTotalAlmacenes(almacenesArray.length);
+      setTotalSecciones(seccionesArray.length);
+
+      const zonaConLayout = zonasArray.find((z) => z.numero_pasillo != null);
+      setSeccionConMapa(zonaConLayout ? zonaConLayout.seccion_id : null);
 
       const totalStock = stockArray.reduce(
         (acc, item) => acc + Number(item.cantidad || 0),
@@ -128,8 +136,8 @@ function Dashboard() {
           color="#2a78d6"
         />
         <Card
-          title="Total almacenes"
-          value={totalAlmacenes}
+          title="Total secciones"
+          value={totalSecciones}
           icon={Warehouse}
           color="#1baf7a"
         />
@@ -148,6 +156,19 @@ function Dashboard() {
       </div>
 
       <DashboardCharts />
+
+      {seccionConMapa && (
+        <div style={{ ...styles.cardBase, marginBottom: "24px" }}>
+          <div style={styles.mapaHeader}>
+            <h3 style={{ margin: 0 }}>Mapa 2D de la sección</h3>
+            <Link to="/secciones/mapa" style={styles.mapaLink}>
+              Ver todas las secciones
+            </Link>
+          </div>
+
+          <SectionMap seccionId={seccionConMapa} height={360} />
+        </div>
+      )}
 
       <div style={{ ...styles.cardBase, marginBottom: "24px" }}>
         <h3 style={{ marginTop: 0, marginBottom: "16px" }}>

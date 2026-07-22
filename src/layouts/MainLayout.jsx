@@ -88,8 +88,8 @@ function MainLayout() {
               Categorías
             </NavLink>
 
-            <NavLink to="/almacenes" style={getLinkStyle}>
-              Almacenes
+            <NavLink to="/secciones" style={getLinkStyle}>
+              Secciones
             </NavLink>
 
             <NavLink to="/stock" style={getLinkStyle}>

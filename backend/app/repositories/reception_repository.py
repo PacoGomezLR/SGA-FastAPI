@@ -26,7 +26,7 @@ class ReceptionRepository:
 
     def create(self, reception_data: ReceptionCreate, usuario_id: int):
         nueva_recepcion = Reception(
-            almacen_id=reception_data.almacen_id,
+            seccion_id=reception_data.seccion_id,
             usuario_id=usuario_id,
             observaciones=reception_data.observaciones,
             estado="borrador"
@@ -49,7 +49,7 @@ class ReceptionRepository:
         return nueva_recepcion
 
     def update(self, recepcion: Reception, reception_data: ReceptionUpdate):
-        recepcion.almacen_id = reception_data.almacen_id
+        recepcion.seccion_id = reception_data.seccion_id
         recepcion.observaciones = reception_data.observaciones
 
         for linea in recepcion.lineas:

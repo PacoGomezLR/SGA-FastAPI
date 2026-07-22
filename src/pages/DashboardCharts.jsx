@@ -99,7 +99,7 @@ function DashboardCharts() {
       setError("");
 
       const [occupancyData, recepcionesData, salidasData] = await Promise.all([
-        apiFetch("/warehouses/occupancy"),
+        apiFetch("/sections/occupancy"),
         apiFetch("/receptions/"),
         apiFetch("/shipments/")
       ]);
@@ -120,7 +120,7 @@ function DashboardCharts() {
 
   const dataOcupacion = useMemo(
     () => ({
-      labels: ocupacion.map((a) => a.almacen_nombre),
+      labels: ocupacion.map((a) => a.seccion_nombre),
       datasets: [
         {
           label: "Ocupación (%)",
@@ -235,9 +235,9 @@ function DashboardCharts() {
   return (
     <div style={styles.chartsGrid}>
       <div style={styles.chartCard}>
-        <h3 style={styles.chartTitle}>Ocupación por almacén</h3>
+        <h3 style={styles.chartTitle}>Ocupación por sección</h3>
         {ocupacion.length === 0 ? (
-          <p style={styles.emptyChartMessage}>No hay almacenes con ubicaciones.</p>
+          <p style={styles.emptyChartMessage}>No hay secciones con ubicaciones.</p>
         ) : (
           <div style={styles.chartWrapper}>
             <Bar data={dataOcupacion} options={optionsOcupacion} />

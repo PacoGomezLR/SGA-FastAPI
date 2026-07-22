@@ -12,7 +12,7 @@ function Inventarios() {
   const paddingPagina = esMobile ? "16px" : "30px";
 
   const [productos, setProductos] = useState([]);
-  const [almacenes, setAlmacenes] = useState([]);
+  const [secciones, setSecciones] = useState([]);
   const [zonas, setZonas] = useState([]);
   const [ubicaciones, setUbicaciones] = useState([]);
   const [stock, setStock] = useState([]);
@@ -21,7 +21,7 @@ function Inventarios() {
 
   const [form, setForm] = useState({
     producto_id: "",
-    almacen_id: "",
+    seccion_id: "",
     zona_id: "",
     ubicacion_id: "",
     cantidad_real: "",
@@ -45,20 +45,20 @@ function Inventarios() {
 
       const [
         productosData,
-        almacenesData,
+        seccionesData,
         zonasData,
         ubicacionesData,
         stockData
       ] = await Promise.all([
         authFetch("/products/").then(r => r.json()),
-        authFetch("/warehouses/").then(r => r.json()),
+        authFetch("/sections/").then(r => r.json()),
         authFetch("/zones/").then(r => r.json()),
         authFetch("/locations/").then(r => r.json()),
         authFetch("/stock?detailed=true").then(r => r.json())
       ]);
 
       setProductos(Array.isArray(productosData) ? productosData : []);
-      setAlmacenes(Array.isArray(almacenesData) ? almacenesData : []);
+      setSecciones(Array.isArray(seccionesData) ? seccionesData : []);
       setZonas(Array.isArray(zonasData) ? zonasData : []);
       setUbicaciones(Array.isArray(ubicacionesData) ? ubicacionesData : []);
       setStock(Array.isArray(stockData) ? stockData : []);
@@ -72,10 +72,10 @@ function Inventarios() {
   function handleChange(e) {
     const { name, value } = e.target;
 
-    if (name === "almacen_id") {
+    if (name === "seccion_id") {
       setForm({
         ...form,
-        almacen_id: value,
+        seccion_id: value,
         zona_id: "",
         ubicacion_id: "",
         cantidad_real: ""
@@ -114,7 +114,7 @@ function Inventarios() {
     setForm({
       ...form,
       producto_id: producto.id,
-      almacen_id: "",
+      seccion_id: "",
       zona_id: "",
       ubicacion_id: "",
       cantidad_real: ""
@@ -137,15 +137,15 @@ function Inventarios() {
       Number(item.cantidad) > 0
   );
 
-  const almacenesDisponibles = almacenes.filter(almacen =>
+  const seccionesDisponibles = secciones.filter(seccion =>
     stockProducto.some(
-      item => String(item.almacen_id) === String(almacen.id)
+      item => String(item.seccion_id) === String(seccion.id)
     )
   );
 
   const zonasDisponibles = zonas.filter(
     zona =>
-      String(zona.almacen_id) === String(form.almacen_id) &&
+      String(zona.seccion_id) === String(form.seccion_id) &&
       stockProducto.some(
         item => String(item.zona_id) === String(zona.id)
       )
@@ -179,7 +179,7 @@ function Inventarios() {
 
     try {
       const createPayload = {
-        almacen_id: Number(form.almacen_id),
+        seccion_id: Number(form.seccion_id),
         observaciones: form.observaciones || null,
         lineas: []
       };
@@ -299,7 +299,7 @@ function Inventarios() {
                   setForm({
                     ...form,
                     producto_id: "",
-                    almacen_id: "",
+                    seccion_id: "",
                     zona_id: "",
                     ubicacion_id: "",
                     cantidad_real: ""
@@ -340,19 +340,19 @@ function Inventarios() {
           </div>
 
           <div>
-            <div style={styles.label}>Almacén</div>
+            <div style={styles.label}>Sección</div>
             <select
-              name="almacen_id"
-              value={form.almacen_id}
+              name="seccion_id"
+              value={form.seccion_id}
               onChange={handleChange}
               style={styles.input}
               required
               disabled={!form.producto_id}
             >
               <option value="">Seleccionar</option>
-              {almacenesDisponibles.map(almacen => (
-                <option key={almacen.id} value={almacen.id}>
-                  {almacen.nombre}
+              {seccionesDisponibles.map(seccion => (
+                <option key={seccion.id} value={seccion.id}>
+                  {seccion.nombre}
                 </option>
               ))}
             </select>
@@ -366,7 +366,7 @@ function Inventarios() {
               onChange={handleChange}
               style={styles.input}
               required
-              disabled={!form.almacen_id}
+              disabled={!form.seccion_id}
             >
               <option value="">Seleccionar</option>
               {zonasDisponibles.map(zona => (
