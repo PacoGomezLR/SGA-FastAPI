@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../../api/api";
-import { construirLayout } from "./mapLayout";
+import { construirLayoutMultiple } from "./mapLayout";
 
-export function useSectionLayout(seccionId) {
+export function useSectionLayout() {
+  const [secciones, setSecciones] = useState([]);
   const [zonas, setZonas] = useState([]);
   const [ubicaciones, setUbicaciones] = useState([]);
   const [stock, setStock] = useState([]);
@@ -10,8 +11,6 @@ export function useSectionLayout(seccionId) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!seccionId) return;
-
     let cancelado = false;
 
     async function cargar() {
@@ -19,24 +18,22 @@ export function useSectionLayout(seccionId) {
         setCargando(true);
         setError("");
 
-        const [zonasData, ubicacionesData, stockData] = await Promise.all([
+        const [seccionesData, zonasData, ubicacionesData, stockData] = await Promise.all([
+          apiFetch("/sections/"),
           apiFetch("/zones/"),
           apiFetch("/locations/"),
-          apiFetch("/stock/", { params: { seccion_id: seccionId } })
+          apiFetch("/stock/")
         ]);
 
         if (cancelado) return;
 
-        const zonasSeccion = Array.isArray(zonasData)
-          ? zonasData.filter((z) => String(z.seccion_id) === String(seccionId))
-          : [];
-
-        setZonas(zonasSeccion);
+        setSecciones(Array.isArray(seccionesData) ? seccionesData : []);
+        setZonas(Array.isArray(zonasData) ? zonasData : []);
         setUbicaciones(Array.isArray(ubicacionesData) ? ubicacionesData : []);
         setStock(Array.isArray(stockData) ? stockData : []);
       } catch (err) {
         if (!cancelado) {
-          setError(err.message || "Error al cargar el layout de la sección");
+          setError(err.message || "Error al cargar el layout de las secciones");
         }
       } finally {
         if (!cancelado) setCargando(false);
@@ -48,9 +45,12 @@ export function useSectionLayout(seccionId) {
     return () => {
       cancelado = true;
     };
-  }, [seccionId]);
+  }, []);
 
-  const layout = useMemo(() => construirLayout(zonas, ubicaciones), [zonas, ubicaciones]);
+  const layout = useMemo(
+    () => construirLayoutMultiple(secciones, zonas, ubicaciones),
+    [secciones, zonas, ubicaciones]
+  );
 
   const stockPorUbicacion = useMemo(() => {
     const mapa = new Map();

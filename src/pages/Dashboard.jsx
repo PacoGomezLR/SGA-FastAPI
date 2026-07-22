@@ -16,7 +16,7 @@ function Dashboard() {
 
   const [ultimosMovimientos, setUltimosMovimientos] = useState([]);
   const [alertasStock, setAlertasStock] = useState([]);
-  const [seccionConMapa, setSeccionConMapa] = useState(null);
+  const [hayLayout, setHayLayout] = useState(false);
 
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -47,8 +47,7 @@ function Dashboard() {
       setTotalProductos(productosArray.length);
       setTotalSecciones(seccionesArray.length);
 
-      const zonaConLayout = zonasArray.find((z) => z.numero_pasillo != null);
-      setSeccionConMapa(zonaConLayout ? zonaConLayout.seccion_id : null);
+      setHayLayout(zonasArray.some((z) => z.numero_pasillo != null));
 
       const totalStock = stockArray.reduce(
         (acc, item) => acc + Number(item.cantidad || 0),
@@ -157,16 +156,16 @@ function Dashboard() {
 
       <DashboardCharts />
 
-      {seccionConMapa && (
+      {hayLayout && (
         <div style={{ ...styles.cardBase, marginBottom: "24px" }}>
           <div style={styles.mapaHeader}>
-            <h3 style={{ margin: 0 }}>Mapa 2D de la sección</h3>
+            <h3 style={{ margin: 0 }}>Mapa 2D de secciones</h3>
             <Link to="/secciones/mapa" style={styles.mapaLink}>
-              Ver todas las secciones
+              Ver mapa completo
             </Link>
           </div>
 
-          <SectionMap seccionId={seccionConMapa} height={360} />
+          <SectionMap height={360} />
         </div>
       )}
 

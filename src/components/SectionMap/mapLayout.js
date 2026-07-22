@@ -1,8 +1,10 @@
 export const CELL_WIDTH = 70;
 export const CELL_HEIGHT = 40;
 export const GAP_LADOS = 40;
-export const GAP_PASILLOS = 90;
+export const GAP_PASILLOS = 70;
+export const GAP_SECCIONES = 130;
 export const MARGIN = 60;
+export const LABEL_HEIGHT = 30;
 
 export function agruparPorPasillo(zonas) {
   const mapa = new Map();
@@ -28,85 +30,149 @@ export function agruparPorPasillo(zonas) {
   return Array.from(mapa.values()).sort((a, b) => a.numero - b.numero);
 }
 
-export function agruparFilasPorZona(zonaId, ubicaciones) {
+/**
+ * Agrupa las ubicaciones de una zona por nivel de altura (eje_y), que en la
+ * vista vertical se apila de abajo (altura 1) hacia arriba. Dentro de cada
+ * nivel, las ubicaciones se ordenan por su posición a lo largo del pasillo
+ * (eje_x), que se dibuja en horizontal.
+ */
+export function agruparNivelesPorZona(zonaId, ubicaciones) {
   const ubicacionesZona = ubicaciones.filter((u) => u.zona_id === zonaId && u.activa);
 
-  const filas = new Map();
+  const niveles = new Map();
 
   ubicacionesZona.forEach((ubicacion) => {
-    const clave = ubicacion.eje_x ?? 0;
+    const clave = ubicacion.eje_y ?? 0;
 
-    if (!filas.has(clave)) {
-      filas.set(clave, []);
+    if (!niveles.has(clave)) {
+      niveles.set(clave, []);
     }
-    filas.get(clave).push(ubicacion);
+    niveles.get(clave).push(ubicacion);
   });
 
-  filas.forEach((lista) => lista.sort((a, b) => (a.eje_y ?? 0) - (b.eje_y ?? 0)));
+  niveles.forEach((lista) => lista.sort((a, b) => (a.eje_x ?? 0) - (b.eje_x ?? 0)));
 
-  return Array.from(filas.entries())
+  return Array.from(niveles.entries())
     .sort(([a], [b]) => a - b)
-    .map(([fila, ubicacionesFila]) => ({ fila, ubicaciones: ubicacionesFila }));
+    .map(([altura, ubicacionesNivel]) => ({ altura, ubicaciones: ubicacionesNivel }));
 }
 
-export function construirLayout(zonas, ubicaciones) {
+export function construirLayoutSeccion(zonas, ubicaciones) {
   const pasillos = agruparPorPasillo(zonas);
 
   return pasillos.map((pasillo) => {
     const columnaD = pasillo.ladoD
-      ? { zona: pasillo.ladoD, filas: agruparFilasPorZona(pasillo.ladoD.id, ubicaciones) }
+      ? { zona: pasillo.ladoD, niveles: agruparNivelesPorZona(pasillo.ladoD.id, ubicaciones) }
       : null;
 
     const columnaI = pasillo.ladoI
-      ? { zona: pasillo.ladoI, filas: agruparFilasPorZona(pasillo.ladoI.id, ubicaciones) }
+      ? { zona: pasillo.ladoI, niveles: agruparNivelesPorZona(pasillo.ladoI.id, ubicaciones) }
       : null;
 
     return { numero: pasillo.numero, columnaD, columnaI };
   });
 }
 
-function alturaMaxColumna(columna) {
-  if (!columna) return 0;
+/**
+ * Construye el layout combinado de varias secciones a la vez.
+ * secciones: [{ id, nombre }], zonas y ubicaciones ya filtradas a las secciones dadas.
+ */
+export function construirLayoutMultiple(secciones, zonas, ubicaciones) {
+  return secciones
+    .map((seccion) => {
+      const zonasSeccion = zonas.filter((z) => z.seccion_id === seccion.id);
+      const pasillos = construirLayoutSeccion(zonasSeccion, ubicaciones);
 
-  return columna.filas.reduce((max, fila) => Math.max(max, fila.ubicaciones.length), 0);
+      return { seccion, pasillos };
+    })
+    .filter((grupo) => grupo.pasillos.length > 0);
 }
 
-export function calcularDimensiones(layout) {
-  if (layout.length === 0) {
-    return { width: MARGIN * 2, height: MARGIN * 2, pasillosConPosicion: [] };
+function anchoColumnaEnCeldas(columna) {
+  if (!columna) return 0;
+
+  return columna.niveles.reduce((max, nivel) => Math.max(max, nivel.ubicaciones.length), 0);
+}
+
+function alturaColumnaEnNiveles(columna) {
+  if (!columna) return 0;
+
+  return columna.niveles.length;
+}
+
+/**
+ * Orientación vertical (como una estantería real vista de perfil): cada
+ * pasillo es una columna que crece hacia abajo. Dentro del pasillo, lado D y
+ * lado I se dibujan uno junto al otro en horizontal (como dos estanterías
+ * caminables una frente a la otra). Cada nivel de altura es una franja
+ * horizontal apilada de abajo hacia arriba, y dentro de esa franja las
+ * ubicaciones (posiciones a lo largo del pasillo) se colocan en horizontal.
+ */
+export function calcularDimensionesMultiple(gruposSeccion) {
+  if (gruposSeccion.length === 0) {
+    return { width: MARGIN * 2, height: MARGIN * 2, seccionesConPosicion: [] };
   }
 
-  let anchoAcumulado = MARGIN;
+  let xAcumulado = MARGIN;
   let alturaMaxima = 0;
 
-  const pasillosConPosicion = layout.map((pasillo) => {
-    const filasD = pasillo.columnaD?.filas.length ?? 0;
-    const filasI = pasillo.columnaI?.filas.length ?? 0;
-    const numFilas = Math.max(filasD, filasI, 1);
+  const seccionesConPosicion = gruposSeccion.map((grupo) => {
+    let xPasillo = xAcumulado;
+    let anchoSeccion = 0;
 
-    const alturaD = alturaMaxColumna(pasillo.columnaD);
-    const alturaI = alturaMaxColumna(pasillo.columnaI);
-    const alturaPasillo = Math.max(alturaD, alturaI, 1);
+    const pasillosConPosicion = grupo.pasillos.map((pasillo) => {
+      const celdasD = anchoColumnaEnCeldas(pasillo.columnaD);
+      const celdasI = anchoColumnaEnCeldas(pasillo.columnaI);
+      const anchoEnCeldas = Math.max(celdasD, celdasI, 1);
 
-    alturaMaxima = Math.max(alturaMaxima, alturaPasillo);
+      const nivelesD = alturaColumnaEnNiveles(pasillo.columnaD);
+      const nivelesI = alturaColumnaEnNiveles(pasillo.columnaI);
+      const maxNiveles = Math.max(nivelesD, nivelesI, 1);
 
-    const xD = anchoAcumulado;
-    const xI = pasillo.columnaD && pasillo.columnaI ? xD + numFilas * CELL_WIDTH + GAP_LADOS : xD;
+      const tieneAmbosLados = Boolean(pasillo.columnaD && pasillo.columnaI);
+      const anchoColumnaPx = anchoEnCeldas * CELL_WIDTH;
 
-    const anchoPasillo =
-      (pasillo.columnaD && pasillo.columnaI ? numFilas * CELL_WIDTH * 2 + GAP_LADOS : numFilas * CELL_WIDTH);
+      const xOffsetD = 0;
+      const xOffsetI = tieneAmbosLados ? anchoColumnaPx + GAP_LADOS : 0;
 
-    const posicion = { ...pasillo, xD, xI, numFilas, alturaPasillo };
+      const anchoPasillo = tieneAmbosLados ? anchoColumnaPx * 2 + GAP_LADOS : anchoColumnaPx;
+      const alturaPasillo = maxNiveles * CELL_HEIGHT;
 
-    anchoAcumulado += anchoPasillo + GAP_PASILLOS;
+      alturaMaxima = Math.max(alturaMaxima, alturaPasillo);
 
-    return posicion;
+      const posicion = {
+        ...pasillo,
+        x: xPasillo,
+        xOffsetD,
+        xOffsetI,
+        maxNiveles,
+        alturaPasillo
+      };
+
+      xPasillo += anchoPasillo + GAP_PASILLOS;
+      anchoSeccion += anchoPasillo + GAP_PASILLOS;
+
+      return posicion;
+    });
+
+    anchoSeccion -= GAP_PASILLOS;
+
+    const posicionSeccion = {
+      seccion: grupo.seccion,
+      pasillos: pasillosConPosicion,
+      xInicio: xAcumulado,
+      ancho: anchoSeccion
+    };
+
+    xAcumulado += anchoSeccion + GAP_SECCIONES;
+
+    return posicionSeccion;
   });
 
-  const width = anchoAcumulado - GAP_PASILLOS + MARGIN;
-  const height = alturaMaxima * CELL_HEIGHT + MARGIN * 2 + 30;
+  const width = xAcumulado - GAP_SECCIONES + MARGIN;
+  const height = alturaMaxima + MARGIN * 2 + LABEL_HEIGHT * 2;
 
-  return { width, height, pasillosConPosicion, alturaMaxima };
+  return { width, height, seccionesConPosicion, alturaMaxima };
 }
 
 export function estadoUbicacion(stockUbicacion) {

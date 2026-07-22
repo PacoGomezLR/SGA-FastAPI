@@ -1,11 +1,12 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { useSectionLayout } from "./useSectionLayout";
 import LocationPopover from "./LocationPopover";
 import {
   CELL_WIDTH,
   CELL_HEIGHT,
-  calcularDimensiones,
+  LABEL_HEIGHT,
+  calcularDimensionesMultiple,
   estadoUbicacion,
   COLOR_POR_ESTADO
 } from "./mapLayout";
@@ -13,14 +14,15 @@ import * as styles from "./SectionMap.styles";
 
 const ESCALA_DETALLE = 1.4;
 
-function Columna({ columna, x, alturaMaxima, escala, stockPorUbicacion, onSelectUbicacion }) {
+function Columna({ columna, xOffset, maxNiveles, escala, stockPorUbicacion, onSelectUbicacion }) {
   if (!columna) return null;
 
   return (
     <>
-      {columna.filas.map((fila) =>
-        fila.ubicaciones.map((ubicacion, indice) => {
-          const y = (alturaMaxima - 1 - indice) * CELL_HEIGHT;
+      {columna.niveles.map((nivel) =>
+        nivel.ubicaciones.map((ubicacion, indice) => {
+          const x = xOffset + indice * CELL_WIDTH;
+          const y = (maxNiveles - nivel.altura) * CELL_HEIGHT;
           const stockUbicacion = stockPorUbicacion.get(ubicacion.id) || [];
           const estado = estadoUbicacion(stockUbicacion);
           const mostrarDetalle = escala >= ESCALA_DETALLE;
@@ -32,7 +34,7 @@ function Columna({ columna, x, alturaMaxima, escala, stockPorUbicacion, onSelect
               style={{ cursor: mostrarDetalle ? "pointer" : "default" }}
             >
               <rect
-                x={x + (fila.fila - 1) * CELL_WIDTH}
+                x={x}
                 y={y}
                 width={CELL_WIDTH - 4}
                 height={CELL_HEIGHT - 4}
@@ -45,7 +47,7 @@ function Columna({ columna, x, alturaMaxima, escala, stockPorUbicacion, onSelect
 
               {mostrarDetalle && (
                 <text
-                  x={x + (fila.fila - 1) * CELL_WIDTH + (CELL_WIDTH - 4) / 2}
+                  x={x + (CELL_WIDTH - 4) / 2}
                   y={y + (CELL_HEIGHT - 4) / 2}
                   textAnchor="middle"
                   dominantBaseline="middle"
@@ -65,11 +67,56 @@ function Columna({ columna, x, alturaMaxima, escala, stockPorUbicacion, onSelect
   );
 }
 
-function SectionMap({ seccionId, height = 480 }) {
-  const { layout, stockPorUbicacion, cargando, error, tieneLayout } = useSectionLayout(seccionId);
+function SectionMap({ height = 480 }) {
+  const { layout, stockPorUbicacion, cargando, error, tieneLayout } = useSectionLayout();
   const [escala, setEscala] = useState(1);
   const [seleccion, setSeleccion] = useState(null);
+  const [anchoContenedor, setAnchoContenedor] = useState(null);
   const frameRef = useRef(null);
+  const transformRef = useRef(null);
+  const observerRef = useRef(null);
+
+  const wrapperCallbackRef = useCallback((node) => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+
+    if (!node) return;
+
+    setAnchoContenedor(node.clientWidth);
+
+    observerRef.current = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) setAnchoContenedor(entry.contentRect.width);
+    });
+
+    observerRef.current.observe(node);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (observerRef.current) observerRef.current.disconnect();
+    };
+  }, []);
+
+  const { width, height: svgHeight, seccionesConPosicion } = useMemo(
+    () => calcularDimensionesMultiple(layout),
+    [layout]
+  );
+
+  const escalaAjuste = useMemo(() => {
+    if (anchoContenedor) {
+      return Math.min(1, (anchoContenedor - 20) / width, (height - 20) / svgHeight);
+    }
+    return Math.min(1, (height - 20) / svgHeight);
+  }, [anchoContenedor, width, svgHeight, height]);
+
+  useEffect(() => {
+    if (!transformRef.current) return;
+
+    transformRef.current.centerView(escalaAjuste, 0);
+  }, [escalaAjuste]);
 
   const handleTransform = useCallback((_, state) => {
     if (frameRef.current) return;
@@ -85,7 +132,7 @@ function SectionMap({ seccionId, height = 480 }) {
   }
 
   if (cargando) {
-    return <div style={styles.mensajeCentro}>Cargando mapa de la sección...</div>;
+    return <div style={styles.mensajeCentro}>Cargando mapa de secciones...</div>;
   }
 
   if (error) {
@@ -95,54 +142,70 @@ function SectionMap({ seccionId, height = 480 }) {
   if (!tieneLayout) {
     return (
       <div style={styles.mensajeCentro}>
-        Esta sección no tiene layout generado.
+        Todavía no hay secciones con layout generado.
       </div>
     );
   }
 
-  const { width, height: svgHeight, pasillosConPosicion, alturaMaxima } = calcularDimensiones(layout);
-
   return (
-    <div style={{ ...styles.wrapper, height }}>
+    <div style={{ ...styles.wrapper, height }} ref={wrapperCallbackRef}>
       <TransformWrapper
-        initialScale={1}
-        minScale={0.3}
+        ref={transformRef}
+        initialScale={escalaAjuste}
+        minScale={escalaAjuste * 0.5}
         maxScale={6}
         centerOnInit
         onTransform={handleTransform}
       >
         <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
           <svg width={width} height={svgHeight} style={styles.svg}>
-            {pasillosConPosicion.map((pasillo) => (
-              <g key={pasillo.numero}>
+            {seccionesConPosicion.map((grupo) => (
+              <g key={grupo.seccion.id}>
                 <text
-                  x={(pasillo.xD + (pasillo.xI || pasillo.xD) + pasillo.numFilas * CELL_WIDTH) / 2}
-                  y={20}
+                  x={grupo.xInicio + grupo.ancho / 2}
+                  y={16}
                   textAnchor="middle"
-                  fontSize="14"
+                  fontSize="15"
                   fontWeight="700"
-                  fill="#334155"
+                  fill="#0f172a"
                 >
-                  Pasillo {pasillo.numero}
+                  {grupo.seccion.nombre}
                 </text>
 
-                <g transform={`translate(0, 30)`}>
-                  <Columna
-                    columna={pasillo.columnaD}
-                    x={pasillo.xD}
-                    alturaMaxima={alturaMaxima}
-                    escala={escala}
-                    stockPorUbicacion={stockPorUbicacion}
-                    onSelectUbicacion={seleccionarUbicacion}
-                  />
-                  <Columna
-                    columna={pasillo.columnaI}
-                    x={pasillo.xI}
-                    alturaMaxima={alturaMaxima}
-                    escala={escala}
-                    stockPorUbicacion={stockPorUbicacion}
-                    onSelectUbicacion={seleccionarUbicacion}
-                  />
+                <g transform={`translate(0, ${LABEL_HEIGHT})`}>
+                  {grupo.pasillos.map((pasillo) => (
+                    <g key={pasillo.numero} transform={`translate(${pasillo.x}, 0)`}>
+                      <text
+                        x={(pasillo.xOffsetD + pasillo.xOffsetI + CELL_WIDTH) / 2}
+                        y={12}
+                        textAnchor="middle"
+                        fontSize="12"
+                        fontWeight="600"
+                        fill="#64748b"
+                      >
+                        Pasillo {pasillo.numero}
+                      </text>
+
+                      <g transform={`translate(0, ${LABEL_HEIGHT})`}>
+                        <Columna
+                          columna={pasillo.columnaD}
+                          xOffset={pasillo.xOffsetD}
+                          maxNiveles={pasillo.maxNiveles}
+                          escala={escala}
+                          stockPorUbicacion={stockPorUbicacion}
+                          onSelectUbicacion={seleccionarUbicacion}
+                        />
+                        <Columna
+                          columna={pasillo.columnaI}
+                          xOffset={pasillo.xOffsetI}
+                          maxNiveles={pasillo.maxNiveles}
+                          escala={escala}
+                          stockPorUbicacion={stockPorUbicacion}
+                          onSelectUbicacion={seleccionarUbicacion}
+                        />
+                      </g>
+                    </g>
+                  ))}
                 </g>
               </g>
             ))}
