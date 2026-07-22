@@ -90,9 +90,11 @@ function AuthProvider({ children }) {
     }
 
     window.addEventListener("storage", syncToken);
+    window.addEventListener("unauthorized", logout);
 
     return () => {
       window.removeEventListener("storage", syncToken);
+      window.removeEventListener("unauthorized", logout);
     };
   }, []);
 

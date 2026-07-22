@@ -72,6 +72,11 @@ function Login() {
 
         {error && <div style={styles.errorBox}>{error}</div>}
 
+        <div style={styles.demoBox}>
+          Acceso de demostración: usuario <strong>admin</strong>, contraseña{" "}
+          <strong>admin123</strong>
+        </div>
+
         <div style={styles.fieldWrapper}>
           <label htmlFor="username" style={styles.fieldLabel}>
             Usuario

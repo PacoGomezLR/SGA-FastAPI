@@ -34,6 +34,17 @@ export const subtitle = {
   fontSize: "14px"
 };
 
+export const demoBox = {
+  marginBottom: "16px",
+  padding: "12px",
+  backgroundColor: "#eff6ff",
+  color: "#1e40af",
+  borderRadius: "10px",
+  fontSize: "13px",
+  border: "1px solid #bfdbfe",
+  textAlign: "center"
+};
+
 export const errorBox = {
   marginBottom: "16px",
   padding: "12px",
