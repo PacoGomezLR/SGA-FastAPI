@@ -89,7 +89,7 @@ function MainLayout() {
             </NavLink>
 
             <NavLink to="/secciones" style={getLinkStyle}>
-              Secciones
+              Almacén
             </NavLink>
 
             <NavLink to="/stock" style={getLinkStyle}>

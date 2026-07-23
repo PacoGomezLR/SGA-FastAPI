@@ -18,7 +18,8 @@ const nuevoPasillo = () => ({
   lado_d: false,
   lado_i: false,
   eje_y_max: "",
-  eje_x_max: ""
+  fila_inicio: "",
+  fila_fin: ""
 });
 
 function Secciones() {
@@ -135,7 +136,8 @@ function Secciones() {
               lado_d: p.lado_d,
               lado_i: p.lado_i,
               eje_y_max: Number(p.eje_y_max),
-              eje_x_max: Number(p.eje_x_max)
+              fila_inicio: Number(p.fila_inicio),
+              fila_fin: Number(p.fila_fin)
             }))
           }
         });
@@ -379,11 +381,22 @@ function Secciones() {
                   />
 
                   <input
-                    name="eje_x_max"
+                    name="fila_inicio"
                     type="number"
                     min="1"
-                    placeholder="Fila (X)"
-                    value={p.eje_x_max}
+                    placeholder="Fila inicio"
+                    value={p.fila_inicio}
+                    onChange={(e) => handlePasilloChange(index, e)}
+                    style={{ ...styles.input, width: "120px" }}
+                    required
+                  />
+
+                  <input
+                    name="fila_fin"
+                    type="number"
+                    min="1"
+                    placeholder="Fila fin"
+                    value={p.fila_fin}
                     onChange={(e) => handlePasilloChange(index, e)}
                     style={{ ...styles.input, width: "120px" }}
                     required

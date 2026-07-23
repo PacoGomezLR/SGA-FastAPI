@@ -13,20 +13,23 @@ def _zona_nombre(numero_pasillo: int, lado: str | None) -> str:
     return f"Pasillo {numero_pasillo}"
 
 
+def _lados_de_pasillo(pasillo: PasilloLayout) -> list[str | None]:
+    lados: list[str | None] = []
+    if pasillo.lado_d:
+        lados.append("D")
+    if pasillo.lado_i:
+        lados.append("I")
+    if not lados:
+        lados.append(None)
+    return lados
+
+
 def _construir_zonas_y_ubicaciones(seccion_id: int, pasillos: list[PasilloLayout]):
     """Construye (sin persistir) las instancias de Zone/Location para los pasillos dados."""
     zonas: list[Zone] = []
 
     for pasillo in pasillos:
-        lados: list[str | None] = []
-        if pasillo.lado_d:
-            lados.append("D")
-        if pasillo.lado_i:
-            lados.append("I")
-        if not lados:
-            lados.append(None)
-
-        for lado in lados:
+        for lado in _lados_de_pasillo(pasillo):
             zona = Zone(
                 seccion_id=seccion_id,
                 nombre=_zona_nombre(pasillo.numero_pasillo, lado),
@@ -43,7 +46,7 @@ def _construir_zonas_y_ubicaciones(seccion_id: int, pasillos: list[PasilloLayout
                     eje_x=x,
                 )
                 for y in range(1, pasillo.eje_y_max + 1)
-                for x in range(1, pasillo.eje_x_max + 1)
+                for x in range(pasillo.fila_inicio, pasillo.fila_fin + 1)
             ]
             zona.ubicaciones = ubicaciones
 
@@ -91,9 +94,55 @@ class SectionLayoutService:
         self.db.commit()
         return {"message": "Pasillos generados correctamente"}
 
+    def _validar_solapamiento_filas(self, seccion_id: int, pasillos: list[PasilloLayout]):
+        """
+        Dos secciones distintas pueden compartir el mismo pasillo+lado, siempre
+        que sus rangos de fila (eje_x) no se solapen. La comprobación es global
+        (cualquier sección), no solo dentro de la sección actual.
+        """
+        for pasillo in pasillos:
+            for lado in _lados_de_pasillo(pasillo):
+                zonas_existentes = (
+                    self.db.query(Zone)
+                    .filter(
+                        Zone.numero_pasillo == pasillo.numero_pasillo,
+                        Zone.lado == lado,
+                        Zone.seccion_id != seccion_id,
+                    )
+                    .all()
+                )
+
+                for zona_existente in zonas_existentes:
+                    filas_ocupadas = [
+                        u.eje_x for u in zona_existente.ubicaciones if u.eje_x is not None
+                    ]
+                    if not filas_ocupadas:
+                        continue
+
+                    fila_min = min(filas_ocupadas)
+                    fila_max = max(filas_ocupadas)
+
+                    hay_solape = (
+                        pasillo.fila_inicio <= fila_max and pasillo.fila_fin >= fila_min
+                    )
+
+                    if hay_solape:
+                        lado_txt = f" lado {lado}" if lado else ""
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=(
+                                f"El pasillo {pasillo.numero_pasillo}{lado_txt} ya tiene "
+                                f"filas {fila_min}-{fila_max} ocupadas por la sección "
+                                f"'{zona_existente.seccion.nombre}' (id {zona_existente.seccion_id}); "
+                                f"el rango {pasillo.fila_inicio}-{pasillo.fila_fin} se solapa."
+                            ),
+                        )
+
     def _agregar_pasillos(self, seccion_id: int, pasillos: list[PasilloLayout]):
         if not pasillos:
             return
+
+        self._validar_solapamiento_filas(seccion_id, pasillos)
 
         nuevas_zonas = _construir_zonas_y_ubicaciones(seccion_id, pasillos)
 

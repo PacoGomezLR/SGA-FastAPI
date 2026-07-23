@@ -13,7 +13,8 @@ def test_crear_seccion_con_layout_genera_zonas_y_ubicaciones(client, auth_header
                     "lado_d": True,
                     "lado_i": True,
                     "eje_y_max": 2,
-                    "eje_x_max": 3,
+                    "fila_inicio": 1,
+                    "fila_fin": 3,
                 }
             ],
         },
@@ -80,7 +81,8 @@ def test_generate_layout_agrega_pasillos_a_seccion_existente(client, auth_header
                     "lado_d": False,
                     "lado_i": False,
                     "eje_y_max": 1,
-                    "eje_x_max": 1,
+                    "fila_inicio": 1,
+                    "fila_fin": 1,
                 }
             ]
         },
@@ -105,7 +107,8 @@ def test_generate_layout_con_zona_duplicada_devuelve_400(client, auth_headers):
                     "lado_d": True,
                     "lado_i": False,
                     "eje_y_max": 1,
-                    "eje_x_max": 1,
+                    "fila_inicio": 1,
+                    "fila_fin": 1,
                 }
             ],
         },
@@ -122,7 +125,8 @@ def test_generate_layout_con_zona_duplicada_devuelve_400(client, auth_headers):
                     "lado_d": True,
                     "lado_i": False,
                     "eje_y_max": 1,
-                    "eje_x_max": 1,
+                    "fila_inicio": 1,
+                    "fila_fin": 1,
                 }
             ]
         },
@@ -142,7 +146,29 @@ def test_pasillo_con_rejilla_demasiado_grande_devuelve_422(client, auth_headers)
                     "lado_d": False,
                     "lado_i": False,
                     "eje_y_max": 201,
-                    "eje_x_max": 1,
+                    "fila_inicio": 1,
+                    "fila_fin": 1,
+                }
+            ],
+        },
+        headers=auth_headers,
+    )
+    assert r.status_code == 422
+
+
+def test_fila_fin_menor_que_fila_inicio_devuelve_422(client, auth_headers):
+    r = client.post(
+        "/section-layout/",
+        json={
+            "seccion": _payload_section(),
+            "pasillos": [
+                {
+                    "numero_pasillo": 1,
+                    "lado_d": False,
+                    "lado_i": False,
+                    "eje_y_max": 1,
+                    "fila_inicio": 5,
+                    "fila_fin": 2,
                 }
             ],
         },
@@ -182,3 +208,127 @@ def test_crear_layout_requiere_rol_administrador_o_supervisor(client, db_session
         headers=headers,
     )
     assert r.status_code == 403
+
+
+def test_dos_secciones_mismo_pasillo_y_lado_sin_solape_de_filas_ok(client, auth_headers):
+    r1 = client.post(
+        "/section-layout/",
+        json={
+            "seccion": _payload_section("Seccion A"),
+            "pasillos": [
+                {
+                    "numero_pasillo": 3,
+                    "lado_d": True,
+                    "lado_i": False,
+                    "eje_y_max": 1,
+                    "fila_inicio": 1,
+                    "fila_fin": 5,
+                }
+            ],
+        },
+        headers=auth_headers,
+    )
+    assert r1.status_code == 201
+
+    r2 = client.post(
+        "/section-layout/",
+        json={
+            "seccion": _payload_section("Seccion B"),
+            "pasillos": [
+                {
+                    "numero_pasillo": 3,
+                    "lado_d": True,
+                    "lado_i": False,
+                    "eje_y_max": 1,
+                    "fila_inicio": 6,
+                    "fila_fin": 10,
+                }
+            ],
+        },
+        headers=auth_headers,
+    )
+    assert r2.status_code == 201
+
+    zonas = client.get("/zones/", headers=auth_headers).json()
+    zonas_pasillo_3 = [z for z in zonas if z["numero_pasillo"] == 3 and z["lado"] == "D"]
+    assert len(zonas_pasillo_3) == 2
+
+
+def test_dos_secciones_mismo_pasillo_y_lado_con_solape_de_filas_devuelve_400(client, auth_headers):
+    r1 = client.post(
+        "/section-layout/",
+        json={
+            "seccion": _payload_section("Seccion A"),
+            "pasillos": [
+                {
+                    "numero_pasillo": 4,
+                    "lado_d": True,
+                    "lado_i": False,
+                    "eje_y_max": 1,
+                    "fila_inicio": 1,
+                    "fila_fin": 5,
+                }
+            ],
+        },
+        headers=auth_headers,
+    )
+    assert r1.status_code == 201
+
+    r2 = client.post(
+        "/section-layout/",
+        json={
+            "seccion": _payload_section("Seccion B"),
+            "pasillos": [
+                {
+                    "numero_pasillo": 4,
+                    "lado_d": True,
+                    "lado_i": False,
+                    "eje_y_max": 1,
+                    "fila_inicio": 3,
+                    "fila_fin": 8,
+                }
+            ],
+        },
+        headers=auth_headers,
+    )
+    assert r2.status_code == 400
+
+
+def test_mismo_pasillo_distinto_lado_no_bloquea_por_solape(client, auth_headers):
+    r1 = client.post(
+        "/section-layout/",
+        json={
+            "seccion": _payload_section("Seccion A"),
+            "pasillos": [
+                {
+                    "numero_pasillo": 7,
+                    "lado_d": True,
+                    "lado_i": False,
+                    "eje_y_max": 1,
+                    "fila_inicio": 1,
+                    "fila_fin": 5,
+                }
+            ],
+        },
+        headers=auth_headers,
+    )
+    assert r1.status_code == 201
+
+    r2 = client.post(
+        "/section-layout/",
+        json={
+            "seccion": _payload_section("Seccion B"),
+            "pasillos": [
+                {
+                    "numero_pasillo": 7,
+                    "lado_d": False,
+                    "lado_i": True,
+                    "eje_y_max": 1,
+                    "fila_inicio": 1,
+                    "fila_fin": 5,
+                }
+            ],
+        },
+        headers=auth_headers,
+    )
+    assert r2.status_code == 201

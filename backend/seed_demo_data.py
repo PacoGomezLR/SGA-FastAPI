@@ -47,10 +47,10 @@ PRODUCTOS = [
     ("Guitarra Acústica Cordoba C5", "SEED-PROD-114", "Guitarras acústicas", 8),
 ]
 
-# (numero_pasillo, lado_d, lado_i, eje_y_max, eje_x_max)
+# (numero_pasillo, lado_d, lado_i, eje_y_max, fila_inicio, fila_fin)
 LAYOUT_SECCION = [
-    PasilloLayout(numero_pasillo=1, lado_d=True, lado_i=True, eje_y_max=4, eje_x_max=5),
-    PasilloLayout(numero_pasillo=2, lado_d=True, lado_i=True, eje_y_max=4, eje_x_max=5),
+    PasilloLayout(numero_pasillo=1, lado_d=True, lado_i=True, eje_y_max=4, fila_inicio=1, fila_fin=5),
+    PasilloLayout(numero_pasillo=2, lado_d=True, lado_i=True, eje_y_max=4, fila_inicio=1, fila_fin=5),
 ]
 
 

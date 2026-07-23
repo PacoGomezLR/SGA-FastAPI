@@ -14,7 +14,8 @@ def _crear_seccion_con_layout(client, auth_headers, nombre, eje_y_max, eje_x_max
                     "lado_d": False,
                     "lado_i": False,
                     "eje_y_max": eje_y_max,
-                    "eje_x_max": eje_x_max,
+                    "fila_inicio": 1,
+                    "fila_fin": eje_x_max,
                 }
             ],
         },
