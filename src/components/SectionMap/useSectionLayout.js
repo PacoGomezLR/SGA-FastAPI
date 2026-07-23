@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../../api/api";
-import { construirLayoutMultiple } from "./mapLayout";
+import { construirLayoutMultiple, extraerZonasEnEspera } from "./mapLayout";
 
 export function useSectionLayout() {
   const [secciones, setSecciones] = useState([]);
@@ -10,45 +10,48 @@ export function useSectionLayout() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
+  const cargar = useCallback(async () => {
+    try {
+      setCargando(true);
+      setError("");
+
+      const [seccionesData, zonasData, ubicacionesData, stockData] = await Promise.all([
+        apiFetch("/sections/"),
+        apiFetch("/zones/"),
+        apiFetch("/locations/"),
+        apiFetch("/stock/")
+      ]);
+
+      setSecciones(Array.isArray(seccionesData) ? seccionesData : []);
+      setZonas(Array.isArray(zonasData) ? zonasData : []);
+      setUbicaciones(Array.isArray(ubicacionesData) ? ubicacionesData : []);
+      setStock(Array.isArray(stockData) ? stockData : []);
+    } catch (err) {
+      setError(err.message || "Error al cargar el layout de las secciones");
+    } finally {
+      setCargando(false);
+    }
+  }, []);
+
   useEffect(() => {
     let cancelado = false;
 
-    async function cargar() {
-      try {
-        setCargando(true);
-        setError("");
-
-        const [seccionesData, zonasData, ubicacionesData, stockData] = await Promise.all([
-          apiFetch("/sections/"),
-          apiFetch("/zones/"),
-          apiFetch("/locations/"),
-          apiFetch("/stock/")
-        ]);
-
-        if (cancelado) return;
-
-        setSecciones(Array.isArray(seccionesData) ? seccionesData : []);
-        setZonas(Array.isArray(zonasData) ? zonasData : []);
-        setUbicaciones(Array.isArray(ubicacionesData) ? ubicacionesData : []);
-        setStock(Array.isArray(stockData) ? stockData : []);
-      } catch (err) {
-        if (!cancelado) {
-          setError(err.message || "Error al cargar el layout de las secciones");
-        }
-      } finally {
-        if (!cancelado) setCargando(false);
-      }
-    }
-
-    cargar();
+    (async () => {
+      if (!cancelado) await cargar();
+    })();
 
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [cargar]);
 
   const layout = useMemo(
     () => construirLayoutMultiple(secciones, zonas, ubicaciones),
+    [secciones, zonas, ubicaciones]
+  );
+
+  const zonasEnEspera = useMemo(
+    () => extraerZonasEnEspera(secciones, zonas, ubicaciones),
     [secciones, zonas, ubicaciones]
   );
 
@@ -67,5 +70,15 @@ export function useSectionLayout() {
 
   const tieneLayout = layout.length > 0;
 
-  return { layout, stockPorUbicacion, cargando, error, tieneLayout };
+  return {
+    layout,
+    zonasEnEspera,
+    stockPorUbicacion,
+    secciones,
+    zonas,
+    cargando,
+    error,
+    tieneLayout,
+    recargar: cargar
+  };
 }

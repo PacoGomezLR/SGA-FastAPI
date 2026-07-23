@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.schemas.section import SectionResponse
-from app.schemas.section_layout import GenerateLayoutRequest, SectionLayoutCreate
+from app.schemas.section_layout import GenerateLayoutRequest, MoveZoneRequest, SectionLayoutCreate
+from app.schemas.zone import ZoneResponse
 from app.security.dependencies import require_role
 from app.services.section_layout_service import SectionLayoutService
 
@@ -35,3 +36,17 @@ def generate_layout(
 ):
     service = SectionLayoutService(db)
     return service.generate_layout(section_id, data.pasillos)
+
+
+@router.post(
+    "/zones/{zona_id}/move",
+    response_model=ZoneResponse
+)
+def move_zone(
+    zona_id: int,
+    data: MoveZoneRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role("administrador", "supervisor"))
+):
+    service = SectionLayoutService(db)
+    return service.move_zone(zona_id, data)

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { useSectionLayout } from "./useSectionLayout";
 import LocationPopover from "./LocationPopover";
+import MoveZonePanel from "./MoveZonePanel";
 import {
   CELL_WIDTH,
   CELL_HEIGHT,
@@ -68,7 +69,17 @@ function Columna({ columna, xOffset, maxNiveles, escala, stockPorUbicacion, onSe
 }
 
 function SectionMap({ height = 480 }) {
-  const { layout, stockPorUbicacion, cargando, error, tieneLayout } = useSectionLayout();
+  const {
+    layout,
+    zonasEnEspera,
+    stockPorUbicacion,
+    secciones,
+    zonas,
+    cargando,
+    error,
+    tieneLayout,
+    recargar
+  } = useSectionLayout();
   const [escala, setEscala] = useState(1);
   const [seleccion, setSeleccion] = useState(null);
   const [anchoContenedor, setAnchoContenedor] = useState(null);
@@ -139,101 +150,125 @@ function SectionMap({ height = 480 }) {
     return <div style={{ ...styles.mensajeCentro, color: "#991b1b" }}>{error}</div>;
   }
 
-  if (!tieneLayout) {
-    return (
-      <div style={styles.mensajeCentro}>
-        Todavía no hay secciones con layout generado.
-      </div>
-    );
-  }
-
   return (
-    <div style={{ ...styles.wrapper, height }} ref={wrapperCallbackRef}>
-      <TransformWrapper
-        ref={transformRef}
-        initialScale={escalaAjuste}
-        minScale={escalaAjuste * 0.5}
-        maxScale={6}
-        centerOnInit
-        onTransform={handleTransform}
-      >
-        <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
-          <svg width={width} height={svgHeight} style={styles.svg}>
-            {seccionesConPosicion.map((grupo) => (
-              <g key={grupo.seccion.id}>
-                <text
-                  x={grupo.xInicio + grupo.ancho / 2}
-                  y={16}
-                  textAnchor="middle"
-                  fontSize="15"
-                  fontWeight="700"
-                  fill="#0f172a"
-                >
-                  {grupo.seccion.nombre}
-                </text>
+    <div>
+      <MoveZonePanel zonas={zonas} secciones={secciones} onMoved={recargar} />
 
-                <g transform={`translate(0, ${LABEL_HEIGHT})`}>
-                  {grupo.pasillos.map((pasillo) => (
-                    <g key={pasillo.numero} transform={`translate(${pasillo.x}, 0)`}>
-                      <text
-                        x={(pasillo.xOffsetD + pasillo.xOffsetI + CELL_WIDTH) / 2}
-                        y={12}
-                        textAnchor="middle"
-                        fontSize="12"
-                        fontWeight="600"
-                        fill="#64748b"
-                      >
-                        Pasillo {pasillo.numero}
-                      </text>
+      {zonasEnEspera.length > 0 && (
+        <div style={styles.esperaWrapper}>
+          <div style={styles.esperaTitle}>Zona de espera</div>
+          <div style={styles.esperaList}>
+            {zonasEnEspera.map(({ zona, seccion, niveles }) => {
+              const totalUbicaciones = niveles.reduce(
+                (acc, nivel) => acc + nivel.ubicaciones.length,
+                0
+              );
+              return (
+                <div key={zona.id} style={styles.esperaCard}>
+                  <div style={styles.esperaCardTitle}>{seccion.nombre}</div>
+                  <div style={styles.esperaCardSubtitle}>
+                    {zona.nombre} — {totalUbicaciones} ubicaciones
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-                      <g transform={`translate(0, ${LABEL_HEIGHT})`}>
-                        <Columna
-                          columna={pasillo.columnaD}
-                          xOffset={pasillo.xOffsetD}
-                          maxNiveles={pasillo.maxNiveles}
-                          escala={escala}
-                          stockPorUbicacion={stockPorUbicacion}
-                          onSelectUbicacion={seleccionarUbicacion}
-                        />
-                        <Columna
-                          columna={pasillo.columnaI}
-                          xOffset={pasillo.xOffsetI}
-                          maxNiveles={pasillo.maxNiveles}
-                          escala={escala}
-                          stockPorUbicacion={stockPorUbicacion}
-                          onSelectUbicacion={seleccionarUbicacion}
-                        />
-                      </g>
+      {!tieneLayout ? (
+        <div style={styles.mensajeCentro}>
+          Todavía no hay secciones con layout generado.
+        </div>
+      ) : (
+        <div style={{ ...styles.wrapper, height }} ref={wrapperCallbackRef}>
+          <TransformWrapper
+            ref={transformRef}
+            initialScale={escalaAjuste}
+            minScale={escalaAjuste * 0.5}
+            maxScale={6}
+            centerOnInit
+            onTransform={handleTransform}
+          >
+            <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
+              <svg width={width} height={svgHeight} style={styles.svg}>
+                {seccionesConPosicion.map((grupo) => (
+                  <g key={grupo.seccion.id}>
+                    <text
+                      x={grupo.xInicio + grupo.ancho / 2}
+                      y={16}
+                      textAnchor="middle"
+                      fontSize="15"
+                      fontWeight="700"
+                      fill="#0f172a"
+                    >
+                      {grupo.seccion.nombre}
+                    </text>
+
+                    <g transform={`translate(0, ${LABEL_HEIGHT})`}>
+                      {grupo.pasillos.map((pasillo) => (
+                        <g key={pasillo.numero} transform={`translate(${pasillo.x}, 0)`}>
+                          <text
+                            x={(pasillo.xOffsetD + pasillo.xOffsetI + CELL_WIDTH) / 2}
+                            y={12}
+                            textAnchor="middle"
+                            fontSize="12"
+                            fontWeight="600"
+                            fill="#64748b"
+                          >
+                            Pasillo {pasillo.numero}
+                          </text>
+
+                          <g transform={`translate(0, ${LABEL_HEIGHT})`}>
+                            <Columna
+                              columna={pasillo.columnaD}
+                              xOffset={pasillo.xOffsetD}
+                              maxNiveles={pasillo.maxNiveles}
+                              escala={escala}
+                              stockPorUbicacion={stockPorUbicacion}
+                              onSelectUbicacion={seleccionarUbicacion}
+                            />
+                            <Columna
+                              columna={pasillo.columnaI}
+                              xOffset={pasillo.xOffsetI}
+                              maxNiveles={pasillo.maxNiveles}
+                              escala={escala}
+                              stockPorUbicacion={stockPorUbicacion}
+                              onSelectUbicacion={seleccionarUbicacion}
+                            />
+                          </g>
+                        </g>
+                      ))}
                     </g>
-                  ))}
-                </g>
-              </g>
-            ))}
-          </svg>
-        </TransformComponent>
-      </TransformWrapper>
+                  </g>
+                ))}
+              </svg>
+            </TransformComponent>
+          </TransformWrapper>
 
-      <div style={styles.legend}>
-        <span style={styles.legendItem}>
-          <span style={{ ...styles.legendDot, backgroundColor: COLOR_POR_ESTADO.vacia }} />
-          Vacía
-        </span>
-        <span style={styles.legendItem}>
-          <span style={{ ...styles.legendDot, backgroundColor: COLOR_POR_ESTADO.ocupada }} />
-          Con stock
-        </span>
-        <span style={styles.legendItem}>
-          <span style={{ ...styles.legendDot, backgroundColor: COLOR_POR_ESTADO.bajo }} />
-          Stock bajo
-        </span>
-      </div>
+          <div style={styles.legend}>
+            <span style={styles.legendItem}>
+              <span style={{ ...styles.legendDot, backgroundColor: COLOR_POR_ESTADO.vacia }} />
+              Vacía
+            </span>
+            <span style={styles.legendItem}>
+              <span style={{ ...styles.legendDot, backgroundColor: COLOR_POR_ESTADO.ocupada }} />
+              Con stock
+            </span>
+            <span style={styles.legendItem}>
+              <span style={{ ...styles.legendDot, backgroundColor: COLOR_POR_ESTADO.bajo }} />
+              Stock bajo
+            </span>
+          </div>
 
-      {seleccion && (
-        <LocationPopover
-          ubicacion={seleccion.ubicacion}
-          stockUbicacion={seleccion.stockUbicacion}
-          onClose={() => setSeleccion(null)}
-        />
+          {seleccion && (
+            <LocationPopover
+              ubicacion={seleccion.ubicacion}
+              stockUbicacion={seleccion.stockUbicacion}
+              onClose={() => setSeleccion(null)}
+            />
+          )}
+        </div>
       )}
     </div>
   );

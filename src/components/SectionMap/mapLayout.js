@@ -80,12 +80,31 @@ export function construirLayoutSeccion(zonas, ubicaciones) {
 export function construirLayoutMultiple(secciones, zonas, ubicaciones) {
   return secciones
     .map((seccion) => {
-      const zonasSeccion = zonas.filter((z) => z.seccion_id === seccion.id);
+      const zonasSeccion = zonas.filter(
+        (z) => z.seccion_id === seccion.id && z.numero_pasillo != null
+      );
       const pasillos = construirLayoutSeccion(zonasSeccion, ubicaciones);
 
       return { seccion, pasillos };
     })
     .filter((grupo) => grupo.pasillos.length > 0);
+}
+
+/**
+ * Zonas "en espera": sin pasillo/lado asignado (numero_pasillo === null).
+ * No ocupan ningún sitio físico real, se muestran aparte en el mapa.
+ */
+export function extraerZonasEnEspera(secciones, zonas, ubicaciones) {
+  const seccionesPorId = new Map(secciones.map((s) => [s.id, s]));
+
+  return zonas
+    .filter((z) => z.numero_pasillo == null)
+    .map((zona) => ({
+      zona,
+      seccion: seccionesPorId.get(zona.seccion_id),
+      niveles: agruparNivelesPorZona(zona.id, ubicaciones)
+    }))
+    .filter((grupo) => grupo.seccion != null);
 }
 
 function anchoColumnaEnCeldas(columna) {

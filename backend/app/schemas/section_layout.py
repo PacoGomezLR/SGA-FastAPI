@@ -36,3 +36,28 @@ class SectionLayoutCreate(BaseModel):
 
 class GenerateLayoutRequest(BaseModel):
     pasillos: list[PasilloLayout] = Field(default_factory=list)
+
+
+class MoveZoneRequest(BaseModel):
+    """
+    Mueve una zona a un nuevo destino, o a la zona de espera si numero_pasillo
+    es None. El número de filas de la zona no cambia: solo se desplaza su
+    posición (numero_pasillo, lado, fila de inicio).
+    """
+    numero_pasillo: Optional[int] = Field(default=None, ge=1)
+    lado: Optional[str] = None
+    fila_inicio: Optional[int] = Field(default=None, ge=1)
+
+    @field_validator("lado")
+    @classmethod
+    def lado_valido(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and value not in ("D", "I"):
+            raise ValueError("El lado debe ser 'D' o 'I'")
+        return value
+
+    @field_validator("fila_inicio")
+    @classmethod
+    def dentro_de_limite(cls, value: Optional[int]) -> Optional[int]:
+        if value is not None and value > 200:
+            raise ValueError("El tamaño de la rejilla es demasiado grande")
+        return value

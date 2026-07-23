@@ -113,3 +113,111 @@ export const popoverItem = {
 export const popoverQuantity = {
   fontWeight: "700"
 };
+
+export const movePanel = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "10px",
+  padding: "14px 16px",
+  backgroundColor: "white",
+  border: "1px solid #e5e7eb",
+  borderRadius: "12px",
+  marginBottom: "16px"
+};
+
+export const movePanelTitle = {
+  fontWeight: "700",
+  color: "#0f172a",
+  fontSize: "14px"
+};
+
+export const moveRow = {
+  display: "flex",
+  gap: "10px",
+  flexWrap: "wrap"
+};
+
+export const moveSelect = {
+  flex: "1 1 220px",
+  padding: "10px 12px",
+  borderRadius: "8px",
+  border: "1px solid #cbd5e1",
+  backgroundColor: "white",
+  outline: "none"
+};
+
+export const moveInput = {
+  flex: "1 1 120px",
+  padding: "10px 12px",
+  borderRadius: "8px",
+  border: "1px solid #cbd5e1",
+  outline: "none"
+};
+
+export const moveButton = {
+  alignSelf: "flex-start",
+  padding: "10px 18px",
+  borderRadius: "8px",
+  border: "none",
+  backgroundColor: "#0f172a",
+  color: "white",
+  fontWeight: "600",
+  cursor: "pointer"
+};
+
+export const moveSuccess = {
+  backgroundColor: "#dcfce7",
+  color: "#166534",
+  padding: "8px 12px",
+  borderRadius: "8px",
+  fontSize: "13px"
+};
+
+export const moveError = {
+  backgroundColor: "#fee2e2",
+  color: "#991b1b",
+  padding: "8px 12px",
+  borderRadius: "8px",
+  fontSize: "13px"
+};
+
+export const esperaWrapper = {
+  marginBottom: "16px",
+  padding: "14px 16px",
+  backgroundColor: "#fffbeb",
+  border: "1px dashed #f59e0b",
+  borderRadius: "12px"
+};
+
+export const esperaTitle = {
+  fontWeight: "700",
+  color: "#92400e",
+  marginBottom: "10px",
+  fontSize: "14px"
+};
+
+export const esperaList = {
+  display: "flex",
+  gap: "10px",
+  flexWrap: "wrap"
+};
+
+export const esperaCard = {
+  padding: "10px 14px",
+  backgroundColor: "white",
+  border: "1px solid #fcd34d",
+  borderRadius: "10px",
+  minWidth: "160px"
+};
+
+export const esperaCardTitle = {
+  fontWeight: "700",
+  color: "#0f172a",
+  fontSize: "13px"
+};
+
+export const esperaCardSubtitle = {
+  color: "#6b7280",
+  fontSize: "12px",
+  marginTop: "2px"
+};
