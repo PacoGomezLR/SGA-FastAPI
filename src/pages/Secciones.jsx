@@ -13,14 +13,10 @@ const initialForm = {
   activo: true
 };
 
-const nuevoPasillo = () => ({
-  numero_pasillo: "",
-  lado_d: false,
-  lado_i: false,
-  eje_y_max: "",
-  fila_inicio: "",
-  fila_fin: ""
-});
+const initialLayout = {
+  num_columnas: "",
+  num_filas: ""
+};
 
 function Secciones() {
   const [secciones, setSecciones] = useState([]);
@@ -32,7 +28,7 @@ function Secciones() {
 
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
-  const [pasillos, setPasillos] = useState([]);
+  const [layout, setLayout] = useState(initialLayout);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
   const { confirm } = useConfirm();
@@ -67,7 +63,7 @@ function Secciones() {
   function limpiarFormulario() {
     setForm(initialForm);
     setEditingId(null);
-    setPasillos([]);
+    setLayout(initialLayout);
     setError("");
     setMensaje("");
     setMostrarFormulario(false);
@@ -77,7 +73,7 @@ function Secciones() {
     setEditingId(seccion.id);
     setMensaje("");
     setError("");
-    setPasillos([]);
+    setLayout(initialLayout);
     setMostrarFormulario(true);
 
     setForm({
@@ -88,22 +84,9 @@ function Secciones() {
     });
   }
 
-  function agregarPasillo() {
-    setPasillos((prev) => [...prev, nuevoPasillo()]);
-  }
-
-  function quitarPasillo(index) {
-    setPasillos((prev) => prev.filter((_, i) => i !== index));
-  }
-
-  function handlePasilloChange(index, e) {
-    const { name, value, type, checked } = e.target;
-
-    setPasillos((prev) =>
-      prev.map((p, i) =>
-        i === index ? { ...p, [name]: type === "checkbox" ? checked : value } : p
-      )
-    );
+  function handleLayoutChange(e) {
+    const { name, value } = e.target;
+    setLayout((prev) => ({ ...prev, [name]: value }));
   }
 
   async function handleSubmit(e) {
@@ -127,18 +110,18 @@ function Secciones() {
           body: seccionPayload
         });
       } else {
+        const tieneLayout = layout.num_columnas && layout.num_filas;
+
         await apiFetch("/section-layout/", {
           method: "POST",
           body: {
             seccion: seccionPayload,
-            pasillos: pasillos.map((p) => ({
-              numero_pasillo: Number(p.numero_pasillo),
-              lado_d: p.lado_d,
-              lado_i: p.lado_i,
-              eje_y_max: Number(p.eje_y_max),
-              fila_inicio: Number(p.fila_inicio),
-              fila_fin: Number(p.fila_fin)
-            }))
+            layout: tieneLayout
+              ? {
+                  num_columnas: Number(layout.num_columnas),
+                  num_filas: Number(layout.num_filas)
+                }
+              : null
           }
         });
       }
@@ -334,87 +317,29 @@ function Secciones() {
 
           {!editingId && (
             <div style={styles.pasillosSection}>
-              <div style={styles.sectionTitle}>Pasillos (opcional)</div>
+              <div style={styles.sectionTitle}>Rejilla de la estantería (opcional)</div>
 
-              {pasillos.map((p, index) => (
-                <div key={index} style={styles.pasilloRow}>
-                  <input
-                    name="numero_pasillo"
-                    type="number"
-                    min="1"
-                    placeholder="Nº pasillo"
-                    value={p.numero_pasillo}
-                    onChange={(e) => handlePasilloChange(index, e)}
-                    style={{ ...styles.input, width: "110px" }}
-                    required
-                  />
+              <div style={styles.pasilloRow}>
+                <input
+                  name="num_columnas"
+                  type="number"
+                  min="1"
+                  placeholder="Nº columnas"
+                  value={layout.num_columnas}
+                  onChange={handleLayoutChange}
+                  style={{ ...styles.input, width: "140px" }}
+                />
 
-                  <label style={styles.checkboxLabelInline}>
-                    <input
-                      type="checkbox"
-                      name="lado_d"
-                      checked={p.lado_d}
-                      onChange={(e) => handlePasilloChange(index, e)}
-                    />
-                    Lado D
-                  </label>
-
-                  <label style={styles.checkboxLabelInline}>
-                    <input
-                      type="checkbox"
-                      name="lado_i"
-                      checked={p.lado_i}
-                      onChange={(e) => handlePasilloChange(index, e)}
-                    />
-                    Lado I
-                  </label>
-
-                  <input
-                    name="eje_y_max"
-                    type="number"
-                    min="1"
-                    placeholder="Altura (Y)"
-                    value={p.eje_y_max}
-                    onChange={(e) => handlePasilloChange(index, e)}
-                    style={{ ...styles.input, width: "110px" }}
-                    required
-                  />
-
-                  <input
-                    name="fila_inicio"
-                    type="number"
-                    min="1"
-                    placeholder="Fila inicio"
-                    value={p.fila_inicio}
-                    onChange={(e) => handlePasilloChange(index, e)}
-                    style={{ ...styles.input, width: "120px" }}
-                    required
-                  />
-
-                  <input
-                    name="fila_fin"
-                    type="number"
-                    min="1"
-                    placeholder="Fila fin"
-                    value={p.fila_fin}
-                    onChange={(e) => handlePasilloChange(index, e)}
-                    style={{ ...styles.input, width: "120px" }}
-                    required
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => quitarPasillo(index)}
-                    style={styles.dangerButton}
-                  >
-                    Quitar
-                  </button>
-                </div>
-              ))}
-
-              <button type="button" onClick={agregarPasillo} style={styles.secondaryButton}>
-                + Añadir pasillo
-              </button>
+                <input
+                  name="num_filas"
+                  type="number"
+                  min="1"
+                  placeholder="Nº filas"
+                  value={layout.num_filas}
+                  onChange={handleLayoutChange}
+                  style={{ ...styles.input, width: "140px" }}
+                />
+              </div>
             </div>
           )}
 

@@ -1,197 +1,137 @@
-export const CELL_WIDTH = 70;
-export const CELL_HEIGHT = 40;
-export const GAP_LADOS = 40;
-export const GAP_PASILLOS = 70;
+export const CELL_WIDTH = 48;
+export const CELL_HEIGHT = 48;
 export const GAP_SECCIONES = 130;
 export const MARGIN = 60;
-export const LABEL_HEIGHT = 30;
+export const LABEL_HEIGHT = 36;
+export const SNAP_GRID = 20;
 
-export function agruparPorPasillo(zonas) {
-  const mapa = new Map();
-
-  zonas.forEach((zona) => {
-    if (zona.numero_pasillo == null) return;
-
-    if (!mapa.has(zona.numero_pasillo)) {
-      mapa.set(zona.numero_pasillo, { numero: zona.numero_pasillo, ladoD: null, ladoI: null });
-    }
-
-    const pasillo = mapa.get(zona.numero_pasillo);
-
-    if (zona.lado === "D") {
-      pasillo.ladoD = zona;
-    } else if (zona.lado === "I") {
-      pasillo.ladoI = zona;
-    } else {
-      pasillo.ladoD = zona;
-    }
-  });
-
-  return Array.from(mapa.values()).sort((a, b) => a.numero - b.numero);
+export function snapToGrid(value) {
+  return Math.round(value / SNAP_GRID) * SNAP_GRID;
 }
 
 /**
- * Agrupa las ubicaciones de una zona por nivel de altura (eje_y), que en la
- * vista vertical se apila de abajo (altura 1) hacia arriba. Dentro de cada
- * nivel, las ubicaciones se ordenan por su posición a lo largo del pasillo
- * (eje_x), que se dibuja en horizontal.
+ * Agrupa las ubicaciones de una sección por columna. Dentro de cada
+ * columna, las ubicaciones se ordenan por fila (de arriba hacia abajo).
  */
-export function agruparNivelesPorZona(zonaId, ubicaciones) {
-  const ubicacionesZona = ubicaciones.filter((u) => u.zona_id === zonaId && u.activa);
+export function agruparPorColumna(seccionId, ubicaciones) {
+  const ubicacionesSeccion = ubicaciones.filter(
+    (u) => u.seccion_id === seccionId && u.activa
+  );
 
-  const niveles = new Map();
+  const columnas = new Map();
 
-  ubicacionesZona.forEach((ubicacion) => {
-    const clave = ubicacion.eje_y ?? 0;
+  ubicacionesSeccion.forEach((ubicacion) => {
+    const clave = ubicacion.columna ?? 0;
 
-    if (!niveles.has(clave)) {
-      niveles.set(clave, []);
+    if (!columnas.has(clave)) {
+      columnas.set(clave, []);
     }
-    niveles.get(clave).push(ubicacion);
+    columnas.get(clave).push(ubicacion);
   });
 
-  niveles.forEach((lista) => lista.sort((a, b) => (a.eje_x ?? 0) - (b.eje_x ?? 0)));
+  columnas.forEach((lista) => lista.sort((a, b) => (a.fila ?? 0) - (b.fila ?? 0)));
 
-  return Array.from(niveles.entries())
+  return Array.from(columnas.entries())
     .sort(([a], [b]) => a - b)
-    .map(([altura, ubicacionesNivel]) => ({ altura, ubicaciones: ubicacionesNivel }));
-}
-
-export function construirLayoutSeccion(zonas, ubicaciones) {
-  const pasillos = agruparPorPasillo(zonas);
-
-  return pasillos.map((pasillo) => {
-    const columnaD = pasillo.ladoD
-      ? { zona: pasillo.ladoD, niveles: agruparNivelesPorZona(pasillo.ladoD.id, ubicaciones) }
-      : null;
-
-    const columnaI = pasillo.ladoI
-      ? { zona: pasillo.ladoI, niveles: agruparNivelesPorZona(pasillo.ladoI.id, ubicaciones) }
-      : null;
-
-    return { numero: pasillo.numero, columnaD, columnaI };
-  });
+    .map(([columna, ubicacionesColumna]) => ({ columna, ubicaciones: ubicacionesColumna }));
 }
 
 /**
- * Construye el layout combinado de varias secciones a la vez.
- * secciones: [{ id, nombre }], zonas y ubicaciones ya filtradas a las secciones dadas.
+ * Construye el layout combinado de varias secciones a la vez. Cada sección
+ * es una rejilla rectangular autocontenida (columnas x filas), sin ningún
+ * concepto de pasillo o lado compartido con otras secciones.
  */
-export function construirLayoutMultiple(secciones, zonas, ubicaciones) {
+export function construirLayoutMultiple(secciones, ubicaciones) {
   return secciones
     .map((seccion) => {
-      const zonasSeccion = zonas.filter(
-        (z) => z.seccion_id === seccion.id && z.numero_pasillo != null
-      );
-      const pasillos = construirLayoutSeccion(zonasSeccion, ubicaciones);
-
-      return { seccion, pasillos };
+      const columnas = agruparPorColumna(seccion.id, ubicaciones);
+      return { seccion, columnas };
     })
-    .filter((grupo) => grupo.pasillos.length > 0);
+    .filter((grupo) => grupo.columnas.length > 0);
 }
 
 /**
- * Zonas "en espera": sin pasillo/lado asignado (numero_pasillo === null).
- * No ocupan ningún sitio físico real, se muestran aparte en el mapa.
- */
-export function extraerZonasEnEspera(secciones, zonas, ubicaciones) {
-  const seccionesPorId = new Map(secciones.map((s) => [s.id, s]));
-
-  return zonas
-    .filter((z) => z.numero_pasillo == null)
-    .map((zona) => ({
-      zona,
-      seccion: seccionesPorId.get(zona.seccion_id),
-      niveles: agruparNivelesPorZona(zona.id, ubicaciones)
-    }))
-    .filter((grupo) => grupo.seccion != null);
-}
-
-function anchoColumnaEnCeldas(columna) {
-  if (!columna) return 0;
-
-  return columna.niveles.reduce((max, nivel) => Math.max(max, nivel.ubicaciones.length), 0);
-}
-
-function alturaColumnaEnNiveles(columna) {
-  if (!columna) return 0;
-
-  return columna.niveles.length;
-}
-
-/**
- * Orientación vertical (como una estantería real vista de perfil): cada
- * pasillo es una columna que crece hacia abajo. Dentro del pasillo, lado D y
- * lado I se dibujan uno junto al otro en horizontal (como dos estanterías
- * caminables una frente a la otra). Cada nivel de altura es una franja
- * horizontal apilada de abajo hacia arriba, y dentro de esa franja las
- * ubicaciones (posiciones a lo largo del pasillo) se colocan en horizontal.
+ * Cada sección se dibuja como una rejilla vertical: las columnas se colocan
+ * una junto a otra en horizontal, y dentro de cada columna las filas se
+ * apilan hacia abajo.
+ *
+ * Posicionamiento: si una sección tiene pos_x/pos_y guardados (movida
+ * manualmente en el modo "Editar disposición"), se dibuja ahí, en una
+ * posición libre que replica el almacén real. Si no, se coloca en el
+ * layout automático (una junto a otra en fila), para que las secciones
+ * todavía no tocadas no salten de sitio.
  */
 export function calcularDimensionesMultiple(gruposSeccion) {
   if (gruposSeccion.length === 0) {
     return { width: MARGIN * 2, height: MARGIN * 2, seccionesConPosicion: [] };
   }
 
-  let xAcumulado = MARGIN;
-  let alturaMaxima = 0;
+  let xAutomatico = MARGIN;
+  let hayLibres = false;
+  let altoMaximoLibre = 0;
 
-  const seccionesConPosicion = gruposSeccion.map((grupo) => {
-    let xPasillo = xAcumulado;
-    let anchoSeccion = 0;
+  const dimensiones = gruposSeccion.map((grupo) => {
+    const numColumnas = grupo.columnas.length;
+    const maxFilas = grupo.columnas.reduce(
+      (max, columna) => Math.max(max, columna.ubicaciones.length),
+      1
+    );
 
-    const pasillosConPosicion = grupo.pasillos.map((pasillo) => {
-      const celdasD = anchoColumnaEnCeldas(pasillo.columnaD);
-      const celdasI = anchoColumnaEnCeldas(pasillo.columnaI);
-      const anchoEnCeldas = Math.max(celdasD, celdasI, 1);
+    // rotacion es un número de cuartos de vuelta (0-3). A 90°/270° se
+    // intercambian los ejes de dibujo (lo que antes ocupaba ancho en
+    // columnas ahora ocupa alto, y viceversa); a 0°/180° las dimensiones son
+    // las mismas que sin rotar. Nunca toca la columna/fila real de ninguna
+    // ubicación, es puramente visual.
+    const ejesIntercambiados = (grupo.seccion.rotacion ?? 0) % 2 === 1;
+    const ancho = (ejesIntercambiados ? maxFilas : numColumnas) * CELL_WIDTH;
+    const alto = (ejesIntercambiados ? numColumnas : maxFilas) * CELL_HEIGHT + LABEL_HEIGHT;
 
-      const nivelesD = alturaColumnaEnNiveles(pasillo.columnaD);
-      const nivelesI = alturaColumnaEnNiveles(pasillo.columnaI);
-      const maxNiveles = Math.max(nivelesD, nivelesI, 1);
+    return { grupo, ancho, alto };
+  });
 
-      const tieneAmbosLados = Boolean(pasillo.columnaD && pasillo.columnaI);
-      const anchoColumnaPx = anchoEnCeldas * CELL_WIDTH;
+  dimensiones.forEach(({ grupo, alto }) => {
+    const { pos_x: posX, pos_y: posY } = grupo.seccion;
+    if (posX != null && posY != null) {
+      hayLibres = true;
+      altoMaximoLibre = Math.max(altoMaximoLibre, posY + alto);
+    }
+  });
 
-      const xOffsetD = 0;
-      const xOffsetI = tieneAmbosLados ? anchoColumnaPx + GAP_LADOS : 0;
+  const yFilaAutomatica = hayLibres ? altoMaximoLibre + MARGIN : MARGIN;
 
-      const anchoPasillo = tieneAmbosLados ? anchoColumnaPx * 2 + GAP_LADOS : anchoColumnaPx;
-      const alturaPasillo = maxNiveles * CELL_HEIGHT;
+  const seccionesConPosicion = dimensiones.map(({ grupo, ancho, alto }) => {
+    const { pos_x: posX, pos_y: posY } = grupo.seccion;
+    const esLibre = posX != null && posY != null;
 
-      alturaMaxima = Math.max(alturaMaxima, alturaPasillo);
-
-      const posicion = {
-        ...pasillo,
-        x: xPasillo,
-        xOffsetD,
-        xOffsetI,
-        maxNiveles,
-        alturaPasillo
-      };
-
-      xPasillo += anchoPasillo + GAP_PASILLOS;
-      anchoSeccion += anchoPasillo + GAP_PASILLOS;
-
-      return posicion;
-    });
-
-    anchoSeccion -= GAP_PASILLOS;
-
+    // Cada sección se posiciona de forma 100% independiente. El SVG no tiene
+    // viewBox (su origen 0,0 es fijo), así que una posición libre nunca
+    // puede ser negativa o se recortaría; se limita (clamp) a 0 sin tocar
+    // ninguna otra sección.
     const posicionSeccion = {
       seccion: grupo.seccion,
-      pasillos: pasillosConPosicion,
-      xInicio: xAcumulado,
-      ancho: anchoSeccion
+      columnas: grupo.columnas,
+      ancho,
+      alto,
+      esLibre,
+      xInicio: esLibre ? Math.max(0, posX) : xAutomatico,
+      yInicio: esLibre ? Math.max(0, posY) : yFilaAutomatica
     };
 
-    xAcumulado += anchoSeccion + GAP_SECCIONES;
+    if (!esLibre) {
+      xAutomatico += ancho + GAP_SECCIONES;
+    }
 
     return posicionSeccion;
   });
 
-  const width = xAcumulado - GAP_SECCIONES + MARGIN;
-  const height = alturaMaxima + MARGIN * 2 + LABEL_HEIGHT * 2;
+  const width = Math.max(
+    ...seccionesConPosicion.map((s) => s.xInicio + s.ancho + MARGIN)
+  );
+  const height = Math.max(
+    ...seccionesConPosicion.map((s) => s.yInicio + s.alto + MARGIN)
+  );
 
-  return { width, height, seccionesConPosicion, alturaMaxima };
+  return { width, height, seccionesConPosicion };
 }
 
 export function estadoUbicacion(stockUbicacion) {

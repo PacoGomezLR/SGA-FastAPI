@@ -8,7 +8,6 @@ const initialForm = {
   cantidad: "",
   observaciones: "",
   seccion_id: "",
-  zona_id: "",
   ubicacion_destino_id: ""
 };
 
@@ -22,11 +21,10 @@ function Recepciones() {
 
   const [productos, setProductos] = useState([]);
   const [secciones, setSecciones] = useState([]);
-  const [zonas, setZonas] = useState([]);
   const [ubicaciones, setUbicaciones] = useState([]);
 
   const [mostrarSelectorUbicacion, setMostrarSelectorUbicacion] = useState(false);
-  const [filaSeleccionada, setFilaSeleccionada] = useState(null);
+  const [columnaSeleccionada, setColumnaSeleccionada] = useState(null);
 
   useEffect(() => {
     cargarDatosFormulario();
@@ -37,23 +35,20 @@ function Recepciones() {
       setCargandoDatos(true);
       setError("");
 
-      const [productosData, seccionesData, zonasData, ubicacionesData] =
+      const [productosData, seccionesData, ubicacionesData] =
         await Promise.all([
           apiFetch("/products/"),
           apiFetch("/sections/"),
-          apiFetch("/zones/"),
           apiFetch("/locations/")
         ]);
 
       setProductos(Array.isArray(productosData) ? productosData : []);
       setSecciones(Array.isArray(seccionesData) ? seccionesData : []);
-      setZonas(Array.isArray(zonasData) ? zonasData : []);
       setUbicaciones(Array.isArray(ubicacionesData) ? ubicacionesData : []);
     } catch (err) {
       setError(err.message || "Error al cargar los datos del formulario");
       setProductos([]);
       setSecciones([]);
-      setZonas([]);
       setUbicaciones([]);
     } finally {
       setCargandoDatos(false);
@@ -67,23 +62,19 @@ function Recepciones() {
       ...prev,
       [name]: value,
       ...(name === "seccion_id" && {
-        zona_id: "",
-        ubicacion_destino_id: ""
-      }),
-      ...(name === "zona_id" && {
         ubicacion_destino_id: ""
       })
     }));
   }
 
   function abrirSelectorUbicacion() {
-    setFilaSeleccionada(null);
+    setColumnaSeleccionada(null);
     setMostrarSelectorUbicacion(true);
   }
 
   function cerrarSelectorUbicacion() {
     setMostrarSelectorUbicacion(false);
-    setFilaSeleccionada(null);
+    setColumnaSeleccionada(null);
   }
 
   function elegirUbicacion(ubicacion) {
@@ -91,42 +82,34 @@ function Recepciones() {
     cerrarSelectorUbicacion();
   }
 
-  const zonasFiltradas = useMemo(() => {
+  const ubicacionesFiltradas = useMemo(() => {
     if (!form.seccion_id) return [];
 
-    return zonas.filter(
-      (zona) => String(zona.seccion_id) === String(form.seccion_id)
-    );
-  }, [zonas, form.seccion_id]);
-
-  const ubicacionesFiltradas = useMemo(() => {
-    if (!form.zona_id) return [];
-
     return ubicaciones.filter(
-      (ubicacion) => String(ubicacion.zona_id) === String(form.zona_id)
+      (ubicacion) => String(ubicacion.seccion_id) === String(form.seccion_id)
     );
-  }, [ubicaciones, form.zona_id]);
+  }, [ubicaciones, form.seccion_id]);
 
-  const filasDeZona = useMemo(() => {
-    const filas = new Map();
+  const columnasDeSeccion = useMemo(() => {
+    const columnas = new Map();
 
     ubicacionesFiltradas.forEach((ubicacion) => {
-      const clave = ubicacion.eje_x ?? ubicacion.codigo;
+      const clave = ubicacion.columna ?? ubicacion.codigo;
 
-      if (!filas.has(clave)) {
-        filas.set(clave, { fila: ubicacion.eje_x, ubicaciones: [] });
+      if (!columnas.has(clave)) {
+        columnas.set(clave, { columna: ubicacion.columna, ubicaciones: [] });
       }
-      filas.get(clave).ubicaciones.push(ubicacion);
+      columnas.get(clave).ubicaciones.push(ubicacion);
     });
 
-    const lista = Array.from(filas.values()).sort((a, b) => {
-      if (a.fila == null) return 1;
-      if (b.fila == null) return -1;
-      return a.fila - b.fila;
+    const lista = Array.from(columnas.values()).sort((a, b) => {
+      if (a.columna == null) return 1;
+      if (b.columna == null) return -1;
+      return a.columna - b.columna;
     });
 
-    lista.forEach((f) => {
-      f.ubicaciones.sort((a, b) => (a.eje_y ?? 0) - (b.eje_y ?? 0));
+    lista.forEach((c) => {
+      c.ubicaciones.sort((a, b) => (a.fila ?? 0) - (b.fila ?? 0));
     });
 
     return lista;
@@ -143,10 +126,6 @@ function Recepciones() {
       (seccion) => String(seccion.id) === String(form.seccion_id)
     );
   }, [secciones, form.seccion_id]);
-
-  const zonaSeleccionada = useMemo(() => {
-    return zonas.find((zona) => String(zona.id) === String(form.zona_id));
-  }, [zonas, form.zona_id]);
 
   const ubicacionSeleccionada = useMemo(() => {
     return ubicaciones.find(
@@ -311,34 +290,12 @@ function Recepciones() {
             </div>
 
             <div style={styles.fieldGroup}>
-              <label htmlFor="zona_id" style={styles.label}>
-                Zona
-              </label>
-              <select
-                id="zona_id"
-                name="zona_id"
-                value={form.zona_id}
-                onChange={handleChange}
-                required
-                style={styles.input}
-                disabled={!form.seccion_id || cargandoDatos || cargando}
-              >
-                <option value="">Selecciona una zona</option>
-                {zonasFiltradas.map((zona) => (
-                  <option key={zona.id} value={zona.id}>
-                    {zona.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={styles.fieldGroup}>
               <label style={styles.label}>Ubicación</label>
               <button
                 type="button"
                 style={styles.ubicacionButton}
                 onClick={abrirSelectorUbicacion}
-                disabled={!form.zona_id || cargandoDatos || cargando}
+                disabled={!form.seccion_id || cargandoDatos || cargando}
               >
                 {ubicacionSeleccionada?.codigo || "Selecciona una ubicación"}
               </button>
@@ -373,11 +330,6 @@ function Recepciones() {
               <strong style={styles.summaryValue}>
                 {seccionSeleccionada?.nombre || "-"}
               </strong>
-            </div>
-
-            <div style={styles.summaryItem}>
-              <span style={styles.summaryLabel}>Zona</span>
-              <strong style={styles.summaryValue}>{zonaSeleccionada?.nombre || "-"}</strong>
             </div>
 
             <div style={styles.summaryItem}>
@@ -417,32 +369,32 @@ function Recepciones() {
       {mostrarSelectorUbicacion && (
         <div style={styles.modalOverlay} onClick={cerrarSelectorUbicacion}>
           <div style={styles.modalBox} onClick={(e) => e.stopPropagation()}>
-            {!filaSeleccionada ? (
+            {!columnaSeleccionada ? (
               <>
-                <h2 style={styles.modalTitle}>Selecciona una fila</h2>
+                <h2 style={styles.modalTitle}>Selecciona una columna</h2>
                 <p style={styles.modalSubtitle}>
-                  Zona: <strong>{zonaSeleccionada?.nombre}</strong>
+                  Sección: <strong>{seccionSeleccionada?.nombre}</strong>
                 </p>
 
-                {filasDeZona.length === 0 ? (
+                {columnasDeSeccion.length === 0 ? (
                   <p style={styles.locationText}>
-                    Esta zona todavía no tiene ubicaciones.
+                    Esta sección todavía no tiene ubicaciones.
                   </p>
                 ) : (
                   <div style={styles.locationsList}>
-                    {filasDeZona.map((f) => (
+                    {columnasDeSeccion.map((c) => (
                       <button
                         type="button"
-                        key={f.fila ?? f.ubicaciones[0]?.id}
+                        key={c.columna ?? c.ubicaciones[0]?.id}
                         style={styles.locationItemButton}
-                        onClick={() => setFilaSeleccionada(f)}
+                        onClick={() => setColumnaSeleccionada(c)}
                       >
                         <div style={styles.locationCode}>
-                          {f.fila != null ? `Fila ${f.fila}` : "Sin fila"}
+                          {c.columna != null ? `Columna ${c.columna}` : "Sin columna"}
                         </div>
                         <div style={styles.locationText}>
-                          {f.ubicaciones.length} altura
-                          {f.ubicaciones.length === 1 ? "" : "s"}
+                          {c.ubicaciones.length} fila
+                          {c.ubicaciones.length === 1 ? "" : "s"}
                         </div>
                       </button>
                     ))}
@@ -452,16 +404,16 @@ function Recepciones() {
             ) : (
               <>
                 <h2 style={styles.modalTitle}>
-                  {filaSeleccionada.fila != null
-                    ? `Fila ${filaSeleccionada.fila}`
-                    : "Sin fila"}
+                  {columnaSeleccionada.columna != null
+                    ? `Columna ${columnaSeleccionada.columna}`
+                    : "Sin columna"}
                 </h2>
                 <p style={styles.modalSubtitle}>
-                  Zona: <strong>{zonaSeleccionada?.nombre}</strong>
+                  Sección: <strong>{seccionSeleccionada?.nombre}</strong>
                 </p>
 
                 <div style={styles.locationsList}>
-                  {filaSeleccionada.ubicaciones.map((ubicacion) => (
+                  {columnaSeleccionada.ubicaciones.map((ubicacion) => (
                     <button
                       type="button"
                       key={ubicacion.id}
@@ -469,8 +421,8 @@ function Recepciones() {
                       onClick={() => elegirUbicacion(ubicacion)}
                     >
                       <div style={styles.locationCode}>
-                        {ubicacion.eje_y != null
-                          ? `Altura ${ubicacion.eje_y}`
+                        {ubicacion.fila != null
+                          ? `Fila ${ubicacion.fila}`
                           : ubicacion.codigo}
                       </div>
                     </button>
@@ -484,12 +436,12 @@ function Recepciones() {
                 type="button"
                 style={styles.secondaryButton}
                 onClick={
-                  filaSeleccionada
-                    ? () => setFilaSeleccionada(null)
+                  columnaSeleccionada
+                    ? () => setColumnaSeleccionada(null)
                     : cerrarSelectorUbicacion
                 }
               >
-                {filaSeleccionada ? "Volver" : "Cerrar"}
+                {columnaSeleccionada ? "Volver" : "Cerrar"}
               </button>
             </div>
           </div>

@@ -7,7 +7,6 @@ from app.routes.category_routes import router as category_router
 from app.routes.product_routes import router as product_router
 from app.routes.section_routes import router as section_router
 from app.routes.section_layout_routes import router as section_layout_router
-from app.routes.zone_routes import router as zone_router
 from app.routes.location_routes import router as location_router
 from app.routes.stock_routes import router as stock_router
 from app.routes.reception_routes import router as reception_router
@@ -36,7 +35,6 @@ app.include_router(category_router)
 app.include_router(product_router)
 app.include_router(section_router)
 app.include_router(section_layout_router)
-app.include_router(zone_router)
 app.include_router(location_router)
 app.include_router(stock_router)
 app.include_router(reception_router)

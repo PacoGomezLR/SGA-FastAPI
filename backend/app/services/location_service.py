@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.models.zone import Zone
+from app.models.section import Section
 from app.repositories.location_repository import LocationRepository
 from app.schemas.location import LocationCreate, LocationUpdate
 
@@ -24,20 +24,20 @@ class LocationService:
         return location
 
     def create_location(self, location_data: LocationCreate):
-        zona = self.db.query(Zone).filter(Zone.id == location_data.zona_id).first()
-        if not zona:
+        seccion = self.db.query(Section).filter(Section.id == location_data.seccion_id).first()
+        if not seccion:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="La zona no existe"
+                detail="La sección no existe"
             )
 
-        existing = self.repository.get_by_zone_and_code(
-            location_data.zona_id, location_data.codigo
+        existing = self.repository.get_by_section_and_code(
+            location_data.seccion_id, location_data.codigo
         )
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Ya existe una ubicación con ese código en esa zona"
+                detail="Ya existe una ubicación con ese código en esa sección"
             )
 
         return self.repository.create(location_data)
@@ -50,25 +50,25 @@ class LocationService:
                 detail="Ubicación no encontrada"
             )
 
-        nueva_zona_id = (
-            location_data.zona_id if location_data.zona_id is not None else location.zona_id
+        nueva_seccion_id = (
+            location_data.seccion_id if location_data.seccion_id is not None else location.seccion_id
         )
         nuevo_codigo = (
             location_data.codigo if location_data.codigo is not None else location.codigo
         )
 
-        zona = self.db.query(Zone).filter(Zone.id == nueva_zona_id).first()
-        if not zona:
+        seccion = self.db.query(Section).filter(Section.id == nueva_seccion_id).first()
+        if not seccion:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="La zona no existe"
+                detail="La sección no existe"
             )
 
-        existing = self.repository.get_by_zone_and_code(nueva_zona_id, nuevo_codigo)
+        existing = self.repository.get_by_section_and_code(nueva_seccion_id, nuevo_codigo)
         if existing and existing.id != location_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Ya existe otra ubicación con ese código en esa zona"
+                detail="Ya existe otra ubicación con ese código en esa sección"
             )
 
         return self.repository.update(location, location_data)

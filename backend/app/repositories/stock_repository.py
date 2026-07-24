@@ -7,7 +7,6 @@ from app.models.stock import Stock
 from app.models.product import Product
 from app.models.category import Category
 from app.models.location import Location
-from app.models.zone import Zone
 from app.models.section import Section
 
 from app.schemas.stock import StockCreate, StockUpdate
@@ -37,9 +36,6 @@ class StockRepository:
                 Section.id.label("seccion_id"),
                 Section.nombre.label("seccion_nombre"),
 
-                Zone.id.label("zona_id"),
-                Zone.nombre.label("zona_nombre"),
-
                 Stock.ubicacion_id.label("ubicacion_id"),
                 Location.codigo.label("ubicacion_nombre"),
 
@@ -50,8 +46,7 @@ class StockRepository:
             .join(Product, Product.id == Stock.producto_id)
             .outerjoin(Category, Category.id == Product.categoria_id)
             .outerjoin(Location, Location.id == Stock.ubicacion_id)
-            .outerjoin(Zone, Zone.id == Location.zona_id)
-            .outerjoin(Section, Section.id == Zone.seccion_id)
+            .outerjoin(Section, Section.id == Location.seccion_id)
         )
 
         if low:
@@ -65,7 +60,6 @@ class StockRepository:
                 bajo_stock_expr.desc(),
                 Product.nombre.asc(),
                 Section.nombre.asc().nulls_last(),
-                Zone.nombre.asc().nulls_last(),
                 Location.codigo.asc().nulls_last()
             )
             .all()

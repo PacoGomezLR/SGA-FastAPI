@@ -82,7 +82,7 @@ class ShipmentService:
                     detail="La cantidad debe ser mayor que 0"
                 )
 
-            if ubicacion.zona.seccion_id != shipment_data.seccion_id:
+            if ubicacion.seccion_id != shipment_data.seccion_id:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=(

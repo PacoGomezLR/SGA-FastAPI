@@ -211,5 +211,5 @@ class ReceptionService:
         if not ubicacion.activa:
             raise HTTPException(400, "Ubicación inactiva")
 
-        if not ubicacion.zona or ubicacion.zona.seccion_id != seccion_id:
+        if ubicacion.seccion_id != seccion_id:
             raise HTTPException(400, "Ubicación no pertenece a la sección")

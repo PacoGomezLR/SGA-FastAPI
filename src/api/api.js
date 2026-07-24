@@ -42,7 +42,24 @@ export async function apiFetch(endpoint, options = {}) {
     config.body = JSON.stringify(body);
   }
 
-  const response = await fetch(url, config);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
+  config.signal = controller.signal;
+
+  let response;
+
+  try {
+    response = await fetch(url, config);
+  } catch (err) {
+    if (err.name === "AbortError") {
+      throw new Error(
+        "El servidor está arrancando, espera unos segundos y vuelve a intentarlo"
+      );
+    }
+    throw new Error("No se pudo conectar con el servidor");
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   let data = null;
 

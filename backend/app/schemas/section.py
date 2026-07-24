@@ -37,6 +37,12 @@ class SectionUpdate(BaseModel):
 
 class SectionResponse(SectionBase):
     id: int
+    num_columnas: Optional[int] = None
+    num_filas: Optional[int] = None
+    pos_x: Optional[int] = None
+    pos_y: Optional[int] = None
+    espejo: bool = False
+    rotacion: int = 0
 
     class Config:
         from_attributes = True
@@ -48,3 +54,23 @@ class SectionOccupancyResponse(BaseModel):
     ubicaciones_totales: int
     ubicaciones_ocupadas: int
     porcentaje_ocupacion: float
+
+
+class SectionPositionUpdate(BaseModel):
+    pos_x: Optional[int] = None
+    pos_y: Optional[int] = None
+
+
+class SectionMirrorUpdate(BaseModel):
+    espejo: bool
+
+
+class SectionRotationUpdate(BaseModel):
+    direccion: int
+
+    @field_validator("direccion")
+    @classmethod
+    def direccion_valida(cls, value: int) -> int:
+        if value not in (1, -1):
+            raise ValueError("direccion debe ser 1 (horario) o -1 (antihorario)")
+        return value

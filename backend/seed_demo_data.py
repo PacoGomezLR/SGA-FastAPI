@@ -20,38 +20,59 @@ from app.db.session import SessionLocal
 from app.models.category import Category
 from app.models.product import Product
 from app.models.section import Section
-from app.models.zone import Zone
+from app.models.location import Location
 from app.models.user import User
 from app.schemas.reception import ReceptionCreate, ReceptionLineCreate
 from app.schemas.shipment import ShipmentCreate, ShipmentLineCreate
-from app.schemas.section_layout import PasilloLayout
+from app.schemas.section_layout import GridLayout
 from app.services.reception_service import ReceptionService
 from app.services.shipment_service import ShipmentService
 from app.services.section_layout_service import SectionLayoutService
 
-PRODUCTOS = [
-    ("Guitarra Gibson Les Paul", "SEED-PROD-100", "Guitarras eléctricas", 15),
-    ("Guitarra Ibanez RG", "SEED-PROD-101", "Guitarras eléctricas", 12),
-    ("Bajo Fender Precision", "SEED-PROD-102", "Bajos", 8),
-    ("Bajo Yamaha TRBX", "SEED-PROD-103", "Bajos", 10),
-    ("Batería Pearl Export", "SEED-PROD-104", "Baterías", 3),
-    ("Batería Tama Imperialstar", "SEED-PROD-105", "Baterías", 3),
-    ("Mesa Yamaha MG10XU", "SEED-PROD-106", "Mesas de mezclas", 6),
-    ("Mesa Behringer Xenyx", "SEED-PROD-107", "Mesas de mezclas", 6),
-    ("Cuerdas D'Addario EXL110", "SEED-PROD-108", "Accesorios de guitarra", 40),
-    ("Púas Dunlop Tortex (pack)", "SEED-PROD-109", "Accesorios de guitarra", 50),
-    ("Correa de guitarra Fender", "SEED-PROD-110", "Accesorios de guitarra", 25),
-    ("Afinador Boss TU-3", "SEED-PROD-111", "Accesorios de guitarra", 15),
-    ("Guitarra Acústica Yamaha F310", "SEED-PROD-112", "Guitarras acústicas", 14),
-    ("Guitarra Acústica Taylor 110", "SEED-PROD-113", "Guitarras acústicas", 5),
-    ("Guitarra Acústica Cordoba C5", "SEED-PROD-114", "Guitarras acústicas", 8),
+# (nombre_seccion, descripcion, direccion, [productos asignados])
+SECCIONES = [
+    {
+        "nombre": "Sección Guitarras",
+        "descripcion": "Guitarras 6 cuerdas",
+        "direccion": "Estantería 1",
+        "productos": [
+            ("Guitarra Gibson Les Paul", "SEED-PROD-100", "Guitarras eléctricas", 15),
+            ("Guitarra Ibanez RG", "SEED-PROD-101", "Guitarras eléctricas", 12),
+            ("Guitarra Acústica Yamaha F310", "SEED-PROD-112", "Guitarras acústicas", 14),
+            ("Guitarra Acústica Taylor 110", "SEED-PROD-113", "Guitarras acústicas", 5),
+            ("Guitarra Acústica Cordoba C5", "SEED-PROD-114", "Guitarras acústicas", 8),
+            ("Cuerdas D'Addario EXL110", "SEED-PROD-108", "Accesorios de guitarra", 40),
+            ("Púas Dunlop Tortex (pack)", "SEED-PROD-109", "Accesorios de guitarra", 50),
+            ("Correa de guitarra Fender", "SEED-PROD-110", "Accesorios de guitarra", 25),
+            ("Afinador Boss TU-3", "SEED-PROD-111", "Accesorios de guitarra", 15),
+        ],
+    },
+    {
+        "nombre": "Sección Bajos",
+        "descripcion": "Almacén de bajos",
+        "direccion": "Estantería 2",
+        "productos": [
+            ("Bajo Fender Precision", "SEED-PROD-102", "Bajos", 8),
+            ("Bajo Yamaha TRBX", "SEED-PROD-103", "Bajos", 10),
+        ],
+    },
+    {
+        "nombre": "Sección Baterías",
+        "descripcion": "Baterías de todas clases",
+        "direccion": "Estantería 3",
+        "productos": [
+            ("Batería Pearl Export", "SEED-PROD-104", "Baterías", 3),
+            ("Batería Tama Imperialstar", "SEED-PROD-105", "Baterías", 3),
+            ("Mesa Yamaha MG10XU", "SEED-PROD-106", "Mesas de mezclas", 6),
+            ("Mesa Behringer Xenyx", "SEED-PROD-107", "Mesas de mezclas", 6),
+        ],
+    },
 ]
 
-# (numero_pasillo, lado_d, lado_i, eje_y_max, fila_inicio, fila_fin)
-LAYOUT_SECCION = [
-    PasilloLayout(numero_pasillo=1, lado_d=True, lado_i=True, eje_y_max=4, fila_inicio=1, fila_fin=5),
-    PasilloLayout(numero_pasillo=2, lado_d=True, lado_i=True, eje_y_max=4, fila_inicio=1, fila_fin=5),
-]
+LAYOUT_SECCION = GridLayout(num_columnas=5, num_filas=4)
+
+RECEPTION_SEED_MARK = "Recepción de demostración (seed)"
+SHIPMENT_SEED_MARK = "Salida de demostración (seed)"
 
 
 def get_or_create_category(db: Session, nombre: str) -> Category:
@@ -87,9 +108,21 @@ def get_or_create_product(db: Session, nombre: str, sku: str, categoria_nombre: 
     return producto
 
 
+def get_or_create_section(db: Session, nombre: str, descripcion: str, direccion: str) -> Section:
+    seccion = db.query(Section).filter(Section.nombre == nombre).first()
+    if seccion:
+        return seccion
+
+    seccion = Section(nombre=nombre, descripcion=descripcion, direccion=direccion, activo=True)
+    db.add(seccion)
+    db.flush()
+    print(f"Sección creada: '{nombre}'")
+    return seccion
+
+
 def ensure_layout(db: Session, seccion: Section) -> None:
-    tiene_zonas = db.query(Zone).filter(Zone.seccion_id == seccion.id).first()
-    if tiene_zonas:
+    tiene_ubicaciones = db.query(Location).filter(Location.seccion_id == seccion.id).first()
+    if tiene_ubicaciones:
         print(f"Sección '{seccion.nombre}' ya tiene layout. No se genera de nuevo.")
         return
 
@@ -104,10 +137,6 @@ def get_admin_user(db: Session) -> User:
     return admin
 
 
-RECEPTION_SEED_MARK = "Recepción de demostración (seed)"
-SHIPMENT_SEED_MARK = "Salida de demostración (seed)"
-
-
 def seed_receptions(db: Session, seccion: Section, productos: list[Product], usuario_id: int) -> None:
     from app.models.reception import Reception
 
@@ -120,8 +149,9 @@ def seed_receptions(db: Session, seccion: Section, productos: list[Product], usu
         print(f"Ya existen recepciones de seed en '{seccion.nombre}'. No se crean de nuevo.")
         return
 
-    zonas = db.query(Zone).filter(Zone.seccion_id == seccion.id).order_by(Zone.id).all()
-    ubicaciones = [ubicacion for zona in zonas for ubicacion in zona.ubicaciones]
+    ubicaciones = (
+        db.query(Location).filter(Location.seccion_id == seccion.id).order_by(Location.id).all()
+    )
 
     if not ubicaciones:
         print(f"Sin ubicaciones en '{seccion.nombre}', se omite la carga de stock.")
@@ -166,7 +196,7 @@ def seed_shipments(db: Session, seccion: Section, productos: list[Product], usua
     service = ShipmentService(db)
     creadas = 0
 
-    for producto in productos[: len(productos) // 2]:
+    for producto in productos[: max(1, len(productos) // 2)]:
         stock_item = (
             db.query(Stock)
             .filter(Stock.producto_id == producto.id)
@@ -202,22 +232,23 @@ def main() -> None:
     try:
         admin = get_admin_user(db)
 
-        productos = [
-            get_or_create_product(db, nombre, sku, categoria, stock_minimo)
-            for nombre, sku, categoria, stock_minimo in PRODUCTOS
-        ]
-        db.commit()
+        for config in SECCIONES:
+            seccion = get_or_create_section(db, config["nombre"], config["descripcion"], config["direccion"])
+            db.commit()
+            db.refresh(seccion)
 
-        seccion = db.query(Section).filter(Section.nombre == "Almacén 1").first()
-        if not seccion:
-            raise RuntimeError("No existe la sección 'Almacén 1' en este entorno.")
+            ensure_layout(db, seccion)
+            db.commit()
+            db.refresh(seccion)
 
-        ensure_layout(db, seccion)
-        db.commit()
-        db.refresh(seccion)
+            productos = [
+                get_or_create_product(db, nombre, sku, categoria, stock_minimo)
+                for nombre, sku, categoria, stock_minimo in config["productos"]
+            ]
+            db.commit()
 
-        seed_receptions(db, seccion, productos, admin.id)
-        seed_shipments(db, seccion, productos, admin.id)
+            seed_receptions(db, seccion, productos, admin.id)
+            seed_shipments(db, seccion, productos, admin.id)
 
     finally:
         db.close()

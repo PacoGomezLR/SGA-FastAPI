@@ -13,7 +13,6 @@ function Salidas() {
 
   const [productos, setProductos] = useState([]);
   const [secciones, setSecciones] = useState([]);
-  const [zonas, setZonas] = useState([]);
   const [ubicaciones, setUbicaciones] = useState([]);
   const [stock, setStock] = useState([]);
 
@@ -22,7 +21,6 @@ function Salidas() {
   const [form, setForm] = useState({
     producto_id: "",
     seccion_id: "",
-    zona_id: "",
     ubicacion_origen_id: "",
     cantidad: "",
     motivo: "venta",
@@ -45,20 +43,17 @@ function Salidas() {
       const [
         productosData,
         seccionesData,
-        zonasData,
         ubicacionesData,
         stockData
       ] = await Promise.all([
         authFetch("/products/").then(r => r.json()),
         authFetch("/sections/").then(r => r.json()),
-        authFetch("/zones/").then(r => r.json()),
         authFetch("/locations/").then(r => r.json()),
         authFetch("/stock?detailed=true").then(r => r.json())
       ]);
 
       setProductos(Array.isArray(productosData) ? productosData : []);
       setSecciones(Array.isArray(seccionesData) ? seccionesData : []);
-      setZonas(Array.isArray(zonasData) ? zonasData : []);
       setUbicaciones(Array.isArray(ubicacionesData) ? ubicacionesData : []);
       setStock(Array.isArray(stockData) ? stockData : []);
     } catch {
@@ -75,16 +70,6 @@ function Salidas() {
       setForm({
         ...form,
         seccion_id: value,
-        zona_id: "",
-        ubicacion_origen_id: ""
-      });
-      return;
-    }
-
-    if (name === "zona_id") {
-      setForm({
-        ...form,
-        zona_id: value,
         ubicacion_origen_id: ""
       });
       return;
@@ -102,7 +87,6 @@ function Salidas() {
     setForm({
       producto_id: producto.id,
       seccion_id: "",
-      zona_id: "",
       ubicacion_origen_id: "",
       cantidad: "",
       motivo: "venta",
@@ -130,15 +114,9 @@ function Salidas() {
     stockProducto.some(s => String(s.seccion_id) === String(a.id))
   );
 
-  const zonasDisponibles = zonas.filter(
-    z =>
-      String(z.seccion_id) === String(form.seccion_id) &&
-      stockProducto.some(s => String(s.zona_id) === String(z.id))
-  );
-
   const ubicacionesDisponibles = ubicaciones.filter(
     u =>
-      String(u.zona_id) === String(form.zona_id) &&
+      String(u.seccion_id) === String(form.seccion_id) &&
       stockProducto.some(s => String(s.ubicacion_id) === String(u.id))
   );
 
@@ -190,7 +168,6 @@ function Salidas() {
       setForm({
         producto_id: "",
         seccion_id: "",
-        zona_id: "",
         ubicacion_origen_id: "",
         cantidad: "",
         motivo: "venta",
@@ -327,22 +304,6 @@ function Salidas() {
             <option value="consumo">Consumo interno</option>
             <option value="muestra">Muestra comercial</option>
             <option value="otro">Otro</option>
-          </select>
-        </div>
-
-        <div style={styles.fieldBox}>
-          <div style={styles.label}>Zona</div>
-          <select
-            name="zona_id"
-            value={form.zona_id}
-            onChange={handleChange}
-            style={styles.input}
-            required
-          >
-            <option value="">Seleccionar</option>
-            {zonasDisponibles.map(z => (
-              <option key={z.id} value={z.id}>{z.nombre}</option>
-            ))}
           </select>
         </div>
 

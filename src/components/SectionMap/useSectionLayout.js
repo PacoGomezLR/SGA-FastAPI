@@ -1,29 +1,28 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../../api/api";
-import { construirLayoutMultiple, extraerZonasEnEspera } from "./mapLayout";
+import { construirLayoutMultiple } from "./mapLayout";
 
 export function useSectionLayout() {
   const [secciones, setSecciones] = useState([]);
-  const [zonas, setZonas] = useState([]);
   const [ubicaciones, setUbicaciones] = useState([]);
   const [stock, setStock] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
-  const cargar = useCallback(async () => {
+  const cargar = useCallback(async (opciones = {}) => {
+    const { silencioso = false } = opciones;
+
     try {
-      setCargando(true);
+      if (!silencioso) setCargando(true);
       setError("");
 
-      const [seccionesData, zonasData, ubicacionesData, stockData] = await Promise.all([
+      const [seccionesData, ubicacionesData, stockData] = await Promise.all([
         apiFetch("/sections/"),
-        apiFetch("/zones/"),
         apiFetch("/locations/"),
         apiFetch("/stock/")
       ]);
 
       setSecciones(Array.isArray(seccionesData) ? seccionesData : []);
-      setZonas(Array.isArray(zonasData) ? zonasData : []);
       setUbicaciones(Array.isArray(ubicacionesData) ? ubicacionesData : []);
       setStock(Array.isArray(stockData) ? stockData : []);
     } catch (err) {
@@ -46,13 +45,8 @@ export function useSectionLayout() {
   }, [cargar]);
 
   const layout = useMemo(
-    () => construirLayoutMultiple(secciones, zonas, ubicaciones),
-    [secciones, zonas, ubicaciones]
-  );
-
-  const zonasEnEspera = useMemo(
-    () => extraerZonasEnEspera(secciones, zonas, ubicaciones),
-    [secciones, zonas, ubicaciones]
+    () => construirLayoutMultiple(secciones, ubicaciones),
+    [secciones, ubicaciones]
   );
 
   const stockPorUbicacion = useMemo(() => {
@@ -72,10 +66,8 @@ export function useSectionLayout() {
 
   return {
     layout,
-    zonasEnEspera,
     stockPorUbicacion,
     secciones,
-    zonas,
     cargando,
     error,
     tieneLayout,

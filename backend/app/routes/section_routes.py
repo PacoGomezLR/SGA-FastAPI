@@ -7,6 +7,9 @@ from app.schemas.section import (
     SectionUpdate,
     SectionResponse,
     SectionOccupancyResponse,
+    SectionPositionUpdate,
+    SectionMirrorUpdate,
+    SectionRotationUpdate,
 )
 from app.security.dependencies import require_role
 from app.services.section_service import SectionService
@@ -77,6 +80,48 @@ def update_section(
 ):
     service = SectionService(db)
     return service.update_section(section_id, section_data)
+
+
+@router.patch(
+    "/{section_id}/position",
+    response_model=SectionResponse
+)
+def update_section_position(
+    section_id: int,
+    data: SectionPositionUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role("administrador", "supervisor"))
+):
+    service = SectionService(db)
+    return service.update_position(section_id, data)
+
+
+@router.patch(
+    "/{section_id}/mirror",
+    response_model=SectionResponse
+)
+def update_section_mirror(
+    section_id: int,
+    data: SectionMirrorUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role("administrador", "supervisor"))
+):
+    service = SectionService(db)
+    return service.update_mirror(section_id, data)
+
+
+@router.patch(
+    "/{section_id}/rotation",
+    response_model=SectionResponse
+)
+def update_section_rotation(
+    section_id: int,
+    data: SectionRotationUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role("administrador", "supervisor"))
+):
+    service = SectionService(db)
+    return service.update_rotation(section_id, data)
 
 
 @router.delete(

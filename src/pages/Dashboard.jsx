@@ -30,24 +30,24 @@ function Dashboard() {
       setCargando(true);
       setError("");
 
-      const [productos, secciones, stock, movimientos, zonas] = await Promise.all([
+      const [productos, secciones, stock, movimientos, ubicaciones] = await Promise.all([
         apiFetch("/products/"),
         apiFetch("/sections/"),
         apiFetch("/stock?detailed=true"),
         apiFetch("/movements/"),
-        apiFetch("/zones/")
+        apiFetch("/locations/")
       ]);
 
       const productosArray = Array.isArray(productos) ? productos : [];
       const seccionesArray = Array.isArray(secciones) ? secciones : [];
       const stockArray = Array.isArray(stock) ? stock : [];
       const movimientosArray = Array.isArray(movimientos) ? movimientos : [];
-      const zonasArray = Array.isArray(zonas) ? zonas : [];
+      const ubicacionesArray = Array.isArray(ubicaciones) ? ubicaciones : [];
 
       setTotalProductos(productosArray.length);
       setTotalSecciones(seccionesArray.length);
 
-      setHayLayout(zonasArray.some((z) => z.numero_pasillo != null));
+      setHayLayout(ubicacionesArray.length > 0);
 
       const totalStock = stockArray.reduce(
         (acc, item) => acc + Number(item.cantidad || 0),

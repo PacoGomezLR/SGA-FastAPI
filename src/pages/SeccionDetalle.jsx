@@ -9,33 +9,26 @@ const initialLocationForm = {
   activa: true
 };
 
-const initialZoneForm = {
-  nombre: "",
-  descripcion: "",
-  activo: true
-};
-
 function SeccionDetalle() {
   const { id } = useParams();
 
   const [seccion, setSeccion] = useState(null);
-  const [zonas, setZonas] = useState([]);
   const [ubicaciones, setUbicaciones] = useState([]);
   const [stock, setStock] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
 
-  const [filaSeleccionada, setFilaSeleccionada] = useState(null);
-
-  const [mostrarFormZona, setMostrarFormZona] = useState(false);
-  const [zoneForm, setZoneForm] = useState(initialZoneForm);
-  const [guardandoZona, setGuardandoZona] = useState(false);
+  const [columnaSeleccionada, setColumnaSeleccionada] = useState(null);
 
   const [mostrarModalUbicacion, setMostrarModalUbicacion] = useState(false);
-  const [zonaSeleccionada, setZonaSeleccionada] = useState(null);
   const [locationForm, setLocationForm] = useState(initialLocationForm);
   const [guardandoUbicacion, setGuardandoUbicacion] = useState(false);
+
+  const [mostrarModalResize, setMostrarModalResize] = useState(false);
+  const [resizeForm, setResizeForm] = useState({ numColumnas: "", numFilas: "" });
+  const [guardandoResize, setGuardandoResize] = useState(false);
+  const [resizeError, setResizeError] = useState("");
 
   useEffect(() => {
     cargarDetalle();
@@ -46,26 +39,23 @@ function SeccionDetalle() {
       setCargando(true);
       setError("");
 
-      const [seccionData, zonasData, ubicacionesData, stockData] = await Promise.all([
+      const [seccionData, ubicacionesData, stockData] = await Promise.all([
         apiFetch(`/sections/${id}`),
-        apiFetch("/zones/"),
         apiFetch("/locations/"),
         apiFetch("/stock/", { params: { seccion_id: id } })
       ]);
 
       setSeccion(seccionData || null);
 
-      const zonasDeSeccion = Array.isArray(zonasData)
-        ? zonasData.filter((zona) => String(zona.seccion_id) === String(id))
+      const ubicacionesSeccion = Array.isArray(ubicacionesData)
+        ? ubicacionesData.filter((u) => String(u.seccion_id) === String(id))
         : [];
 
-      setZonas(zonasDeSeccion);
-      setUbicaciones(Array.isArray(ubicacionesData) ? ubicacionesData : []);
+      setUbicaciones(ubicacionesSeccion);
       setStock(Array.isArray(stockData) ? stockData : []);
     } catch (err) {
       setError(err.message || "Error al cargar el detalle de la sección");
       setSeccion(null);
-      setZonas([]);
       setUbicaciones([]);
       setStock([]);
     } finally {
@@ -73,67 +63,7 @@ function SeccionDetalle() {
     }
   }
 
-  function abrirFormZona() {
-    setMostrarFormZona(true);
-    setZoneForm(initialZoneForm);
-    setMensaje("");
-    setError("");
-  }
-
-  function cancelarFormZona() {
-    if (guardandoZona) return;
-
-    setMostrarFormZona(false);
-    setZoneForm(initialZoneForm);
-  }
-
-  function handleZoneChange(e) {
-    const { name, value, type, checked } = e.target;
-
-    setZoneForm((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value
-    }));
-  }
-
-  async function crearZona(e) {
-    e.preventDefault();
-
-    if (!zoneForm.nombre.trim()) {
-      setError("El nombre de la zona es obligatorio");
-      return;
-    }
-
-    try {
-      setGuardandoZona(true);
-      setError("");
-      setMensaje("");
-
-      const payload = {
-        seccion_id: Number(id),
-        nombre: zoneForm.nombre.trim(),
-        descripcion: zoneForm.descripcion.trim() || null,
-        activo: zoneForm.activo
-      };
-
-      await apiFetch("/zones/", {
-        method: "POST",
-        body: payload
-      });
-
-      setMensaje("Zona creada correctamente");
-      setZoneForm(initialZoneForm);
-      setMostrarFormZona(false);
-      await cargarDetalle();
-    } catch (err) {
-      setError(err.message || "Error al crear la zona");
-    } finally {
-      setGuardandoZona(false);
-    }
-  }
-
-  function abrirModalUbicacion(zona) {
-    setZonaSeleccionada(zona);
+  function abrirModalUbicacion() {
     setLocationForm(initialLocationForm);
     setMensaje("");
     setError("");
@@ -144,7 +74,6 @@ function SeccionDetalle() {
     if (guardandoUbicacion) return;
 
     setMostrarModalUbicacion(false);
-    setZonaSeleccionada(null);
     setLocationForm(initialLocationForm);
   }
 
@@ -160,11 +89,6 @@ function SeccionDetalle() {
   async function crearUbicacion(e) {
     e.preventDefault();
 
-    if (!zonaSeleccionada) {
-      setError("No se ha seleccionado ninguna zona");
-      return;
-    }
-
     if (!locationForm.codigo.trim()) {
       setError("El código de la ubicación es obligatorio");
       return;
@@ -176,7 +100,7 @@ function SeccionDetalle() {
       setMensaje("");
 
       const payload = {
-        zona_id: Number(zonaSeleccionada.id),
+        seccion_id: Number(id),
         codigo: locationForm.codigo.trim(),
         descripcion: locationForm.descripcion.trim() || null,
         activa: locationForm.activa
@@ -197,21 +121,53 @@ function SeccionDetalle() {
     }
   }
 
-  const ubicacionesPorZona = useMemo(() => {
-    const mapa = new Map();
-
-    zonas.forEach((zona) => {
-      mapa.set(zona.id, []);
+  function abrirModalResize() {
+    setResizeForm({
+      numColumnas: String(seccion?.num_columnas ?? ""),
+      numFilas: String(seccion?.num_filas ?? "")
     });
+    setResizeError("");
+    setMostrarModalResize(true);
+  }
 
-    ubicaciones.forEach((ubicacion) => {
-      if (mapa.has(ubicacion.zona_id)) {
-        mapa.get(ubicacion.zona_id).push(ubicacion);
-      }
-    });
+  function cerrarModalResize() {
+    if (guardandoResize) return;
 
-    return mapa;
-  }, [zonas, ubicaciones]);
+    setMostrarModalResize(false);
+    setResizeError("");
+  }
+
+  function handleResizeChange(e) {
+    const { name, value } = e.target;
+    setResizeForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  async function enviarResize(e) {
+    e.preventDefault();
+
+    try {
+      setGuardandoResize(true);
+      setResizeError("");
+
+      const body = {
+        num_columnas: resizeForm.numColumnas ? Number(resizeForm.numColumnas) : null,
+        num_filas: resizeForm.numFilas ? Number(resizeForm.numFilas) : null
+      };
+
+      const respuesta = await apiFetch(`/section-layout/${id}/resize`, {
+        method: "PATCH",
+        body
+      });
+
+      setMensaje(respuesta.mensaje || "Sección redimensionada correctamente");
+      setMostrarModalResize(false);
+      await cargarDetalle();
+    } catch (err) {
+      setResizeError(err.message || "Error al redimensionar la sección");
+    } finally {
+      setGuardandoResize(false);
+    }
+  }
 
   const stockPorUbicacion = useMemo(() => {
     const mapa = new Map();
@@ -226,47 +182,45 @@ function SeccionDetalle() {
     return mapa;
   }, [stock]);
 
-  const filasPorZona = useMemo(() => {
+  const columnas = useMemo(() => {
     const mapa = new Map();
 
-    ubicacionesPorZona.forEach((ubicacionesZona, zonaId) => {
-      const filas = new Map();
+    ubicaciones.forEach((ubicacion) => {
+      const clave = ubicacion.columna ?? ubicacion.codigo;
 
-      ubicacionesZona.forEach((ubicacion) => {
-        const clave = ubicacion.eje_x ?? ubicacion.codigo;
-
-        if (!filas.has(clave)) {
-          filas.set(clave, { fila: ubicacion.eje_x, ubicaciones: [] });
-        }
-        filas.get(clave).ubicaciones.push(ubicacion);
-      });
-
-      const listaFilas = Array.from(filas.values()).sort((a, b) => {
-        if (a.fila == null) return 1;
-        if (b.fila == null) return -1;
-        return a.fila - b.fila;
-      });
-
-      listaFilas.forEach((f) => {
-        f.ubicaciones.sort((a, b) => (a.eje_y ?? 0) - (b.eje_y ?? 0));
-      });
-
-      mapa.set(zonaId, listaFilas);
+      if (!mapa.has(clave)) {
+        mapa.set(clave, { columna: ubicacion.columna, ubicaciones: [] });
+      }
+      mapa.get(clave).ubicaciones.push(ubicacion);
     });
 
-    return mapa;
-  }, [ubicacionesPorZona]);
+    const lista = Array.from(mapa.values()).sort((a, b) => {
+      if (a.columna == null) return 1;
+      if (b.columna == null) return -1;
+      return a.columna - b.columna;
+    });
 
-  function abrirFila(zona, fila) {
-    setFilaSeleccionada({ zona, fila });
+    lista.forEach((c) => {
+      c.ubicaciones.sort((a, b) => (a.fila ?? 0) - (b.fila ?? 0));
+    });
+
+    return lista;
+  }, [ubicaciones]);
+
+  function abrirColumna(columna) {
+    setColumnaSeleccionada(columna);
   }
 
-  function cerrarFila() {
-    setFilaSeleccionada(null);
+  function cerrarColumna() {
+    setColumnaSeleccionada(null);
   }
 
   if (cargando) {
     return <p>Cargando detalle de la sección...</p>;
+  }
+
+  if (error) {
+    return <p style={{ color: "#991b1b" }}>{error}</p>;
   }
 
   if (!seccion) {
@@ -279,7 +233,7 @@ function SeccionDetalle() {
         <div>
           <h1 style={{ margin: 0 }}>{seccion.nombre}</h1>
           <p style={styles.subtitle}>
-            Vista jerárquica de la sección, sus zonas y sus ubicaciones
+            Rejilla de la sección y sus ubicaciones
           </p>
         </div>
 
@@ -317,182 +271,73 @@ function SeccionDetalle() {
           </div>
 
           <div>
-            <div style={styles.infoLabel}>Zonas</div>
-            <div style={styles.infoValue}>{zonas.length}</div>
+            <div style={styles.infoLabel}>Rejilla</div>
+            <div style={styles.infoValue}>
+              {seccion.num_columnas ?? "?"} columnas × {seccion.num_filas ?? "?"} filas
+            </div>
           </div>
         </div>
       </div>
 
       <div style={styles.section}>
         <div style={styles.sectionHeader}>
-          <h2 style={{ margin: 0 }}>Zonas y ubicaciones</h2>
+          <h2 style={{ margin: 0 }}>Columnas y ubicaciones</h2>
 
-          {!mostrarFormZona && (
-            <button type="button" style={styles.createButton} onClick={abrirFormZona}>
-              + Nueva zona
+          <div style={{ display: "flex", gap: "8px" }}>
+            {columnas.length > 0 && (
+              <button type="button" style={styles.secondaryButton} onClick={abrirModalResize}>
+                Redimensionar
+              </button>
+            )}
+
+            <button type="button" style={styles.createButton} onClick={abrirModalUbicacion}>
+              + Nueva ubicación
             </button>
-          )}
+          </div>
         </div>
 
-        {mostrarFormZona && (
-          <div style={styles.zoneFormCard}>
-            <h3 style={styles.zoneFormTitle}>Nueva zona</h3>
-
-            <form onSubmit={crearZona}>
-              <div style={styles.zoneFormGrid}>
-                <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Nombre</label>
-                  <input
-                    name="nombre"
-                    placeholder="Ej: Recepción, Picking, Reserva..."
-                    value={zoneForm.nombre}
-                    onChange={handleZoneChange}
-                    required
-                    style={styles.input}
-                    autoFocus
-                  />
-                </div>
-
-                <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Descripción</label>
-                  <input
-                    name="descripcion"
-                    placeholder="Descripción de la zona"
-                    value={zoneForm.descripcion}
-                    onChange={handleZoneChange}
-                    style={styles.input}
-                  />
-                </div>
-              </div>
-
-              <label style={styles.checkboxCard}>
-                <input
-                  type="checkbox"
-                  name="activo"
-                  checked={zoneForm.activo}
-                  onChange={handleZoneChange}
-                />
-                <span>Zona activa</span>
-              </label>
-
-              <div style={styles.modalActions}>
-                <button
-                  type="submit"
-                  style={styles.primaryButton}
-                  disabled={guardandoZona}
-                >
-                  {guardandoZona ? "Creando..." : "Crear zona"}
-                </button>
-
-                <button
-                  type="button"
-                  style={styles.secondaryButton}
-                  onClick={cancelarFormZona}
-                  disabled={guardandoZona}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {zonas.length === 0 ? (
-          <div style={styles.emptyBox}>Esta sección todavía no tiene zonas.</div>
+        {columnas.length === 0 ? (
+          <div style={styles.emptyBox}>Esta sección todavía no tiene ubicaciones.</div>
         ) : (
-          <div style={styles.zonesGrid}>
-            {zonas.map((zona) => {
-              const filasZona = filasPorZona.get(zona.id) || [];
-
-              return (
-                <div key={zona.id} style={styles.zoneCard}>
-                  <div style={styles.zoneHeader}>
-                    <div>
-                      <span style={styles.zoneLink}>
-                        {zona.nombre}
-                      </span>
-
-                      <p style={styles.zoneDescription}>
-                        {zona.descripcion || "Sin descripción"}
-                      </p>
-                    </div>
-
-                    <span
-                      style={{
-                        ...styles.badge,
-                        backgroundColor: zona.activo ? "#dcfce7" : "#fee2e2",
-                        color: zona.activo ? "#166534" : "#991b1b"
-                      }}
-                    >
-                      {zona.activo ? "Activa" : "Inactiva"}
-                    </span>
-                  </div>
-
-                  <div style={styles.locationsHeader}>
-                    <div style={styles.subTitle}>Ubicaciones</div>
-
-                    <button
-                      type="button"
-                      style={styles.miniCreateButton}
-                      onClick={() => abrirModalUbicacion(zona)}
-                    >
-                      + Nueva ubicación
-                    </button>
-                  </div>
-
-                  {filasZona.length === 0 ? (
-                    <div style={styles.emptyMiniBox}>
-                      No hay ubicaciones en esta zona.
-                    </div>
-                  ) : (
-                    <div style={styles.locationsList}>
-                      {filasZona.map((f) => (
-                        <button
-                          type="button"
-                          key={f.fila ?? f.ubicaciones[0]?.id}
-                          style={styles.locationItemButton}
-                          onClick={() => abrirFila(zona, f)}
-                        >
-                          <div style={styles.locationCode}>
-                            {f.fila != null ? `Fila ${f.fila}` : "Sin fila"}
-                          </div>
-                          <div style={styles.locationText}>
-                            {f.ubicaciones.length} altura
-                            {f.ubicaciones.length === 1 ? "" : "s"}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+          <div style={styles.locationsList}>
+            {columnas.map((c) => (
+              <button
+                type="button"
+                key={c.columna ?? c.ubicaciones[0]?.id}
+                style={styles.locationItemButton}
+                onClick={() => abrirColumna(c)}
+              >
+                <div style={styles.locationCode}>
+                  {c.columna != null ? `Columna ${c.columna}` : "Sin columna"}
                 </div>
-              );
-            })}
+                <div style={styles.locationText}>
+                  {c.ubicaciones.length} fila
+                  {c.ubicaciones.length === 1 ? "" : "s"}
+                </div>
+              </button>
+            ))}
           </div>
         )}
       </div>
 
-      {filaSeleccionada && (
-        <div style={styles.modalOverlay} onClick={cerrarFila}>
+      {columnaSeleccionada && (
+        <div style={styles.modalOverlay} onClick={cerrarColumna}>
           <div style={styles.modalBox} onClick={(e) => e.stopPropagation()}>
             <h2 style={styles.modalTitle}>
-              {filaSeleccionada.fila.fila != null
-                ? `Fila ${filaSeleccionada.fila.fila}`
-                : "Sin fila"}
+              {columnaSeleccionada.columna != null
+                ? `Columna ${columnaSeleccionada.columna}`
+                : "Sin columna"}
             </h2>
 
-            <p style={styles.modalSubtitle}>
-              Zona: <strong>{filaSeleccionada.zona.nombre}</strong>
-            </p>
-
             <div style={styles.locationsList}>
-              {filaSeleccionada.fila.ubicaciones.map((ubicacion) => {
+              {columnaSeleccionada.ubicaciones.map((ubicacion) => {
                 const stockUbicacion = stockPorUbicacion.get(ubicacion.id) || [];
 
                 return (
                   <div key={ubicacion.id} style={styles.locationItem}>
                     <div style={styles.locationCode}>
-                      {ubicacion.eje_y != null
-                        ? `Altura ${ubicacion.eje_y}`
+                      {ubicacion.fila != null
+                        ? `Fila ${ubicacion.fila}`
                         : ubicacion.codigo || `Ubicación ${ubicacion.id}`}
                     </div>
 
@@ -515,7 +360,7 @@ function SeccionDetalle() {
             </div>
 
             <div style={{ ...styles.modalActions, marginTop: "16px" }}>
-              <button type="button" style={styles.secondaryButton} onClick={cerrarFila}>
+              <button type="button" style={styles.secondaryButton} onClick={cerrarColumna}>
                 Cerrar
               </button>
             </div>
@@ -528,16 +373,12 @@ function SeccionDetalle() {
           <div style={styles.modalBox} onClick={(e) => e.stopPropagation()}>
             <h2 style={styles.modalTitle}>Nueva ubicación</h2>
 
-            <p style={styles.modalSubtitle}>
-              Zona: <strong>{zonaSeleccionada?.nombre}</strong>
-            </p>
-
             <form onSubmit={crearUbicacion}>
               <div style={styles.fieldGroup}>
                 <label style={styles.label}>Código</label>
                 <input
                   name="codigo"
-                  placeholder="Ej: A1, B3, EST-01..."
+                  placeholder="Ej: C1-F1, EST-01..."
                   value={locationForm.codigo}
                   onChange={handleLocationChange}
                   required
@@ -581,6 +422,63 @@ function SeccionDetalle() {
                   style={styles.secondaryButton}
                   onClick={cerrarModalUbicacion}
                   disabled={guardandoUbicacion}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {mostrarModalResize && (
+        <div style={styles.modalOverlay} onClick={cerrarModalResize}>
+          <div style={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+            <h2 style={styles.modalTitle}>Redimensionar sección</h2>
+
+            {resizeError && <div style={styles.errorBox}>{resizeError}</div>}
+
+            <form onSubmit={enviarResize}>
+              <div style={styles.zoneFormGrid}>
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>Columnas</label>
+                  <input
+                    type="number"
+                    name="numColumnas"
+                    min="1"
+                    value={resizeForm.numColumnas}
+                    onChange={handleResizeChange}
+                    style={styles.input}
+                  />
+                </div>
+
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>Filas</label>
+                  <input
+                    type="number"
+                    name="numFilas"
+                    min="1"
+                    value={resizeForm.numFilas}
+                    onChange={handleResizeChange}
+                    style={styles.input}
+                  />
+                </div>
+              </div>
+
+              <div style={styles.modalActions}>
+                <button
+                  type="submit"
+                  style={styles.primaryButton}
+                  disabled={guardandoResize}
+                >
+                  {guardandoResize ? "Aplicando..." : "Redimensionar"}
+                </button>
+
+                <button
+                  type="button"
+                  style={styles.secondaryButton}
+                  onClick={cerrarModalResize}
+                  disabled={guardandoResize}
                 >
                   Cancelar
                 </button>

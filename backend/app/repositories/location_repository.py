@@ -14,10 +14,10 @@ class LocationRepository:
     def get_by_id(self, location_id: int):
         return self.db.query(Location).filter(Location.id == location_id).first()
 
-    def get_by_zone_and_code(self, zona_id: int, codigo: str):
+    def get_by_section_and_code(self, seccion_id: int, codigo: str):
         return (
             self.db.query(Location)
-            .filter(Location.zona_id == zona_id, Location.codigo == codigo)
+            .filter(Location.seccion_id == seccion_id, Location.codigo == codigo)
             .first()
         )
 

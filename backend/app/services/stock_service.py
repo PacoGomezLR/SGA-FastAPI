@@ -31,9 +31,6 @@ class StockService:
                 "seccion_id": item.seccion_id,
                 "seccion_nombre": item.seccion_nombre,
 
-                "zona_id": getattr(item, "zona_id", None),
-                "zona_nombre": getattr(item, "zona_nombre", None),
-
                 "cantidad": item.cantidad,
                 "stock_minimo": item.stock_minimo,
                 "bajo_stock": item.bajo_stock

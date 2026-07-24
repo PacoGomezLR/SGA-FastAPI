@@ -1,4 +1,4 @@
-def _crear_seccion_con_layout(client, auth_headers, nombre, eje_y_max, eje_x_max):
+def _crear_seccion_con_layout(client, auth_headers, nombre, num_columnas, num_filas):
     r = client.post(
         "/section-layout/",
         json={
@@ -8,16 +8,7 @@ def _crear_seccion_con_layout(client, auth_headers, nombre, eje_y_max, eje_x_max
                 "direccion": "x",
                 "activo": True,
             },
-            "pasillos": [
-                {
-                    "numero_pasillo": 1,
-                    "lado_d": False,
-                    "lado_i": False,
-                    "eje_y_max": eje_y_max,
-                    "fila_inicio": 1,
-                    "fila_fin": eje_x_max,
-                }
-            ],
+            "layout": {"num_columnas": num_columnas, "num_filas": num_filas},
         },
         headers=auth_headers,
     )
@@ -66,11 +57,7 @@ def test_occupancy_calcula_porcentaje_correctamente(client, auth_headers):
     producto_id = _crear_producto(client, auth_headers, "Producto Test")
 
     ubicaciones = client.get("/locations/", headers=auth_headers).json()
-    ubicaciones_seccion = [
-        u for u in ubicaciones if u["zona_id"] in
-        [z["id"] for z in client.get("/zones/", headers=auth_headers).json()
-         if z["seccion_id"] == seccion_id]
-    ]
+    ubicaciones_seccion = [u for u in ubicaciones if u["seccion_id"] == seccion_id]
     assert len(ubicaciones_seccion) == 4
 
     # Ocupa 1 de las 4 ubicaciones
@@ -98,10 +85,8 @@ def test_occupancy_ignora_stock_con_cantidad_cero(client, auth_headers):
     seccion_id = _crear_seccion_con_layout(client, auth_headers, "Seccion Cero", 1, 1)
     producto_id = _crear_producto(client, auth_headers, "Producto Cero")
 
-    zonas = client.get("/zones/", headers=auth_headers).json()
-    zona_id = next(z["id"] for z in zonas if z["seccion_id"] == seccion_id)
     ubicaciones = client.get("/locations/", headers=auth_headers).json()
-    ubicacion = next(u for u in ubicaciones if u["zona_id"] == zona_id)
+    ubicacion = next(u for u in ubicaciones if u["seccion_id"] == seccion_id)
 
     client.post(
         "/stock/",

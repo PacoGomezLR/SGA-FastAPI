@@ -78,7 +78,6 @@ function Stock() {
         (item.producto_nombre || "").toLowerCase().includes(texto) ||
         String(item.producto_id || "").includes(texto) ||
         (item.ubicacion_nombre || "").toLowerCase().includes(texto) ||
-        (item.zona_nombre || "").toLowerCase().includes(texto) ||
         (item.seccion_nombre || "").toLowerCase().includes(texto) ||
         (item.categoria_nombre || "").toLowerCase().includes(texto);
 
@@ -99,7 +98,7 @@ function Stock() {
         <div>
           <h1 style={{ margin: 0 }}>Stock</h1>
           <p style={styles.subtitle}>
-            Consulta de existencias por producto, sección, zona y ubicación.
+            Consulta de existencias por producto, sección y ubicación.
           </p>
         </div>
       </div>
@@ -154,7 +153,7 @@ function Stock() {
 
         <input
           type="text"
-          placeholder="Buscar producto, sección, zona o ubicación..."
+          placeholder="Buscar producto, sección o ubicación..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           style={esMobile ? styles.searchInputMobile : styles.searchInput}
@@ -176,7 +175,6 @@ function Stock() {
                   <th style={styles.th}>Producto</th>
                   <th style={styles.th}>Categoría</th>
                   <th style={styles.th}>Sección</th>
-                  <th style={styles.th}>Zona</th>
                   <th style={styles.th}>Ubicación</th>
                   <th style={styles.th}>Cantidad</th>
                   <th style={styles.th}>Stock mínimo</th>
@@ -194,7 +192,6 @@ function Stock() {
                     <td style={styles.td}>{item.producto_nombre || item.producto_id}</td>
                     <td style={styles.td}>{item.categoria_nombre || "-"}</td>
                     <td style={styles.td}>{item.seccion_nombre || "-"}</td>
-                    <td style={styles.td}>{item.zona_nombre || "-"}</td>
                     <td style={styles.td}>{item.ubicacion_nombre || "-"}</td>
 
                     <td style={styles.tdCantidad}>

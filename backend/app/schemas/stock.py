@@ -34,9 +34,6 @@ class StockDetailedResponse(BaseModel):
     seccion_id: Optional[int] = None
     seccion_nombre: Optional[str] = None
 
-    zona_id: Optional[int] = None
-    zona_nombre: Optional[str] = None
-
     ubicacion_id: Optional[int] = None
     ubicacion_nombre: Optional[str] = None
 

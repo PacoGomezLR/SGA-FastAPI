@@ -4,12 +4,12 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class LocationBase(BaseModel):
-    zona_id: int
+    seccion_id: int
     codigo: str = Field(..., min_length=1)
     descripcion: Optional[str] = None
     activa: bool = True
-    eje_y: Optional[int] = Field(default=None, ge=1)
-    eje_x: Optional[int] = Field(default=None, ge=1)
+    columna: Optional[int] = Field(default=None, ge=1)
+    fila: Optional[int] = Field(default=None, ge=1)
 
     @field_validator("codigo")
     @classmethod
@@ -24,12 +24,12 @@ class LocationCreate(LocationBase):
 
 
 class LocationUpdate(BaseModel):
-    zona_id: Optional[int] = None
+    seccion_id: Optional[int] = None
     codigo: Optional[str] = None
     descripcion: Optional[str] = None
     activa: Optional[bool] = None
-    eje_y: Optional[int] = Field(default=None, ge=1)
-    eje_x: Optional[int] = Field(default=None, ge=1)
+    columna: Optional[int] = Field(default=None, ge=1)
+    fila: Optional[int] = Field(default=None, ge=1)
 
     @field_validator("codigo")
     @classmethod

@@ -3,56 +3,23 @@ from sqlalchemy.orm import Session
 
 from app.models.location import Location
 from app.models.section import Section
-from app.models.zone import Zone
-from app.schemas.section_layout import MoveZoneRequest, PasilloLayout, SectionLayoutCreate
+from app.models.shipment_line import ShipmentLine
+from app.models.stock import Stock
+from app.schemas.section_layout import GridLayout, ResizeSectionRequest, ResizeSectionResult, SectionLayoutCreate
 
 
-def _zona_nombre(numero_pasillo: int, lado: str | None) -> str:
-    if lado:
-        return f"Pasillo {numero_pasillo}-{lado}"
-    return f"Pasillo {numero_pasillo}"
-
-
-def _lados_de_pasillo(pasillo: PasilloLayout) -> list[str | None]:
-    lados: list[str | None] = []
-    if pasillo.lado_d:
-        lados.append("D")
-    if pasillo.lado_i:
-        lados.append("I")
-    if not lados:
-        lados.append(None)
-    return lados
-
-
-def _construir_zonas_y_ubicaciones(seccion_id: int, pasillos: list[PasilloLayout]):
-    """Construye (sin persistir) las instancias de Zone/Location para los pasillos dados."""
-    zonas: list[Zone] = []
-
-    for pasillo in pasillos:
-        for lado in _lados_de_pasillo(pasillo):
-            zona = Zone(
-                seccion_id=seccion_id,
-                nombre=_zona_nombre(pasillo.numero_pasillo, lado),
-                activo=True,
-                numero_pasillo=pasillo.numero_pasillo,
-                lado=lado,
-            )
-
-            ubicaciones = [
-                Location(
-                    codigo=f"A{y}-F{x}",
-                    activa=True,
-                    eje_y=y,
-                    eje_x=x,
-                )
-                for y in range(1, pasillo.eje_y_max + 1)
-                for x in range(pasillo.fila_inicio, pasillo.fila_fin + 1)
-            ]
-            zona.ubicaciones = ubicaciones
-
-            zonas.append(zona)
-
-    return zonas
+def _construir_ubicaciones(seccion_id: int, layout: GridLayout) -> list[Location]:
+    return [
+        Location(
+            seccion_id=seccion_id,
+            codigo=f"F{fila}-A{columna}",
+            activa=True,
+            columna=columna,
+            fila=fila,
+        )
+        for columna in range(1, layout.num_columnas + 1)
+        for fila in range(1, layout.num_filas + 1)
+    ]
 
 
 class SectionLayoutService:
@@ -75,13 +42,16 @@ class SectionLayoutService:
         self.db.add(seccion)
         self.db.flush()
 
-        self._agregar_pasillos(seccion.id, data.pasillos)
+        if data.layout is not None:
+            seccion.num_columnas = data.layout.num_columnas
+            seccion.num_filas = data.layout.num_filas
+            self.db.add_all(_construir_ubicaciones(seccion.id, data.layout))
 
         self.db.commit()
         self.db.refresh(seccion)
         return seccion
 
-    def generate_layout(self, section_id: int, pasillos: list[PasilloLayout]):
+    def generate_layout(self, section_id: int, layout: GridLayout):
         seccion = self.db.query(Section).filter(Section.id == section_id).first()
         if not seccion:
             raise HTTPException(
@@ -89,182 +59,139 @@ class SectionLayoutService:
                 detail="Sección no encontrada",
             )
 
-        self._agregar_pasillos(section_id, pasillos)
+        tiene_ubicaciones = (
+            self.db.query(Location).filter(Location.seccion_id == section_id).first()
+        )
+        if tiene_ubicaciones:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La sección ya tiene un layout generado",
+            )
+
+        seccion.num_columnas = layout.num_columnas
+        seccion.num_filas = layout.num_filas
+        self.db.add_all(_construir_ubicaciones(section_id, layout))
 
         self.db.commit()
-        return {"message": "Pasillos generados correctamente"}
+        return {"message": "Layout generado correctamente"}
 
-    def _validar_solapamiento_filas(self, seccion_id: int, pasillos: list[PasilloLayout]):
-        """
-        Dos secciones distintas pueden compartir el mismo pasillo+lado, siempre
-        que sus rangos de fila (eje_x) no se solapen. La comprobación es global
-        (cualquier sección), no solo dentro de la sección actual.
-        """
-        for pasillo in pasillos:
-            for lado in _lados_de_pasillo(pasillo):
-                zonas_existentes = (
-                    self.db.query(Zone)
-                    .filter(
-                        Zone.numero_pasillo == pasillo.numero_pasillo,
-                        Zone.lado == lado,
-                        Zone.seccion_id != seccion_id,
-                    )
-                    .all()
-                )
-
-                for zona_existente in zonas_existentes:
-                    filas_ocupadas = [
-                        u.eje_x for u in zona_existente.ubicaciones if u.eje_x is not None
-                    ]
-                    if not filas_ocupadas:
-                        continue
-
-                    fila_min = min(filas_ocupadas)
-                    fila_max = max(filas_ocupadas)
-
-                    hay_solape = (
-                        pasillo.fila_inicio <= fila_max and pasillo.fila_fin >= fila_min
-                    )
-
-                    if hay_solape:
-                        lado_txt = f" lado {lado}" if lado else ""
-                        raise HTTPException(
-                            status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=(
-                                f"El pasillo {pasillo.numero_pasillo}{lado_txt} ya tiene "
-                                f"filas {fila_min}-{fila_max} ocupadas por la sección "
-                                f"'{zona_existente.seccion.nombre}' (id {zona_existente.seccion_id}); "
-                                f"el rango {pasillo.fila_inicio}-{pasillo.fila_fin} se solapa."
-                            ),
-                        )
-
-    def move_zone(self, zona_id: int, data: MoveZoneRequest):
-        """
-        Mueve una zona a un nuevo destino (pasillo+lado+fila_inicio), o a la
-        zona de espera si numero_pasillo es None. El número de filas que
-        ocupa la zona no cambia: se recalculan las coordenadas (eje_x) de sus
-        ubicaciones existentes, y el stock viaja con ellas sin tocarse.
-        """
-        zona = self.db.query(Zone).filter(Zone.id == zona_id).first()
-        if not zona:
+    def resize_section(self, section_id: int, data: ResizeSectionRequest) -> ResizeSectionResult:
+        seccion = self.db.query(Section).filter(Section.id == section_id).first()
+        if not seccion:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Zona no encontrada",
+                detail="Sección no encontrada",
             )
 
-        filas_actuales = sorted(
-            {u.eje_x for u in zona.ubicaciones if u.eje_x is not None}
-        )
-        if not filas_actuales:
+        if data.num_columnas is None and data.num_filas is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="La zona no tiene ubicaciones con fila asignada; no se puede mover",
+                detail="Debes indicar num_columnas y/o num_filas",
             )
 
-        num_filas = len(filas_actuales)
-
-        a_la_espera = data.numero_pasillo is None
-
-        if not a_la_espera:
-            if data.fila_inicio is None:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Debes indicar la fila de inicio en el destino",
-                )
-
-            nueva_fila_inicio = data.fila_inicio
-            nueva_fila_fin = data.fila_inicio + num_filas - 1
-
-            self._validar_solapamiento_destino(
-                zona_id=zona.id,
-                numero_pasillo=data.numero_pasillo,
-                lado=data.lado,
-                fila_inicio=nueva_fila_inicio,
-                fila_fin=nueva_fila_fin,
+        ubicaciones = (
+            self.db.query(Location).filter(Location.seccion_id == section_id).all()
+        )
+        if not ubicaciones:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La sección no tiene layout generado todavía",
             )
 
-            desplazamiento = nueva_fila_inicio - filas_actuales[0]
+        columnas_actuales = sorted({u.columna for u in ubicaciones if u.columna is not None})
+        filas_actuales = sorted({u.fila for u in ubicaciones if u.fila is not None})
+        num_columnas_actual = len(columnas_actuales)
+        num_filas_actual = len(filas_actuales)
 
-            for ubicacion in zona.ubicaciones:
-                if ubicacion.eje_x is None:
-                    continue
-                ubicacion.eje_x += desplazamiento
-                ubicacion.codigo = f"A{ubicacion.eje_y}-F{ubicacion.eje_x}"
+        if data.num_columnas is not None:
+            self._resize_eje(
+                seccion=seccion,
+                ubicaciones=ubicaciones,
+                eje="columna",
+                valor_actual=num_columnas_actual,
+                valor_nuevo=data.num_columnas,
+                otro_rango=filas_actuales,
+            )
 
-            zona.numero_pasillo = data.numero_pasillo
-            zona.lado = data.lado
-            zona.nombre = _zona_nombre(data.numero_pasillo, data.lado)
-        else:
-            zona.numero_pasillo = None
-            zona.lado = None
-            zona.nombre = f"{zona.nombre} (en espera)" if "(en espera)" not in zona.nombre else zona.nombre
+        if data.num_filas is not None:
+            self.db.flush()
+            ubicaciones = (
+                self.db.query(Location).filter(Location.seccion_id == section_id).all()
+            )
+            columnas_actuales = sorted({u.columna for u in ubicaciones if u.columna is not None})
+            self._resize_eje(
+                seccion=seccion,
+                ubicaciones=ubicaciones,
+                eje="fila",
+                valor_actual=num_filas_actual,
+                valor_nuevo=data.num_filas,
+                otro_rango=columnas_actuales,
+            )
 
         self.db.commit()
-        self.db.refresh(zona)
-        return zona
+        return ResizeSectionResult(mensaje="Sección redimensionada correctamente")
 
-    def _validar_solapamiento_destino(
-        self,
-        zona_id: int,
-        numero_pasillo: int,
-        lado: str | None,
-        fila_inicio: int,
-        fila_fin: int,
-    ):
-        zonas_existentes = (
-            self.db.query(Zone)
-            .filter(
-                Zone.numero_pasillo == numero_pasillo,
-                Zone.lado == lado,
-                Zone.id != zona_id,
-            )
-            .all()
-        )
-
-        for zona_existente in zonas_existentes:
-            filas_ocupadas = [
-                u.eje_x for u in zona_existente.ubicaciones if u.eje_x is not None
-            ]
-            if not filas_ocupadas:
-                continue
-
-            fila_min = min(filas_ocupadas)
-            fila_max = max(filas_ocupadas)
-
-            hay_solape = fila_inicio <= fila_max and fila_fin >= fila_min
-
-            if hay_solape:
-                lado_txt = f" lado {lado}" if lado else ""
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=(
-                        f"El pasillo {numero_pasillo}{lado_txt} ya tiene "
-                        f"filas {fila_min}-{fila_max} ocupadas por la sección "
-                        f"'{zona_existente.seccion.nombre}' (id {zona_existente.seccion_id}); "
-                        f"el rango {fila_inicio}-{fila_fin} se solapa."
-                    ),
-                )
-
-    def _agregar_pasillos(self, seccion_id: int, pasillos: list[PasilloLayout]):
-        if not pasillos:
+    def _resize_eje(self, seccion: Section, ubicaciones: list[Location], eje: str, valor_actual: int, valor_nuevo: int, otro_rango: list[int]):
+        if valor_nuevo == valor_actual:
             return
 
-        self._validar_solapamiento_filas(seccion_id, pasillos)
+        if valor_nuevo < valor_actual:
+            ubicaciones_a_eliminar = [
+                u for u in ubicaciones if getattr(u, eje) is not None and getattr(u, eje) > valor_nuevo
+            ]
+            self._verificar_sin_historico(ubicaciones_a_eliminar, seccion.nombre)
 
-        nuevas_zonas = _construir_zonas_y_ubicaciones(seccion_id, pasillos)
+            for ubicacion in ubicaciones_a_eliminar:
+                self.db.delete(ubicacion)
+        else:
+            for valor in range(valor_actual + 1, valor_nuevo + 1):
+                for otro in otro_rango:
+                    columna = valor if eje == "columna" else otro
+                    fila = otro if eje == "columna" else valor
+                    self.db.add(
+                        Location(
+                            seccion_id=seccion.id,
+                            codigo=f"F{fila}-A{columna}",
+                            activa=True,
+                            columna=columna,
+                            fila=fila,
+                        )
+                    )
 
-        nombres_nuevos = [zona.nombre for zona in nuevas_zonas]
-        existentes = (
-            self.db.query(Zone.nombre)
-            .filter(Zone.seccion_id == seccion_id, Zone.nombre.in_(nombres_nuevos))
-            .all()
+        if eje == "columna":
+            seccion.num_columnas = valor_nuevo
+        else:
+            seccion.num_filas = valor_nuevo
+
+    def _verificar_sin_historico(self, ubicaciones: list[Location], seccion_nombre: str):
+        ubicacion_ids = [u.id for u in ubicaciones]
+        if not ubicacion_ids:
+            return
+
+        con_stock = (
+            self.db.query(Stock)
+            .filter(Stock.ubicacion_id.in_(ubicacion_ids), Stock.cantidad > 0)
+            .first()
         )
-        if existentes:
-            nombres_repetidos = ", ".join(nombre for (nombre,) in existentes)
+        if con_stock:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Ya existen zonas con ese nombre en esta sección: {nombres_repetidos}",
+                detail=(
+                    f"No se puede reducir la sección '{seccion_nombre}': hay ubicaciones "
+                    "con stock en el rango que se eliminaría. Vacía el stock primero."
+                ),
             )
 
-        self.db.add_all(nuevas_zonas)
-        self.db.flush()
+        con_historico = (
+            self.db.query(ShipmentLine)
+            .filter(ShipmentLine.ubicacion_origen_id.in_(ubicacion_ids))
+            .first()
+        )
+        if con_historico:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"No se puede reducir la sección '{seccion_nombre}': hay ubicaciones "
+                    "en el rango con historial de salidas registradas y no se pueden eliminar."
+                ),
+            )

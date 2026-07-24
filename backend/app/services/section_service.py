@@ -5,9 +5,14 @@ from sqlalchemy.orm import Session
 from app.models.location import Location
 from app.models.stock import Stock
 from app.models.section import Section
-from app.models.zone import Zone
 from app.repositories.section_repository import SectionRepository
-from app.schemas.section import SectionCreate, SectionUpdate
+from app.schemas.section import (
+    SectionCreate,
+    SectionUpdate,
+    SectionPositionUpdate,
+    SectionMirrorUpdate,
+    SectionRotationUpdate,
+)
 
 
 class SectionService:
@@ -54,6 +59,46 @@ class SectionService:
 
         return self.repository.update(section, section_data)
 
+    def update_position(self, section_id: int, data: SectionPositionUpdate):
+        section = self.repository.get_by_id(section_id)
+        if not section:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Sección no encontrada"
+            )
+
+        section.pos_x = data.pos_x
+        section.pos_y = data.pos_y
+        self.db.commit()
+        self.db.refresh(section)
+        return section
+
+    def update_mirror(self, section_id: int, data: SectionMirrorUpdate):
+        section = self.repository.get_by_id(section_id)
+        if not section:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Sección no encontrada"
+            )
+
+        section.espejo = data.espejo
+        self.db.commit()
+        self.db.refresh(section)
+        return section
+
+    def update_rotation(self, section_id: int, data: SectionRotationUpdate):
+        section = self.repository.get_by_id(section_id)
+        if not section:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Sección no encontrada"
+            )
+
+        section.rotacion = (section.rotacion + data.direccion) % 4
+        self.db.commit()
+        self.db.refresh(section)
+        return section
+
     def delete_section(self, section_id: int):
         section = self.repository.get_by_id(section_id)
         if not section:
@@ -83,8 +128,7 @@ class SectionService:
                 ).label("ubicaciones_ocupadas"),
             )
             .select_from(Section)
-            .join(Zone, Zone.seccion_id == Section.id)
-            .join(Location, Location.zona_id == Zone.id)
+            .join(Location, Location.seccion_id == Section.id)
             .join(
                 ubicacion_ocupada,
                 ubicacion_ocupada.c.ubicacion_id == Location.id,
