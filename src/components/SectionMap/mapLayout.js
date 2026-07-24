@@ -60,13 +60,35 @@ export function construirLayoutMultiple(secciones, ubicaciones) {
  * posición libre que replica el almacén real. Si no, se coloca en el
  * layout automático (una junto a otra en fila), para que las secciones
  * todavía no tocadas no salten de sitio.
+ *
+ * `posicionesAutomaticasCongeladas` (opcional) es un Map<seccionId, {x, y}>
+ * con las posiciones YA asignadas en un cálculo anterior para secciones en
+ * modo automático. Es imprescindible para que voltear/rotar una sección no
+ * desplace a las demás: sin esto, el acumulador xAutomatico depende del
+ * ancho de TODAS las secciones anteriores en el array, así que si una
+ * cambia de ancho (p. ej. al rotar 90°), todas las que la siguen en la fila
+ * se recalculan a una x distinta — el mismo anti-patrón de "offset
+ * compartido" que romper la independencia entre secciones. Congelando la
+ * posición la primera vez que se calcula, cada sección automática mantiene
+ * su sitio para siempre, y solo las secciones NUEVAS (sin entrada aún en el
+ * mapa) se añaden al final de la fila.
  */
-export function calcularDimensionesMultiple(gruposSeccion) {
+export function calcularDimensionesMultiple(gruposSeccion, posicionesAutomaticasCongeladas) {
   if (gruposSeccion.length === 0) {
     return { width: MARGIN * 2, height: MARGIN * 2, seccionesConPosicion: [] };
   }
 
+  const congeladas = posicionesAutomaticasCongeladas || new Map();
+
+  // xAutomatico arranca después del BORDE DERECHO (x + ancho + margen de
+  // separación) de la sección congelada más a la derecha, no de su x de
+  // inicio — si solo mirásemos x, una sección nueva podría solaparse con
+  // el cuerpo de una ya congelada en vez de colocarse después de ella.
   let xAutomatico = MARGIN;
+  congeladas.forEach((pos) => {
+    xAutomatico = Math.max(xAutomatico, pos.x + pos.ancho + GAP_SECCIONES);
+  });
+
   let hayLibres = false;
   let altoMaximoLibre = 0;
 
@@ -102,26 +124,36 @@ export function calcularDimensionesMultiple(gruposSeccion) {
   const seccionesConPosicion = dimensiones.map(({ grupo, ancho, alto }) => {
     const { pos_x: posX, pos_y: posY } = grupo.seccion;
     const esLibre = posX != null && posY != null;
+    const yaCongelada = congeladas.get(grupo.seccion.id);
 
     // Cada sección se posiciona de forma 100% independiente. El SVG no tiene
     // viewBox (su origen 0,0 es fijo), así que una posición libre nunca
     // puede ser negativa o se recortaría; se limita (clamp) a 0 sin tocar
     // ninguna otra sección.
-    const posicionSeccion = {
+    let xInicio;
+    let yInicio;
+
+    if (esLibre) {
+      xInicio = Math.max(0, posX);
+      yInicio = Math.max(0, posY);
+    } else if (yaCongelada) {
+      xInicio = yaCongelada.x;
+      yInicio = yaCongelada.y;
+    } else {
+      xInicio = xAutomatico;
+      yInicio = yFilaAutomatica;
+      xAutomatico += ancho + GAP_SECCIONES;
+    }
+
+    return {
       seccion: grupo.seccion,
       columnas: grupo.columnas,
       ancho,
       alto,
       esLibre,
-      xInicio: esLibre ? Math.max(0, posX) : xAutomatico,
-      yInicio: esLibre ? Math.max(0, posY) : yFilaAutomatica
+      xInicio,
+      yInicio
     };
-
-    if (!esLibre) {
-      xAutomatico += ancho + GAP_SECCIONES;
-    }
-
-    return posicionSeccion;
   });
 
   const width = Math.max(

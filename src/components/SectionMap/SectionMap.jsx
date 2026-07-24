@@ -123,6 +123,7 @@ function SectionMap({ height = 480 }) {
   const frameRef = useRef(null);
   const transformRef = useRef(null);
   const observerRef = useRef(null);
+  const posicionesAutomaticasRef = useRef(new Map());
 
   const [modoEdicion, setModoEdicion] = useState(false);
   const [posicionesEditadas, setPosicionesEditadas] = useState({});
@@ -154,9 +155,27 @@ function SectionMap({ height = 480 }) {
     };
   }, []);
 
-  const { width: anchoBase, height: altoBase, seccionesConPosicion } = useMemo(
-    () => calcularDimensionesMultiple(layout),
-    [layout]
+  const { width: anchoBase, height: altoBase, seccionesConPosicion } = useMemo(() => {
+    const resultado = calcularDimensionesMultiple(layout, posicionesAutomaticasRef.current);
+
+    // Congela la posición (y el ancho actual, necesario para no solapar
+    // secciones nuevas que se añadan después) de cada sección en modo
+    // automático la primera vez que se calcula, para que voltear/rotar otra
+    // sección no la desplace nunca — ver el comentario de la función.
+    resultado.seccionesConPosicion.forEach((grupo) => {
+      if (!grupo.esLibre) {
+        posicionesAutomaticasRef.current.set(grupo.seccion.id, {
+          x: grupo.xInicio,
+          y: grupo.yInicio,
+          ancho: grupo.ancho
+        });
+      } else {
+        posicionesAutomaticasRef.current.delete(grupo.seccion.id);
+      }
+    });
+
+    return resultado;
+  }, [layout]
   );
 
   // Mientras se arrastra una sección en modo edición, el lienzo debe crecer

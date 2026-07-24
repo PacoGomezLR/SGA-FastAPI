@@ -9,7 +9,7 @@ class SectionRepository:
         self.db = db
 
     def get_all(self):
-        return self.db.query(Section).all()
+        return self.db.query(Section).order_by(Section.id).all()
 
     def get_by_id(self, section_id: int):
         return self.db.query(Section).filter(Section.id == section_id).first()
