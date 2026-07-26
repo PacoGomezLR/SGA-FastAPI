@@ -6,6 +6,15 @@ import * as styles from "./Salidas.styles";
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+const MOTIVOS_LABEL = {
+  venta: "Venta",
+  merma: "Merma",
+  rotura: "Rotura",
+  consumo: "Consumo interno",
+  muestra: "Muestra comercial",
+  otro: "Otro"
+};
+
 function Salidas() {
   const { token, authFetch } = useAuth();
   const esMobile = useIsMobile();
@@ -27,10 +36,10 @@ function Salidas() {
     observaciones: ""
   });
 
-  const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
   const [cargandoDatos, setCargandoDatos] = useState(true);
+  const [resumenSalida, setResumenSalida] = useState(null);
 
   useEffect(() => {
     cargarDatos();
@@ -65,6 +74,8 @@ function Salidas() {
 
   function handleChange(e) {
     const { name, value } = e.target;
+
+    setResumenSalida(null);
 
     if (name === "seccion_id") {
       setForm({
@@ -114,20 +125,20 @@ function Salidas() {
     stockProducto.some(s => String(s.seccion_id) === String(a.id))
   );
 
-  const ubicacionesDisponibles = ubicaciones.filter(
-    u =>
-      String(u.seccion_id) === String(form.seccion_id) &&
-      stockProducto.some(s => String(s.ubicacion_id) === String(u.id))
-  );
-
-  const stockSeleccionado = stockProducto.find(
-    s => String(s.ubicacion_id) === String(form.ubicacion_origen_id)
-  );
+  const ubicacionesDisponibles = ubicaciones
+    .filter(
+      u =>
+        String(u.seccion_id) === String(form.seccion_id) &&
+        stockProducto.some(s => String(s.ubicacion_id) === String(u.id))
+    )
+    .map(u => {
+      const lineaStock = stockProducto.find(s => String(s.ubicacion_id) === String(u.id));
+      return { ...u, cantidadDisponible: lineaStock?.cantidad ?? 0 };
+    });
 
   async function handleSubmit(e) {
     e.preventDefault();
 
-    setMensaje("");
     setError("");
     setCargando(true);
 
@@ -161,7 +172,16 @@ function Salidas() {
         throw new Error(data?.detail || "Error al registrar salida");
       }
 
-      setMensaje("Salida registrada correctamente");
+      const producto = productos.find(p => String(p.id) === String(form.producto_id));
+      const seccion = secciones.find(s => String(s.id) === String(form.seccion_id));
+      const ubicacion = ubicaciones.find(u => String(u.id) === String(form.ubicacion_origen_id));
+
+      setResumenSalida({
+        producto: producto?.nombre || "Producto",
+        cantidad: form.cantidad,
+        motivo: MOTIVOS_LABEL[form.motivo] || form.motivo,
+        origen: `${seccion?.nombre || "-"} · ${ubicacion?.codigo || "-"}`
+      });
 
       setBusquedaProducto("");
 
@@ -176,6 +196,7 @@ function Salidas() {
 
       cargarDatos();
     } catch (err) {
+      setResumenSalida(null);
       setError(err.message);
     } finally {
       setCargando(false);
@@ -194,15 +215,31 @@ function Salidas() {
         Registra mercancía que abandona el almacén: ventas, mermas, roturas o consumo interno.
       </p>
 
-      {mensaje && (
-        <div style={{
-          background: "#dcfce7",
-          color: "#166534",
-          padding: "12px",
-          borderRadius: "10px",
-          marginBottom: "15px"
-        }}>
-          {mensaje}
+      {resumenSalida && (
+        <div style={styles.resumenCard}>
+          <div style={styles.resumenTitulo}>✓ Salida registrada correctamente</div>
+
+          <div style={styles.resumenGrid}>
+            <div>
+              <div style={styles.resumenLabel}>Producto</div>
+              <div style={styles.resumenValor}>{resumenSalida.producto}</div>
+            </div>
+
+            <div>
+              <div style={styles.resumenLabel}>Cantidad</div>
+              <div style={styles.resumenValor}>{resumenSalida.cantidad}</div>
+            </div>
+
+            <div>
+              <div style={styles.resumenLabel}>Motivo</div>
+              <div style={styles.resumenValor}>{resumenSalida.motivo}</div>
+            </div>
+
+            <div>
+              <div style={styles.resumenLabel}>Origen</div>
+              <div style={styles.resumenValor}>{resumenSalida.origen}</div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -241,6 +278,7 @@ function Salidas() {
             onChange={(e) => {
               setBusquedaProducto(e.target.value);
               setForm({ ...form, producto_id: "" });
+              setResumenSalida(null);
             }}
             required
           />
@@ -298,12 +336,9 @@ function Salidas() {
             style={styles.input}
             required
           >
-            <option value="venta">Venta</option>
-            <option value="merma">Merma</option>
-            <option value="rotura">Rotura</option>
-            <option value="consumo">Consumo interno</option>
-            <option value="muestra">Muestra comercial</option>
-            <option value="otro">Otro</option>
+            {Object.entries(MOTIVOS_LABEL).map(([valor, etiqueta]) => (
+              <option key={valor} value={valor}>{etiqueta}</option>
+            ))}
           </select>
         </div>
 
@@ -329,18 +364,11 @@ function Salidas() {
           >
             <option value="">Seleccionar</option>
             {ubicacionesDisponibles.map(u => (
-              <option key={u.id} value={u.id}>{u.codigo}</option>
+              <option key={u.id} value={u.id}>
+                {u.codigo} ({u.cantidadDisponible} unidades)
+              </option>
             ))}
           </select>
-        </div>
-
-        <div style={styles.fieldBox}>
-          <div style={styles.label}>Stock disponible</div>
-          <input
-            value={stockSeleccionado ? stockSeleccionado.cantidad : ""}
-            disabled
-            style={{ ...styles.input, background: "#f3f4f6" }}
-          />
         </div>
 
         <div style={styles.fieldBox}>
@@ -354,8 +382,6 @@ function Salidas() {
             required
           />
         </div>
-
-        <div></div>
 
         <div style={{ gridColumn: "1 / -1" }}>
           <button
