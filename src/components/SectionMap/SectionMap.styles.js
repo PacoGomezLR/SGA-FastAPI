@@ -4,7 +4,8 @@ export const wrapper = {
   borderRadius: "14px",
   border: "1px solid #e5e7eb",
   backgroundColor: "#f8fafc",
-  overflow: "hidden"
+  overflow: "hidden",
+  touchAction: "none"
 };
 
 export const wrapperFullscreen = {
@@ -17,7 +18,8 @@ export const wrapperFullscreen = {
   overflow: "hidden",
   zIndex: 1000,
   isolation: "isolate",
-  transform: "translateZ(0)"
+  transform: "translateZ(0)",
+  touchAction: "none"
 };
 
 export const toolbarFullscreen = {

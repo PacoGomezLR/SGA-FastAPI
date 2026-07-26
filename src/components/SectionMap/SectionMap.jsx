@@ -461,7 +461,7 @@ function SectionMap({ height = 480 }) {
             zoomAnimation={{ animationTime: 150, animationType: "easeOutCubic" }}
             doubleClick={{ disabled: modoEdicion, step: 0.7, animationTime: 250, animationType: "easeOutCubic" }}
           >
-            <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
+            <TransformComponent wrapperStyle={{ width: "100%", height: "100%", touchAction: "none" }}>
               <svg
                 width={modoEdicion ? width + COLCHON_EDICION * 2 : width}
                 height={modoEdicion ? svgHeight + COLCHON_EDICION * 2 : svgHeight}
