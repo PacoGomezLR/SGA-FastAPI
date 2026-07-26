@@ -4,8 +4,7 @@ export const wrapper = {
   borderRadius: "14px",
   border: "1px solid #e5e7eb",
   backgroundColor: "#f8fafc",
-  overflow: "hidden",
-  touchAction: "none"
+  overflow: "hidden"
 };
 
 export const wrapperFullscreen = {

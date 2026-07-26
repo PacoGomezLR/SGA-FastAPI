@@ -444,7 +444,7 @@ function SectionMap({ height = 480, interactivo = true }) {
           style={
             modoEdicion
               ? { ...styles.wrapperFullscreen, paddingTop: "64px" }
-              : { ...styles.wrapper, height }
+              : { ...styles.wrapper, height, touchAction: interactivo ? "none" : "pan-y" }
           }
           ref={wrapperCallbackRef}
         >
@@ -463,7 +463,7 @@ function SectionMap({ height = 480, interactivo = true }) {
             zoomAnimation={{ animationTime: 150, animationType: "easeOutCubic" }}
             doubleClick={{ disabled: !interactivo || modoEdicion, step: 0.7, animationTime: 250, animationType: "easeOutCubic" }}
           >
-            <TransformComponent wrapperStyle={{ width: "100%", height: "100%", touchAction: "none" }}>
+            <TransformComponent wrapperStyle={{ width: "100%", height: "100%", touchAction: interactivo ? "none" : "pan-y" }}>
               <svg
                 width={modoEdicion ? width + COLCHON_EDICION * 2 : width}
                 height={modoEdicion ? svgHeight + COLCHON_EDICION * 2 : svgHeight}
