@@ -175,3 +175,27 @@ export const editHint = {
   color: "#6b7280"
 };
 
+export const hoverCard = {
+  position: "fixed",
+  zIndex: 1100,
+  maxWidth: "260px",
+  padding: "10px 14px",
+  backgroundColor: "rgba(15, 23, 42, 0.94)",
+  borderRadius: "8px",
+  boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
+  pointerEvents: "none"
+};
+
+export const hoverCardTitle = {
+  fontSize: "13px",
+  fontWeight: "700",
+  color: "white",
+  marginBottom: "4px"
+};
+
+export const hoverCardDescripcion = {
+  fontSize: "12px",
+  color: "#e2e8f0",
+  lineHeight: 1.4
+};
+

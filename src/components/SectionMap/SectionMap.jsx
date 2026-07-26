@@ -120,6 +120,8 @@ function SectionMap({ height = 480 }) {
   const [escala, setEscala] = useState(1);
   const [seleccion, setSeleccion] = useState(null);
   const [anchoContenedor, setAnchoContenedor] = useState(null);
+  const [seccionHover, setSeccionHover] = useState(null);
+  const [posicionHover, setPosicionHover] = useState({ x: 0, y: 0 });
   const frameRef = useRef(null);
   const transformRef = useRef(null);
   const observerRef = useRef(null);
@@ -258,16 +260,13 @@ function SectionMap({ height = 480 }) {
     return { x: xInicio, y: yInicio };
   }
 
-  function iniciarArrastre(e, grupo) {
-    if (!modoEdicion) return;
-    e.stopPropagation();
-
+  function iniciarArrastre(clientX, clientY, grupo) {
     const pos = posicionActualDe(grupo.seccion.id, grupo.xInicio, grupo.yInicio);
 
     arrastreRef.current = {
       seccionId: grupo.seccion.id,
-      startClientX: e.clientX,
-      startClientY: e.clientY,
+      startClientX: clientX,
+      startClientY: clientY,
       startX: pos.x,
       startY: pos.y,
       escala
@@ -275,15 +274,28 @@ function SectionMap({ height = 480 }) {
     setArrastrando(grupo.seccion.id);
   }
 
+  function iniciarArrastreMouse(e, grupo) {
+    if (!modoEdicion) return;
+    e.stopPropagation();
+    iniciarArrastre(e.clientX, e.clientY, grupo);
+  }
+
+  function iniciarArrastreTactil(e, grupo) {
+    if (!modoEdicion) return;
+    e.stopPropagation();
+    const touch = e.touches[0];
+    iniciarArrastre(touch.clientX, touch.clientY, grupo);
+  }
+
   useEffect(() => {
     if (!modoEdicion) return;
 
-    function onMouseMove(e) {
+    function moverA(clientX, clientY) {
       const info = arrastreRef.current;
       if (!info) return;
 
-      const deltaX = (e.clientX - info.startClientX) / info.escala;
-      const deltaY = (e.clientY - info.startClientY) / info.escala;
+      const deltaX = (clientX - info.startClientX) / info.escala;
+      const deltaY = (clientY - info.startClientY) / info.escala;
 
       setPosicionesEditadas((prev) => ({
         ...prev,
@@ -294,17 +306,34 @@ function SectionMap({ height = 480 }) {
       }));
     }
 
-    function onMouseUp() {
+    function onMouseMove(e) {
+      moverA(e.clientX, e.clientY);
+    }
+
+    function onTouchMove(e) {
+      if (!arrastreRef.current) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      moverA(touch.clientX, touch.clientY);
+    }
+
+    function finalizarArrastre() {
       arrastreRef.current = null;
       setArrastrando(null);
     }
 
     window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
+    window.addEventListener("mouseup", finalizarArrastre);
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", finalizarArrastre);
+    window.addEventListener("touchcancel", finalizarArrastre);
 
     return () => {
       window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("mouseup", finalizarArrastre);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", finalizarArrastre);
+      window.removeEventListener("touchcancel", finalizarArrastre);
     };
   }, [modoEdicion]);
 
@@ -448,8 +477,25 @@ function SectionMap({ height = 480 }) {
                         key={grupo.seccion.id}
                         className={modoEdicion ? "seccion-arrastrable" : undefined}
                         transform={`translate(${pos.x}, ${pos.y})`}
-                        onMouseDown={(e) => iniciarArrastre(e, grupo)}
-                        style={{ cursor: modoEdicion ? (seEstaArrastrando ? "grabbing" : "grab") : "default" }}
+                        onMouseDown={(e) => iniciarArrastreMouse(e, grupo)}
+                        onTouchStart={(e) => iniciarArrastreTactil(e, grupo)}
+                        onMouseEnter={(e) => {
+                          if (modoEdicion) return;
+                          setSeccionHover(grupo.seccion);
+                          setPosicionHover({ x: e.clientX, y: e.clientY });
+                        }}
+                        onMouseMove={(e) => {
+                          if (modoEdicion) return;
+                          setPosicionHover({ x: e.clientX, y: e.clientY });
+                        }}
+                        onMouseLeave={() => {
+                          if (modoEdicion) return;
+                          setSeccionHover(null);
+                        }}
+                        style={{
+                          cursor: modoEdicion ? (seEstaArrastrando ? "grabbing" : "grab") : "default",
+                          touchAction: modoEdicion ? "none" : undefined
+                        }}
                       >
                         {modoEdicion && (
                           <rect
@@ -481,6 +527,7 @@ function SectionMap({ height = 480 }) {
                           <g
                             transform={`translate(16, -24)`}
                             onMouseDown={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
                             onClick={() => rotarSeccion(grupo.seccion, -1)}
                             style={{ cursor: "pointer" }}
                           >
@@ -501,6 +548,7 @@ function SectionMap({ height = 480 }) {
                           <g
                             transform={`translate(${grupo.ancho / 2}, -24)`}
                             onMouseDown={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
                             onClick={() => voltearSeccion(grupo.seccion)}
                             style={{ cursor: "pointer" }}
                           >
@@ -521,6 +569,7 @@ function SectionMap({ height = 480 }) {
                           <g
                             transform={`translate(${grupo.ancho - 16}, -24)`}
                             onMouseDown={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
                             onClick={() => rotarSeccion(grupo.seccion, 1)}
                             style={{ cursor: "pointer" }}
                           >
@@ -583,6 +632,19 @@ function SectionMap({ height = 480 }) {
               Stock bajo
             </span>
           </div>
+
+          {seccionHover && seccionHover.descripcion && (
+            <div
+              style={{
+                ...styles.hoverCard,
+                left: posicionHover.x + 16,
+                top: posicionHover.y + 16
+              }}
+            >
+              <div style={styles.hoverCardTitle}>{seccionHover.nombre}</div>
+              <div style={styles.hoverCardDescripcion}>{seccionHover.descripcion}</div>
+            </div>
+          )}
 
           {seleccion && (
             <LocationPopover
