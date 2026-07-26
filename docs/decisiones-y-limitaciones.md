@@ -69,6 +69,25 @@ Motivos:
 
 ---
 
+### 6. Hosting gratuito en producción (Render + Vercel + Neon)
+
+El backend está desplegado en el plan gratuito de Render, el frontend en Vercel y la base de datos en Neon.
+
+Consecuencia asumida:
+- Render "duerme" el backend tras ~15 minutos sin tráfico
+- la primera petición tras ese período tarda entre 20 y 50 segundos en responder mientras el servicio se reactiva (cold start)
+- una vez despierto, responde con normalidad hasta la siguiente ventana de inactividad
+
+Motivo:
+- proyecto de portfolio sin necesidad de disponibilidad constante
+- prioriza coste cero sobre tiempo de respuesta en la primera carga
+
+Alternativas evaluadas y descartadas por ahora:
+- ping periódico externo (cron) para mantener el servicio despierto — evita el cold start pero es un parche, no una solución real
+- plan de pago de Render (~$7/mes) — elimina el problema pero no es necesario para el objetivo actual del proyecto
+
+---
+
 ## Limitaciones actuales
 
 ### 1. Duplicidad de backend
