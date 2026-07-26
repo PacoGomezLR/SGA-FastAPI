@@ -6,6 +6,8 @@ import * as styles from "./Inventarios.styles";
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+const TODAS_UBICACIONES = "todas";
+
 function Inventarios() {
   const { token, authFetch } = useAuth();
   const esMobile = useIsMobile();
@@ -20,11 +22,12 @@ function Inventarios() {
 
   const [form, setForm] = useState({
     producto_id: "",
-    seccion_id: "",
     ubicacion_id: "",
     cantidad_real: "",
     observaciones: ""
   });
+
+  const [cantidadesPorUbicacion, setCantidadesPorUbicacion] = useState({});
 
   const [inventoryId, setInventoryId] = useState(null);
 
@@ -67,22 +70,13 @@ function Inventarios() {
   function handleChange(e) {
     const { name, value } = e.target;
 
-    if (name === "seccion_id") {
-      setForm({
-        ...form,
-        seccion_id: value,
-        ubicacion_id: "",
-        cantidad_real: ""
-      });
-      return;
-    }
-
     if (name === "ubicacion_id") {
       setForm({
         ...form,
         ubicacion_id: value,
         cantidad_real: ""
       });
+      setCantidadesPorUbicacion({});
       return;
     }
 
@@ -98,9 +92,16 @@ function Inventarios() {
     setForm({
       ...form,
       producto_id: producto.id,
-      seccion_id: "",
       ubicacion_id: "",
       cantidad_real: ""
+    });
+    setCantidadesPorUbicacion({});
+  }
+
+  function handleCantidadUbicacion(ubicacionId, value) {
+    setCantidadesPorUbicacion({
+      ...cantidadesPorUbicacion,
+      [ubicacionId]: value
     });
   }
 
@@ -120,19 +121,26 @@ function Inventarios() {
       Number(item.cantidad) > 0
   );
 
-  const seccionesDisponibles = secciones.filter(seccion =>
-    stockProducto.some(
-      item => String(item.seccion_id) === String(seccion.id)
-    )
-  );
-
-  const ubicacionesDisponibles = ubicaciones.filter(
-    ubicacion =>
-      String(ubicacion.seccion_id) === String(form.seccion_id) &&
-      stockProducto.some(
-        item => String(item.ubicacion_id) === String(ubicacion.id)
-      )
-  );
+  const ubicacionesConStock = useMemo(() => {
+    return stockProducto
+      .map(item => {
+        const ubicacion = ubicaciones.find(
+          u => String(u.id) === String(item.ubicacion_id)
+        );
+        const seccion = secciones.find(
+          s => String(s.id) === String(item.seccion_id)
+        );
+        if (!ubicacion) return null;
+        return {
+          ...ubicacion,
+          seccion_id: item.seccion_id,
+          seccionNombre: seccion?.nombre || "",
+          cantidadSistema: item.cantidad
+        };
+      })
+      .filter(Boolean);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stock, ubicaciones, secciones, form.producto_id]);
 
   const stockSistema = stock.find(
     item =>
@@ -145,44 +153,34 @@ function Inventarios() {
       ? Number(form.cantidad_real) - Number(stockSistema.cantidad)
       : "";
 
-  async function handleCreateInventory(e) {
-    e.preventDefault();
+  const totalTodasUbicaciones = ubicacionesConStock.reduce((total, ubicacion) => {
+    const valor = cantidadesPorUbicacion[ubicacion.id];
+    return total + (valor !== undefined && valor !== "" ? Number(valor) : 0);
+  }, 0);
 
-    setMensaje("");
-    setError("");
-    setCargando(true);
-
-    try {
-      const createPayload = {
-        seccion_id: Number(form.seccion_id),
+  async function crearInventarioConLineas(seccionId, lineas) {
+    const createResponse = await fetch(`${API_BASE_URL}/inventories/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        seccion_id: Number(seccionId),
         observaciones: form.observaciones || null,
         lineas: []
-      };
+      })
+    });
 
-      const createResponse = await fetch(`${API_BASE_URL}/inventories/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(createPayload)
-      });
+    const createData = await createResponse.json();
 
-      const createData = await createResponse.json();
+    if (!createResponse.ok) {
+      throw new Error(createData?.detail || "Error al crear inventario");
+    }
 
-      if (!createResponse.ok) {
-        throw new Error(createData?.detail || "Error al crear inventario");
-      }
+    const newInventoryId = createData.id;
 
-      const newInventoryId = createData.id;
-
-      const linePayload = {
-        producto_id: Number(form.producto_id),
-        ubicacion_id: Number(form.ubicacion_id),
-        cantidad_real: Number(form.cantidad_real),
-        observaciones: null
-      };
-
+    for (const linea of lineas) {
       const lineResponse = await fetch(
         `${API_BASE_URL}/inventories/${newInventoryId}/lines`,
         {
@@ -191,7 +189,7 @@ function Inventarios() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify(linePayload)
+          body: JSON.stringify(linea)
         }
       );
 
@@ -200,9 +198,66 @@ function Inventarios() {
       if (!lineResponse.ok) {
         throw new Error(lineData?.detail || "Error al añadir línea");
       }
+    }
 
-      setInventoryId(newInventoryId);
-      setMensaje(`Inventario creado correctamente con ID ${newInventoryId}`);
+    return newInventoryId;
+  }
+
+  async function handleCreateInventory(e) {
+    e.preventDefault();
+
+    setMensaje("");
+    setError("");
+    setCargando(true);
+
+    try {
+      if (form.ubicacion_id === TODAS_UBICACIONES) {
+        const seccionesImplicadas = [
+          ...new Set(ubicacionesConStock.map(u => u.seccion_id))
+        ];
+
+        const idsCreados = [];
+
+        for (const seccionId of seccionesImplicadas) {
+          const ubicacionesSeccion = ubicacionesConStock.filter(
+            u => String(u.seccion_id) === String(seccionId)
+          );
+
+          const lineas = ubicacionesSeccion.map(u => ({
+            producto_id: Number(form.producto_id),
+            ubicacion_id: Number(u.id),
+            cantidad_real: Number(cantidadesPorUbicacion[u.id] || 0),
+            observaciones: null
+          }));
+
+          const nuevoId = await crearInventarioConLineas(seccionId, lineas);
+          idsCreados.push(nuevoId);
+        }
+
+        setInventoryId(idsCreados[idsCreados.length - 1]);
+        setMensaje(
+          `Inventario${idsCreados.length > 1 ? "s" : ""} creado${idsCreados.length > 1 ? "s" : ""} correctamente (ID ${idsCreados.join(", ")}). Total contado: ${totalTodasUbicaciones} unidades`
+        );
+      } else {
+        const seccionUbicacion = ubicacionesConStock.find(
+          u => String(u.id) === String(form.ubicacion_id)
+        );
+
+        const nuevoId = await crearInventarioConLineas(
+          seccionUbicacion?.seccion_id,
+          [
+            {
+              producto_id: Number(form.producto_id),
+              ubicacion_id: Number(form.ubicacion_id),
+              cantidad_real: Number(form.cantidad_real),
+              observaciones: null
+            }
+          ]
+        );
+
+        setInventoryId(nuevoId);
+        setMensaje(`Inventario creado correctamente con ID ${nuevoId}`);
+      }
     } catch (err) {
       setError(err.message || "Error de conexión");
     } finally {
@@ -274,10 +329,10 @@ function Inventarios() {
                   setForm({
                     ...form,
                     producto_id: "",
-                    seccion_id: "",
                     ubicacion_id: "",
                     cantidad_real: ""
                   });
+                  setCantidadesPorUbicacion({});
                 }}
                 required
               />
@@ -314,25 +369,6 @@ function Inventarios() {
           </div>
 
           <div>
-            <div style={styles.label}>Sección</div>
-            <select
-              name="seccion_id"
-              value={form.seccion_id}
-              onChange={handleChange}
-              style={styles.input}
-              required
-              disabled={!form.producto_id}
-            >
-              <option value="">Seleccionar</option>
-              {seccionesDisponibles.map(seccion => (
-                <option key={seccion.id} value={seccion.id}>
-                  {seccion.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
             <div style={styles.label}>Ubicación</div>
             <select
               name="ubicacion_id"
@@ -340,69 +376,136 @@ function Inventarios() {
               onChange={handleChange}
               style={styles.input}
               required
-              disabled={!form.seccion_id}
+              disabled={!form.producto_id}
             >
               <option value="">Seleccionar</option>
-              {ubicacionesDisponibles.map(ubicacion => (
+              {ubicacionesConStock.map(ubicacion => (
                 <option key={ubicacion.id} value={ubicacion.id}>
-                  {ubicacion.codigo}
+                  {ubicacion.codigo} · {ubicacion.seccionNombre}
                 </option>
               ))}
+              {ubicacionesConStock.length > 1 && (
+                <option value={TODAS_UBICACIONES}>Todas las ubicaciones</option>
+              )}
             </select>
           </div>
+
+          {form.ubicacion_id && form.ubicacion_id !== TODAS_UBICACIONES && (
+            <div>
+              <div style={styles.label}>Observaciones</div>
+              <input
+                type="text"
+                name="observaciones"
+                value={form.observaciones}
+                onChange={handleChange}
+                style={styles.input}
+              />
+            </div>
+          )}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div>
-            <div style={styles.label}>Stock sistema</div>
-            <input
-              value={stockSistema ? stockSistema.cantidad : ""}
-              disabled
-              style={{ ...styles.input, background: "#f3f4f6" }}
-            />
-          </div>
+        {form.ubicacion_id === TODAS_UBICACIONES ? (
+          <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div style={styles.label}>Cantidad real por ubicación</div>
 
-          <div>
-            <div style={styles.label}>Cantidad real</div>
-            <input
-              type="number"
-              name="cantidad_real"
-              value={form.cantidad_real}
-              onChange={handleChange}
-              style={styles.input}
-              required
-              disabled={!form.ubicacion_id}
-            />
-          </div>
+            {ubicacionesConStock.map(ubicacion => (
+              <div
+                key={ubicacion.id}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr 1fr",
+                  gap: "12px",
+                  alignItems: "center",
+                  padding: "10px 14px",
+                  background: "#f8fafc",
+                  borderRadius: "10px",
+                  border: "1px solid #e5e7eb"
+                }}
+              >
+                <div>
+                  <strong>{ubicacion.codigo}</strong> · {ubicacion.seccionNombre}
+                </div>
+                <div style={{ color: "#6b7280" }}>
+                  Stock sistema: {ubicacion.cantidadSistema}
+                </div>
+                <input
+                  type="number"
+                  value={cantidadesPorUbicacion[ubicacion.id] ?? ""}
+                  onChange={(e) => handleCantidadUbicacion(ubicacion.id, e.target.value)}
+                  style={styles.input}
+                  required
+                  min="0"
+                />
+              </div>
+            ))}
 
-          <div>
-            <div style={styles.label}>Diferencia</div>
-            <input
-              value={diferencia}
-              disabled
-              style={{
-                ...styles.input,
-                background:
-                  diferencia > 0
-                    ? "#dcfce7"
-                    : diferencia < 0
-                    ? "#fee2e2"
-                    : "#f3f4f6"
-              }}
-            />
-          </div>
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "14px",
+              background: "#eff6ff",
+              borderRadius: "10px",
+              border: "1px solid #bfdbfe",
+              fontWeight: "700"
+            }}>
+              <span>Total en almacén</span>
+              <span>{totalTodasUbicaciones} unidades</span>
+            </div>
 
-          <div>
-            <div style={styles.label}>Observaciones</div>
-            <input
-              type="text"
-              name="observaciones"
-              value={form.observaciones}
-              onChange={handleChange}
-              style={styles.input}
-            />
+            <div>
+              <div style={styles.label}>Observaciones</div>
+              <input
+                type="text"
+                name="observaciones"
+                value={form.observaciones}
+                onChange={handleChange}
+                style={styles.input}
+              />
+            </div>
           </div>
-        </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div>
+              <div style={styles.label}>Stock sistema</div>
+              <input
+                value={stockSistema ? stockSistema.cantidad : ""}
+                disabled
+                style={{ ...styles.input, background: "#f3f4f6" }}
+              />
+            </div>
+
+            <div>
+              <div style={styles.label}>Cantidad real</div>
+              <input
+                type="number"
+                name="cantidad_real"
+                value={form.cantidad_real}
+                onChange={handleChange}
+                style={styles.input}
+                required
+                disabled={!form.ubicacion_id}
+              />
+            </div>
+
+            <div>
+              <div style={styles.label}>Diferencia</div>
+              <input
+                value={diferencia}
+                disabled
+                style={{
+                  ...styles.input,
+                  background:
+                    diferencia > 0
+                      ? "#dcfce7"
+                      : diferencia < 0
+                      ? "#fee2e2"
+                      : "#f3f4f6"
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         <div style={{ gridColumn: "1 / -1" }}>
           <button
