@@ -108,7 +108,7 @@ function Columna({ columna, indice, numColumnas, numFilas, rotacion, espejo, esc
   );
 }
 
-function SectionMap({ height = 480 }) {
+function SectionMap({ height = 480, interactivo = true }) {
   const {
     layout,
     stockPorUbicacion,
@@ -405,7 +405,7 @@ function SectionMap({ height = 480 }) {
 
   return (
     <div>
-      {!modoEdicion && (
+      {!modoEdicion && interactivo && (
         <div style={styles.toolbar}>
           <button type="button" style={styles.secondaryButton} onClick={activarModoEdicion}>
             Editar disposición
@@ -455,11 +455,13 @@ function SectionMap({ height = 480 }) {
             minScale={(modoEdicion ? escalaEdicion : escalaAjuste) * 0.15}
             maxScale={6}
             centerOnInit
+            disabled={!interactivo}
             onTransform={handleTransform}
-            wheel={{ step: 0.0004 }}
-            panning={{ excluded: ["seccion-arrastrable"] }}
+            wheel={{ disabled: !interactivo, step: 0.0004 }}
+            pinch={{ disabled: !interactivo }}
+            panning={{ disabled: !interactivo, excluded: ["seccion-arrastrable"] }}
             zoomAnimation={{ animationTime: 150, animationType: "easeOutCubic" }}
-            doubleClick={{ disabled: modoEdicion, step: 0.7, animationTime: 250, animationType: "easeOutCubic" }}
+            doubleClick={{ disabled: !interactivo || modoEdicion, step: 0.7, animationTime: 250, animationType: "easeOutCubic" }}
           >
             <TransformComponent wrapperStyle={{ width: "100%", height: "100%", touchAction: "none" }}>
               <svg

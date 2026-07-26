@@ -165,7 +165,7 @@ function Dashboard() {
             </Link>
           </div>
 
-          <SectionMap height={360} />
+          <SectionMap height={540} interactivo={false} />
         </div>
       )}
 
