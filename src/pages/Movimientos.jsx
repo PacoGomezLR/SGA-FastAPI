@@ -25,9 +25,9 @@ function Movimientos() {
     observaciones: ""
   });
 
-  const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [resumenMovimiento, setResumenMovimiento] = useState(null);
   const [cargandoDatos, setCargandoDatos] = useState(true);
 
   useEffect(() => {
@@ -63,6 +63,8 @@ function Movimientos() {
 
   function handleChange(e) {
     const { name, value } = e.target;
+
+    setResumenMovimiento(null);
 
     if (name === "seccion_origen_id") {
       setForm({
@@ -122,11 +124,16 @@ function Movimientos() {
     stockProducto.some(s => String(s.seccion_id) === String(a.id))
   );
 
-  const ubicacionesOrigen = ubicaciones.filter(
-    u =>
-      String(u.seccion_id) === String(form.seccion_origen_id) &&
-      stockProducto.some(s => String(s.ubicacion_id) === String(u.id))
-  );
+  const ubicacionesOrigen = ubicaciones
+    .filter(
+      u =>
+        String(u.seccion_id) === String(form.seccion_origen_id) &&
+        stockProducto.some(s => String(s.ubicacion_id) === String(u.id))
+    )
+    .map(u => {
+      const lineaStock = stockProducto.find(s => String(s.ubicacion_id) === String(u.id));
+      return { ...u, cantidadDisponible: lineaStock?.cantidad ?? 0 };
+    });
 
   const ubicacionesDestino = ubicaciones.filter(
     u => String(u.seccion_id) === String(form.seccion_destino_id)
@@ -140,7 +147,6 @@ function Movimientos() {
       return;
     }
 
-    setMensaje("");
     setError("");
     setCargando(true);
 
@@ -170,7 +176,18 @@ function Movimientos() {
         throw new Error(data?.detail || "Error al registrar movimiento");
       }
 
-      setMensaje("Movimiento registrado correctamente");
+      const producto = productos.find(p => String(p.id) === String(form.producto_id));
+      const seccionOrigen = secciones.find(s => String(s.id) === String(form.seccion_origen_id));
+      const seccionDestino = secciones.find(s => String(s.id) === String(form.seccion_destino_id));
+      const ubicacionOrigen = ubicaciones.find(u => String(u.id) === String(form.ubicacion_origen_id));
+      const ubicacionDestino = ubicaciones.find(u => String(u.id) === String(form.ubicacion_destino_id));
+
+      setResumenMovimiento({
+        producto: producto?.nombre || "Producto",
+        cantidad: form.cantidad,
+        origen: `${seccionOrigen?.nombre || "-"} · ${ubicacionOrigen?.codigo || "-"}`,
+        destino: `${seccionDestino?.nombre || "-"} · ${ubicacionDestino?.codigo || "-"}`
+      });
 
       cargarDatos();
 
@@ -187,6 +204,7 @@ function Movimientos() {
       });
 
     } catch (err) {
+      setResumenMovimiento(null);
       setError(err.message);
     } finally {
       setCargando(false);
@@ -201,7 +219,34 @@ function Movimientos() {
     <div style={{ padding: paddingPagina }}>
       <h1>Movimientos internos</h1>
 
-      {mensaje && <div style={{ color: "green", marginBottom: "15px" }}>{mensaje}</div>}
+      {resumenMovimiento && (
+        <div style={styles.resumenCard}>
+          <div style={styles.resumenTitulo}>✓ Movimiento registrado correctamente</div>
+
+          <div style={styles.resumenGrid}>
+            <div>
+              <div style={styles.resumenLabel}>Producto</div>
+              <div style={styles.resumenValor}>{resumenMovimiento.producto}</div>
+            </div>
+
+            <div>
+              <div style={styles.resumenLabel}>Cantidad</div>
+              <div style={styles.resumenValor}>{resumenMovimiento.cantidad}</div>
+            </div>
+
+            <div>
+              <div style={styles.resumenLabel}>Origen</div>
+              <div style={styles.resumenValor}>{resumenMovimiento.origen}</div>
+            </div>
+
+            <div>
+              <div style={styles.resumenLabel}>Destino</div>
+              <div style={styles.resumenValor}>{resumenMovimiento.destino}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {error && <div style={{ color: "red", marginBottom: "15px" }}>{error}</div>}
 
       <form
@@ -226,6 +271,7 @@ function Movimientos() {
             onChange={(e) => {
               setBusquedaProducto(e.target.value);
               setForm({ ...form, producto_id: "" });
+              setResumenMovimiento(null);
             }}
             placeholder="Buscar producto..."
             required
@@ -305,7 +351,9 @@ function Movimientos() {
           >
             <option value="">Seleccionar</option>
             {ubicacionesOrigen.map(u => (
-              <option key={u.id} value={u.id}>{u.codigo}</option>
+              <option key={u.id} value={u.id}>
+                {u.codigo} ({u.cantidadDisponible} unidades)
+              </option>
             ))}
           </select>
         </div>
