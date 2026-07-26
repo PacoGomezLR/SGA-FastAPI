@@ -12,14 +12,41 @@ export const subtitle = {
   color: "#64748b"
 };
 
-export const successBox = {
-  backgroundColor: "#dcfce7",
+export const resumenCard = {
+  backgroundColor: "#f0fdf4",
+  border: "1px solid #bbf7d0",
+  borderRadius: "14px",
+  padding: "20px",
+  marginBottom: "20px"
+};
+
+export const resumenTitulo = {
+  margin: "0 0 12px 0",
   color: "#166534",
-  border: "1px solid #86efac",
-  padding: "12px 14px",
-  borderRadius: "10px",
-  marginBottom: "16px",
-  fontWeight: "500"
+  fontWeight: "700",
+  fontSize: "15px",
+  display: "flex",
+  alignItems: "center",
+  gap: "8px"
+};
+
+export const resumenGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: "14px"
+};
+
+export const resumenLabel = {
+  fontSize: "12px",
+  color: "#4b5563",
+  fontWeight: "600",
+  marginBottom: "2px"
+};
+
+export const resumenValor = {
+  fontSize: "14px",
+  color: "#0f172a",
+  fontWeight: "600"
 };
 
 export const errorBox = {
@@ -167,79 +194,3 @@ export const secondaryButton = {
   fontWeight: "700"
 };
 
-export const ubicacionButton = {
-  ...input,
-  textAlign: "left",
-  cursor: "pointer"
-};
-
-export const modalOverlay = {
-  position: "fixed",
-  inset: 0,
-  backgroundColor: "rgba(15, 23, 42, 0.45)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-  padding: "20px"
-};
-
-export const modalBox = {
-  width: "100%",
-  maxWidth: "440px",
-  maxHeight: "80vh",
-  overflowY: "auto",
-  backgroundColor: "white",
-  borderRadius: "16px",
-  padding: "22px",
-  boxShadow: "0 20px 50px rgba(0,0,0,0.20)"
-};
-
-export const modalTitle = {
-  margin: "0 0 6px 0",
-  color: "#0f172a"
-};
-
-export const modalSubtitle = {
-  margin: "0 0 18px 0",
-  color: "#64748b"
-};
-
-export const locationsList = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "10px"
-};
-
-export const locationItem = {
-  border: "1px solid #e2e8f0",
-  borderRadius: "10px",
-  padding: "12px"
-};
-
-export const locationItemButton = {
-  ...locationItem,
-  width: "100%",
-  textAlign: "left",
-  backgroundColor: "white",
-  cursor: "pointer",
-  font: "inherit"
-};
-
-export const locationCode = {
-  fontWeight: "700",
-  color: "#0f172a",
-  marginBottom: "4px"
-};
-
-export const locationText = {
-  color: "#64748b",
-  fontSize: "14px"
-};
-
-export const modalActions = {
-  display: "flex",
-  gap: "10px",
-  flexWrap: "wrap",
-  marginTop: "16px"
-};

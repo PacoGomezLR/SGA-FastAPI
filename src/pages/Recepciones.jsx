@@ -14,17 +14,14 @@ const initialForm = {
 function Recepciones() {
   const esMobile = useIsMobile();
   const [form, setForm] = useState(initialForm);
-  const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
+  const [resumenRecepcion, setResumenRecepcion] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [cargandoDatos, setCargandoDatos] = useState(true);
 
   const [productos, setProductos] = useState([]);
   const [secciones, setSecciones] = useState([]);
   const [ubicaciones, setUbicaciones] = useState([]);
-
-  const [mostrarSelectorUbicacion, setMostrarSelectorUbicacion] = useState(false);
-  const [columnaSeleccionada, setColumnaSeleccionada] = useState(null);
 
   useEffect(() => {
     cargarDatosFormulario();
@@ -58,6 +55,8 @@ function Recepciones() {
   function handleChange(e) {
     const { name, value } = e.target;
 
+    setResumenRecepcion(null);
+
     setForm((prev) => ({
       ...prev,
       [name]: value,
@@ -67,21 +66,6 @@ function Recepciones() {
     }));
   }
 
-  function abrirSelectorUbicacion() {
-    setColumnaSeleccionada(null);
-    setMostrarSelectorUbicacion(true);
-  }
-
-  function cerrarSelectorUbicacion() {
-    setMostrarSelectorUbicacion(false);
-    setColumnaSeleccionada(null);
-  }
-
-  function elegirUbicacion(ubicacion) {
-    setForm((prev) => ({ ...prev, ubicacion_destino_id: ubicacion.id }));
-    cerrarSelectorUbicacion();
-  }
-
   const ubicacionesFiltradas = useMemo(() => {
     if (!form.seccion_id) return [];
 
@@ -89,31 +73,6 @@ function Recepciones() {
       (ubicacion) => String(ubicacion.seccion_id) === String(form.seccion_id)
     );
   }, [ubicaciones, form.seccion_id]);
-
-  const columnasDeSeccion = useMemo(() => {
-    const columnas = new Map();
-
-    ubicacionesFiltradas.forEach((ubicacion) => {
-      const clave = ubicacion.columna ?? ubicacion.codigo;
-
-      if (!columnas.has(clave)) {
-        columnas.set(clave, { columna: ubicacion.columna, ubicaciones: [] });
-      }
-      columnas.get(clave).ubicaciones.push(ubicacion);
-    });
-
-    const lista = Array.from(columnas.values()).sort((a, b) => {
-      if (a.columna == null) return 1;
-      if (b.columna == null) return -1;
-      return a.columna - b.columna;
-    });
-
-    lista.forEach((c) => {
-      c.ubicaciones.sort((a, b) => (a.fila ?? 0) - (b.fila ?? 0));
-    });
-
-    return lista;
-  }, [ubicacionesFiltradas]);
 
   const productoSeleccionado = useMemo(() => {
     return productos.find(
@@ -136,7 +95,6 @@ function Recepciones() {
   async function handleSubmit(e) {
     e.preventDefault();
 
-    setMensaje("");
     setError("");
 
     if (!form.ubicacion_destino_id) {
@@ -169,9 +127,17 @@ function Recepciones() {
         method: "PUT"
       });
 
-      setMensaje(`Recepción creada y confirmada correctamente con ID ${data.id}`);
+      setResumenRecepcion({
+        id: data.id,
+        producto: productoSeleccionado?.nombre || "Producto",
+        cantidad: form.cantidad,
+        seccion: seccionSeleccionada?.nombre || "-",
+        ubicacion: ubicacionSeleccionada?.codigo || "-"
+      });
+
       setForm(initialForm);
     } catch (err) {
+      setResumenRecepcion(null);
       setError(err.message || "Error al crear y confirmar la recepción");
     } finally {
       setCargando(false);
@@ -180,7 +146,7 @@ function Recepciones() {
 
   function limpiarFormulario() {
     setForm(initialForm);
-    setMensaje("");
+    setResumenRecepcion(null);
     setError("");
   }
 
@@ -195,7 +161,36 @@ function Recepciones() {
         </div>
       </div>
 
-      {mensaje && <div style={styles.successBox}>{mensaje}</div>}
+      {resumenRecepcion && (
+        <div style={styles.resumenCard}>
+          <div style={styles.resumenTitulo}>
+            ✓ Recepción #{resumenRecepcion.id} creada y confirmada correctamente
+          </div>
+
+          <div style={styles.resumenGrid}>
+            <div>
+              <div style={styles.resumenLabel}>Producto</div>
+              <div style={styles.resumenValor}>{resumenRecepcion.producto}</div>
+            </div>
+
+            <div>
+              <div style={styles.resumenLabel}>Cantidad</div>
+              <div style={styles.resumenValor}>{resumenRecepcion.cantidad}</div>
+            </div>
+
+            <div>
+              <div style={styles.resumenLabel}>Sección</div>
+              <div style={styles.resumenValor}>{resumenRecepcion.seccion}</div>
+            </div>
+
+            <div>
+              <div style={styles.resumenLabel}>Ubicación</div>
+              <div style={styles.resumenValor}>{resumenRecepcion.ubicacion}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {error && <div style={styles.errorBox}>{error}</div>}
 
       <form onSubmit={handleSubmit}>
@@ -290,20 +285,25 @@ function Recepciones() {
             </div>
 
             <div style={styles.fieldGroup}>
-              <label style={styles.label}>Ubicación</label>
-              <button
-                type="button"
-                style={styles.ubicacionButton}
-                onClick={abrirSelectorUbicacion}
-                disabled={!form.seccion_id || cargandoDatos || cargando}
-              >
-                {ubicacionSeleccionada?.codigo || "Selecciona una ubicación"}
-              </button>
-              <input
-                type="hidden"
+              <label htmlFor="ubicacion_destino_id" style={styles.label}>
+                Ubicación
+              </label>
+              <select
+                id="ubicacion_destino_id"
                 name="ubicacion_destino_id"
                 value={form.ubicacion_destino_id}
-              />
+                onChange={handleChange}
+                required
+                style={styles.input}
+                disabled={!form.seccion_id || cargandoDatos || cargando}
+              >
+                <option value="">Selecciona una ubicación</option>
+                {ubicacionesFiltradas.map((ubicacion) => (
+                  <option key={ubicacion.id} value={ubicacion.id}>
+                    {ubicacion.codigo}
+                  </option>
+                ))}
+              </select>
             </div>
           </section>
         </div>
@@ -365,88 +365,6 @@ function Recepciones() {
           </div>
         </section>
       </form>
-
-      {mostrarSelectorUbicacion && (
-        <div style={styles.modalOverlay} onClick={cerrarSelectorUbicacion}>
-          <div style={styles.modalBox} onClick={(e) => e.stopPropagation()}>
-            {!columnaSeleccionada ? (
-              <>
-                <h2 style={styles.modalTitle}>Selecciona una columna</h2>
-                <p style={styles.modalSubtitle}>
-                  Sección: <strong>{seccionSeleccionada?.nombre}</strong>
-                </p>
-
-                {columnasDeSeccion.length === 0 ? (
-                  <p style={styles.locationText}>
-                    Esta sección todavía no tiene ubicaciones.
-                  </p>
-                ) : (
-                  <div style={styles.locationsList}>
-                    {columnasDeSeccion.map((c) => (
-                      <button
-                        type="button"
-                        key={c.columna ?? c.ubicaciones[0]?.id}
-                        style={styles.locationItemButton}
-                        onClick={() => setColumnaSeleccionada(c)}
-                      >
-                        <div style={styles.locationCode}>
-                          {c.columna != null ? `Columna ${c.columna}` : "Sin columna"}
-                        </div>
-                        <div style={styles.locationText}>
-                          {c.ubicaciones.length} fila
-                          {c.ubicaciones.length === 1 ? "" : "s"}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <h2 style={styles.modalTitle}>
-                  {columnaSeleccionada.columna != null
-                    ? `Columna ${columnaSeleccionada.columna}`
-                    : "Sin columna"}
-                </h2>
-                <p style={styles.modalSubtitle}>
-                  Sección: <strong>{seccionSeleccionada?.nombre}</strong>
-                </p>
-
-                <div style={styles.locationsList}>
-                  {columnaSeleccionada.ubicaciones.map((ubicacion) => (
-                    <button
-                      type="button"
-                      key={ubicacion.id}
-                      style={styles.locationItemButton}
-                      onClick={() => elegirUbicacion(ubicacion)}
-                    >
-                      <div style={styles.locationCode}>
-                        {ubicacion.fila != null
-                          ? `Fila ${ubicacion.fila}`
-                          : ubicacion.codigo}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-
-            <div style={styles.modalActions}>
-              <button
-                type="button"
-                style={styles.secondaryButton}
-                onClick={
-                  columnaSeleccionada
-                    ? () => setColumnaSeleccionada(null)
-                    : cerrarSelectorUbicacion
-                }
-              >
-                {columnaSeleccionada ? "Volver" : "Cerrar"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
