@@ -3,12 +3,6 @@ import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api/api";
 import * as styles from "./SeccionDetalle.styles";
 
-const initialLocationForm = {
-  codigo: "",
-  descripcion: "",
-  activa: true
-};
-
 function SeccionDetalle() {
   const { id } = useParams();
 
@@ -17,18 +11,8 @@ function SeccionDetalle() {
   const [stock, setStock] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
-  const [mensaje, setMensaje] = useState("");
 
   const [columnaSeleccionada, setColumnaSeleccionada] = useState(null);
-
-  const [mostrarModalUbicacion, setMostrarModalUbicacion] = useState(false);
-  const [locationForm, setLocationForm] = useState(initialLocationForm);
-  const [guardandoUbicacion, setGuardandoUbicacion] = useState(false);
-
-  const [mostrarModalResize, setMostrarModalResize] = useState(false);
-  const [resizeForm, setResizeForm] = useState({ numColumnas: "", numFilas: "" });
-  const [guardandoResize, setGuardandoResize] = useState(false);
-  const [resizeError, setResizeError] = useState("");
 
   useEffect(() => {
     cargarDetalle();
@@ -60,112 +44,6 @@ function SeccionDetalle() {
       setStock([]);
     } finally {
       setCargando(false);
-    }
-  }
-
-  function abrirModalUbicacion() {
-    setLocationForm(initialLocationForm);
-    setMensaje("");
-    setError("");
-    setMostrarModalUbicacion(true);
-  }
-
-  function cerrarModalUbicacion() {
-    if (guardandoUbicacion) return;
-
-    setMostrarModalUbicacion(false);
-    setLocationForm(initialLocationForm);
-  }
-
-  function handleLocationChange(e) {
-    const { name, value, type, checked } = e.target;
-
-    setLocationForm((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value
-    }));
-  }
-
-  async function crearUbicacion(e) {
-    e.preventDefault();
-
-    if (!locationForm.codigo.trim()) {
-      setError("El código de la ubicación es obligatorio");
-      return;
-    }
-
-    try {
-      setGuardandoUbicacion(true);
-      setError("");
-      setMensaje("");
-
-      const payload = {
-        seccion_id: Number(id),
-        codigo: locationForm.codigo.trim(),
-        descripcion: locationForm.descripcion.trim() || null,
-        activa: locationForm.activa
-      };
-
-      await apiFetch("/locations/", {
-        method: "POST",
-        body: payload
-      });
-
-      setMensaje("Ubicación creada correctamente");
-      cerrarModalUbicacion();
-      await cargarDetalle();
-    } catch (err) {
-      setError(err.message || "Error al crear la ubicación");
-    } finally {
-      setGuardandoUbicacion(false);
-    }
-  }
-
-  function abrirModalResize() {
-    setResizeForm({
-      numColumnas: String(seccion?.num_columnas ?? ""),
-      numFilas: String(seccion?.num_filas ?? "")
-    });
-    setResizeError("");
-    setMostrarModalResize(true);
-  }
-
-  function cerrarModalResize() {
-    if (guardandoResize) return;
-
-    setMostrarModalResize(false);
-    setResizeError("");
-  }
-
-  function handleResizeChange(e) {
-    const { name, value } = e.target;
-    setResizeForm((prev) => ({ ...prev, [name]: value }));
-  }
-
-  async function enviarResize(e) {
-    e.preventDefault();
-
-    try {
-      setGuardandoResize(true);
-      setResizeError("");
-
-      const body = {
-        num_columnas: resizeForm.numColumnas ? Number(resizeForm.numColumnas) : null,
-        num_filas: resizeForm.numFilas ? Number(resizeForm.numFilas) : null
-      };
-
-      const respuesta = await apiFetch(`/section-layout/${id}/resize`, {
-        method: "PATCH",
-        body
-      });
-
-      setMensaje(respuesta.mensaje || "Sección redimensionada correctamente");
-      setMostrarModalResize(false);
-      await cargarDetalle();
-    } catch (err) {
-      setResizeError(err.message || "Error al redimensionar la sección");
-    } finally {
-      setGuardandoResize(false);
     }
   }
 
@@ -242,7 +120,6 @@ function SeccionDetalle() {
         </Link>
       </div>
 
-      {mensaje && <div style={styles.successBox}>{mensaje}</div>}
       {error && <div style={styles.errorBox}>{error}</div>}
 
       <div style={styles.infoCard}>
@@ -282,18 +159,6 @@ function SeccionDetalle() {
       <div style={styles.section}>
         <div style={styles.sectionHeader}>
           <h2 style={{ margin: 0 }}>Columnas y ubicaciones</h2>
-
-          <div style={{ display: "flex", gap: "8px" }}>
-            {columnas.length > 0 && (
-              <button type="button" style={styles.secondaryButton} onClick={abrirModalResize}>
-                Redimensionar
-              </button>
-            )}
-
-            <button type="button" style={styles.createButton} onClick={abrirModalUbicacion}>
-              + Nueva ubicación
-            </button>
-          </div>
         </div>
 
         {columnas.length === 0 ? (
@@ -368,125 +233,6 @@ function SeccionDetalle() {
         </div>
       )}
 
-      {mostrarModalUbicacion && (
-        <div style={styles.modalOverlay} onClick={cerrarModalUbicacion}>
-          <div style={styles.modalBox} onClick={(e) => e.stopPropagation()}>
-            <h2 style={styles.modalTitle}>Nueva ubicación</h2>
-
-            <form onSubmit={crearUbicacion}>
-              <div style={styles.fieldGroup}>
-                <label style={styles.label}>Código</label>
-                <input
-                  name="codigo"
-                  placeholder="Ej: C1-F1, EST-01..."
-                  value={locationForm.codigo}
-                  onChange={handleLocationChange}
-                  required
-                  style={styles.input}
-                  autoFocus
-                />
-              </div>
-
-              <div style={styles.fieldGroup}>
-                <label style={styles.label}>Descripción</label>
-                <input
-                  name="descripcion"
-                  placeholder="Descripción de la ubicación"
-                  value={locationForm.descripcion}
-                  onChange={handleLocationChange}
-                  style={styles.input}
-                />
-              </div>
-
-              <label style={styles.checkboxCard}>
-                <input
-                  type="checkbox"
-                  name="activa"
-                  checked={locationForm.activa}
-                  onChange={handleLocationChange}
-                />
-                <span>Ubicación activa</span>
-              </label>
-
-              <div style={styles.modalActions}>
-                <button
-                  type="submit"
-                  style={styles.primaryButton}
-                  disabled={guardandoUbicacion}
-                >
-                  {guardandoUbicacion ? "Creando..." : "Crear ubicación"}
-                </button>
-
-                <button
-                  type="button"
-                  style={styles.secondaryButton}
-                  onClick={cerrarModalUbicacion}
-                  disabled={guardandoUbicacion}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {mostrarModalResize && (
-        <div style={styles.modalOverlay} onClick={cerrarModalResize}>
-          <div style={styles.modalBox} onClick={(e) => e.stopPropagation()}>
-            <h2 style={styles.modalTitle}>Redimensionar sección</h2>
-
-            {resizeError && <div style={styles.errorBox}>{resizeError}</div>}
-
-            <form onSubmit={enviarResize}>
-              <div style={styles.zoneFormGrid}>
-                <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Columnas</label>
-                  <input
-                    type="number"
-                    name="numColumnas"
-                    min="1"
-                    value={resizeForm.numColumnas}
-                    onChange={handleResizeChange}
-                    style={styles.input}
-                  />
-                </div>
-
-                <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Filas</label>
-                  <input
-                    type="number"
-                    name="numFilas"
-                    min="1"
-                    value={resizeForm.numFilas}
-                    onChange={handleResizeChange}
-                    style={styles.input}
-                  />
-                </div>
-              </div>
-
-              <div style={styles.modalActions}>
-                <button
-                  type="submit"
-                  style={styles.primaryButton}
-                  disabled={guardandoResize}
-                >
-                  {guardandoResize ? "Aplicando..." : "Redimensionar"}
-                </button>
-
-                <button
-                  type="button"
-                  style={styles.secondaryButton}
-                  onClick={cerrarModalResize}
-                  disabled={guardandoResize}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -97,9 +97,20 @@ export const pasillosSection = {
 
 export const pasilloRow = {
   display: "flex",
-  alignItems: "center",
-  gap: "10px",
+  alignItems: "flex-start",
+  gap: "16px",
   flexWrap: "wrap"
+};
+
+export const pasilloFieldGroup = {
+  display: "grid",
+  gap: "6px"
+};
+
+export const pasilloLabel = {
+  fontSize: "13px",
+  fontWeight: "600",
+  color: "#334155"
 };
 
 export const tableWrapper = {

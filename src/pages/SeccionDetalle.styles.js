@@ -7,17 +7,6 @@ export const sectionHeader = {
   gap: "10px"
 };
 
-export const createButton = {
-  padding: "10px 14px",
-  borderRadius: "8px",
-  border: "none",
-  textDecoration: "none",
-  backgroundColor: "#2563eb",
-  color: "white",
-  fontWeight: "600",
-  cursor: "pointer"
-};
-
 export const header = {
   display: "flex",
   justifyContent: "space-between",
@@ -194,15 +183,6 @@ export const badge = {
   whiteSpace: "nowrap"
 };
 
-export const successBox = {
-  padding: "12px",
-  backgroundColor: "#dcfce7",
-  color: "#166534",
-  borderRadius: "8px",
-  fontWeight: "500",
-  marginBottom: "16px"
-};
-
 export const errorBox = {
   padding: "12px",
   backgroundColor: "#fee2e2",
@@ -260,51 +240,10 @@ export const modalSubtitle = {
   color: "#64748b"
 };
 
-export const fieldGroup = {
-  display: "grid",
-  gap: "6px",
-  marginBottom: "14px"
-};
-
-export const label = {
-  fontWeight: "600",
-  color: "#334155"
-};
-
-export const input = {
-  width: "100%",
-  padding: "10px 12px",
-  borderRadius: "8px",
-  border: "1px solid #cbd5e1",
-  outline: "none",
-  backgroundColor: "white",
-  boxSizing: "border-box"
-};
-
-export const checkboxCard = {
-  display: "flex",
-  alignItems: "center",
-  gap: "10px",
-  padding: "10px 12px",
-  borderRadius: "8px",
-  border: "1px solid #cbd5e1",
-  marginBottom: "16px"
-};
-
 export const modalActions = {
   display: "flex",
   gap: "10px",
   flexWrap: "wrap"
-};
-
-export const primaryButton = {
-  padding: "10px 14px",
-  borderRadius: "8px",
-  border: "none",
-  backgroundColor: "#0f172a",
-  color: "white",
-  fontWeight: "600",
-  cursor: "pointer"
 };
 
 export const secondaryButton = {

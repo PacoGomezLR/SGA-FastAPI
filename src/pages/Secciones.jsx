@@ -73,7 +73,10 @@ function Secciones() {
     setEditingId(seccion.id);
     setMensaje("");
     setError("");
-    setLayout(initialLayout);
+    setLayout({
+      num_columnas: seccion.num_columnas != null ? String(seccion.num_columnas) : "",
+      num_filas: seccion.num_filas != null ? String(seccion.num_filas) : ""
+    });
     setMostrarFormulario(true);
 
     setForm({
@@ -109,6 +112,22 @@ function Secciones() {
           method: "PUT",
           body: seccionPayload
         });
+
+        const seccionOriginal = secciones.find((s) => s.id === editingId);
+        const nuevaColumnas = layout.num_columnas ? Number(layout.num_columnas) : null;
+        const nuevaFilas = layout.num_filas ? Number(layout.num_filas) : null;
+        const cambioColumnas = nuevaColumnas != null && nuevaColumnas !== seccionOriginal?.num_columnas;
+        const cambioFilas = nuevaFilas != null && nuevaFilas !== seccionOriginal?.num_filas;
+
+        if (cambioColumnas || cambioFilas) {
+          await apiFetch(`/section-layout/${editingId}/resize`, {
+            method: "PATCH",
+            body: {
+              num_columnas: cambioColumnas ? nuevaColumnas : null,
+              num_filas: cambioFilas ? nuevaFilas : null
+            }
+          });
+        }
       } else {
         const tieneLayout = layout.num_columnas && layout.num_filas;
 
@@ -315,12 +334,18 @@ function Secciones() {
             Activo
           </label>
 
-          {!editingId && (
-            <div style={styles.pasillosSection}>
-              <div style={styles.sectionTitle}>Rejilla de la estantería (opcional)</div>
+          <div style={styles.pasillosSection}>
+            <div style={styles.sectionTitle}>
+              {editingId ? "Rejilla de la estantería" : "Rejilla de la estantería (opcional)"}
+            </div>
 
-              <div style={styles.pasilloRow}>
+            <div style={styles.pasilloRow}>
+              <div style={styles.pasilloFieldGroup}>
+                <label htmlFor="num_columnas" style={styles.pasilloLabel}>
+                  Columnas
+                </label>
                 <input
+                  id="num_columnas"
                   name="num_columnas"
                   type="number"
                   min="1"
@@ -329,8 +354,14 @@ function Secciones() {
                   onChange={handleLayoutChange}
                   style={{ ...styles.input, width: "140px" }}
                 />
+              </div>
 
+              <div style={styles.pasilloFieldGroup}>
+                <label htmlFor="num_filas" style={styles.pasilloLabel}>
+                  Filas
+                </label>
                 <input
+                  id="num_filas"
                   name="num_filas"
                   type="number"
                   min="1"
@@ -341,7 +372,7 @@ function Secciones() {
                 />
               </div>
             </div>
-          )}
+          </div>
 
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <button type="submit" disabled={guardando} style={styles.primaryButton}>
