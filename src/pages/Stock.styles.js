@@ -12,6 +12,17 @@ export const subtitle = {
   color: "#64748b"
 };
 
+export const exportButton = {
+  padding: "10px 18px",
+  borderRadius: "8px",
+  border: "1px solid #cbd5e1",
+  backgroundColor: "white",
+  color: "#0f172a",
+  fontWeight: "600",
+  cursor: "pointer",
+  whiteSpace: "nowrap"
+};
+
 export const filtersCard = {
   display: "flex",
   gap: "12px",

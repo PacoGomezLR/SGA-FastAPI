@@ -1,4 +1,10 @@
+from datetime import datetime
+from io import BytesIO
+
 from fastapi import HTTPException, status
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.utils import get_column_letter
 from sqlalchemy.orm import Session
 
 from app.repositories.stock_repository import StockRepository
@@ -37,6 +43,57 @@ class StockService:
             }
             for item in data
         ]
+
+    def export_stock_excel(self, low: bool = False, seccion_id: int | None = None) -> BytesIO:
+        filas = self.get_all_stock_detailed(low=low, seccion_id=seccion_id)
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Stock actual"
+
+        columnas = [
+            ("Producto", "producto_nombre"),
+            ("Categoría", "categoria_nombre"),
+            ("Sección", "seccion_nombre"),
+            ("Ubicación", "ubicacion_nombre"),
+            ("Cantidad", "cantidad"),
+            ("Stock mínimo", "stock_minimo"),
+            ("Stock bajo", "bajo_stock"),
+        ]
+
+        encabezado_fill = PatternFill(start_color="0F172A", end_color="0F172A", fill_type="solid")
+        encabezado_font = Font(color="FFFFFF", bold=True)
+        fila_bajo_fill = PatternFill(start_color="FEE2E2", end_color="FEE2E2", fill_type="solid")
+
+        for col_index, (titulo, _clave) in enumerate(columnas, start=1):
+            celda = ws.cell(row=1, column=col_index, value=titulo)
+            celda.fill = encabezado_fill
+            celda.font = encabezado_font
+            celda.alignment = Alignment(horizontal="left")
+
+        for fila_index, item in enumerate(filas, start=2):
+            for col_index, (_titulo, clave) in enumerate(columnas, start=1):
+                valor = item.get(clave)
+                if clave == "bajo_stock":
+                    valor = "Sí" if valor else "No"
+                ws.cell(row=fila_index, column=col_index, value=valor if valor is not None else "-")
+
+            if item.get("bajo_stock"):
+                for col_index in range(1, len(columnas) + 1):
+                    ws.cell(row=fila_index, column=col_index).fill = fila_bajo_fill
+
+        ws.freeze_panes = "A2"
+
+        for col_index, (titulo, clave) in enumerate(columnas, start=1):
+            longitud_max = max(
+                [len(titulo)] + [len(str(item.get(clave, ""))) for item in filas]
+            )
+            ws.column_dimensions[get_column_letter(col_index)].width = min(longitud_max + 4, 45)
+
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        return buffer
 
     def get_stock_by_id(self, stock_id: int):
         stock = self.repository.get_by_id(stock_id)

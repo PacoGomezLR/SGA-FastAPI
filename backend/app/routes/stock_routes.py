@@ -1,4 +1,7 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -26,6 +29,27 @@ def get_stock(
 ):
     service = StockService(db)
     return service.get_all_stock_detailed(low=low, seccion_id=seccion_id)
+
+
+@router.get(
+    "/export",
+    dependencies=[Depends(require_role("administrador", "supervisor", "operario"))],
+)
+def export_stock(
+    low: bool = Query(False, description="Filtrar solo stock bajo"),
+    seccion_id: int | None = Query(None, description="Filtrar por sección"),
+    db: Session = Depends(get_db),
+):
+    service = StockService(db)
+    buffer = service.export_stock_excel(low=low, seccion_id=seccion_id)
+
+    nombre_archivo = f"stock_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{nombre_archivo}"'},
+    )
 
 
 @router.get(

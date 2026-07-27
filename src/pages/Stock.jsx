@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { apiFetch } from "../api/api";
+import { apiFetch, API_BASE_URL } from "../api/api";
 import { useIsMobile } from "../hooks/useMediaQuery";
 import * as styles from "./Stock.styles";
 
@@ -15,6 +15,43 @@ function Stock() {
   const [categoria, setCategoria] = useState("");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const [exportando, setExportando] = useState(false);
+
+  async function exportarExcel() {
+    try {
+      setExportando(true);
+      setError("");
+
+      const params = new URLSearchParams();
+      if (soloBajo) params.append("low", "true");
+      if (seccionId !== "") params.append("seccion_id", seccionId);
+
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/stock/export?${params.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+
+      if (!response.ok) {
+        throw new Error("No se pudo generar el archivo de stock");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const enlace = document.createElement("a");
+      const fecha = new Date().toISOString().slice(0, 10);
+
+      enlace.href = url;
+      enlace.download = `stock_${fecha}.xlsx`;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message || "Error al exportar el stock");
+    } finally {
+      setExportando(false);
+    }
+  }
 
   async function cargarStock() {
     try {
@@ -101,6 +138,15 @@ function Stock() {
             Consulta de existencias por producto, sección y ubicación.
           </p>
         </div>
+
+        <button
+          type="button"
+          style={styles.exportButton}
+          onClick={exportarExcel}
+          disabled={exportando}
+        >
+          {exportando ? "Exportando..." : "Exportar a Excel"}
+        </button>
       </div>
 
       <section style={styles.filtersCard}>

@@ -24,3 +24,6 @@ python-multipart==0.0.22
 # Testing
 pytest==8.3.5
 httpx==0.28.1
+
+# Exportación a Excel
+openpyxl==3.1.5
