@@ -23,6 +23,7 @@ function Productos() {
   const [mensaje, setMensaje] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState("");
+  const [categoriasExpandidas, setCategoriasExpandidas] = useState(new Set());
 
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
@@ -248,58 +249,113 @@ function Productos() {
     );
   });
 
+  const grupos = new Map();
+  productosFiltrados.forEach((p) => {
+    const clave = p.categoria_nombre || "Sin categoría";
+    if (!grupos.has(clave)) grupos.set(clave, []);
+    grupos.get(clave).push(p);
+  });
+  const gruposOrdenados = Array.from(grupos.entries()).sort(([a], [b]) => a.localeCompare(b));
+
+  const hayBusquedaActiva = busqueda.trim().length > 0;
+
+  function alternarGrupo(nombreCategoria) {
+    setCategoriasExpandidas((prev) => {
+      const siguiente = new Set(prev);
+      if (siguiente.has(nombreCategoria)) {
+        siguiente.delete(nombreCategoria);
+      } else {
+        siguiente.add(nombreCategoria);
+      }
+      return siguiente;
+    });
+  }
+
   const tablaProductos =
     productosFiltrados.length === 0 ? null : (
       <div style={styles.tableWrapper}>
-      <table style={styles.table}>
-        <thead>
-          <tr>
-            <th style={styles.th}>ID</th>
-            <th style={styles.th}>Nombre</th>
-            <th style={styles.th}>Categoría</th>
-            <th style={styles.th}>Unidad</th>
-            <th style={styles.th}>SKU</th>
-            <th style={styles.th}>Stock mínimo</th>
-            <th style={styles.th}>Activo</th>
-            <th style={styles.th}>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {productosFiltrados.map((p) => (
-            <tr key={p.id}>
-              <td style={styles.td}>{p.id}</td>
-              <td style={styles.td}>{p.nombre}</td>
-              <td style={styles.td}>{p.categoria_nombre || "-"}</td>
-              <td style={styles.td}>{p.unidad_medida || "-"}</td>
-              <td style={styles.td}>{p.sku}</td>
-              <td style={styles.td}>{p.stock_minimo ?? 0}</td>
-              <td style={styles.td}>
-                <span style={p.activo ? styles.badgeActivo : styles.badgeInactivo}>
-                  {p.activo ? "Sí" : "No"}
+        <div style={styles.cabeceraCategorias}>
+          <span style={styles.cabeceraCategoriasNombre}>
+            <span style={{ ...styles.flechaGrupo, visibility: "hidden" }}>▼</span>
+            Categoría
+          </span>
+          <span>Referencias</span>
+        </div>
+
+        {gruposOrdenados.map(([nombreCategoria, productosCategoria]) => {
+          const colapsado = !hayBusquedaActiva && !categoriasExpandidas.has(nombreCategoria);
+
+          return (
+            <div key={nombreCategoria} style={styles.bloqueCategoria}>
+              <div
+                style={styles.filaGrupo}
+                onClick={() => alternarGrupo(nombreCategoria)}
+              >
+                <span style={styles.nombreGrupo}>
+                  <span style={{ ...styles.flechaGrupo, transform: colapsado ? "rotate(-90deg)" : "rotate(0deg)" }}>
+                    ▼
+                  </span>
+                  {nombreCategoria}
                 </span>
-              </td>
-              <td style={styles.td}>
-                <div style={styles.accionesTabla}>
-                  <button
-                    type="button"
-                    style={styles.secondaryButton}
-                    onClick={() => editarProducto(p)}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    style={styles.dangerButton}
-                    onClick={() => solicitarEliminacion(p)}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                <span style={styles.contadorGrupo}>
+                  {productosCategoria.length}
+                </span>
+              </div>
+
+              {!colapsado && (
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={{ ...styles.th, width: "60px" }}>ID</th>
+                      <th style={{ ...styles.th, width: "20%" }}>Nombre</th>
+                      <th style={{ ...styles.th, width: "14%" }}>Categoría</th>
+                      <th style={{ ...styles.th, width: "9%" }}>Unidad</th>
+                      <th style={{ ...styles.th, width: "12%" }}>SKU</th>
+                      <th style={{ ...styles.th, width: "100px" }}>Stock mínimo</th>
+                      <th style={{ ...styles.th, width: "70px" }}>Activo</th>
+                      <th style={{ ...styles.th, width: "190px" }}>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {productosCategoria.map((p) => (
+                      <tr key={p.id}>
+                        <td style={styles.td}>{p.id}</td>
+                        <td style={styles.td}>{p.nombre}</td>
+                        <td style={styles.td}>{p.categoria_nombre || "-"}</td>
+                        <td style={styles.td}>{p.unidad_medida || "-"}</td>
+                        <td style={styles.td}>{p.sku}</td>
+                        <td style={styles.td}>{p.stock_minimo ?? 0}</td>
+                        <td style={styles.td}>
+                          <span style={p.activo ? styles.badgeActivo : styles.badgeInactivo}>
+                            {p.activo ? "Sí" : "No"}
+                          </span>
+                        </td>
+                        <td style={styles.td}>
+                          <div style={styles.accionesTabla}>
+                            <button
+                              type="button"
+                              style={styles.secondaryButton}
+                              onClick={() => editarProducto(p)}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              style={styles.dangerButton}
+                              onClick={() => solicitarEliminacion(p)}
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
 
@@ -342,7 +398,7 @@ function Productos() {
                     <label style={styles.label}>Nombre</label>
                     <input
                       name="nombre"
-                      placeholder="Ej: Guitarra Fender Stratocaster"
+                      placeholder="Ej: Perfil de marco 76 AD"
                       value={form.nombre}
                       onChange={handleChange}
                       required
@@ -412,7 +468,7 @@ function Productos() {
                       <label style={styles.label}>Unidad de medida</label>
                       <input
                         name="unidad_medida"
-                        placeholder="Ej: unidad, kg, caja..."
+                        placeholder="Ej: Barra, Paquete, Unidad..."
                         value={form.unidad_medida}
                         onChange={handleChange}
                         required
@@ -484,7 +540,7 @@ function Productos() {
               <input
                 value={nuevaCategoria}
                 onChange={(e) => setNuevaCategoria(e.target.value)}
-                placeholder="Ej: Guitarras"
+                placeholder="Ej: Perfiles PVC"
                 style={styles.input}
                 autoFocus
               />

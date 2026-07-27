@@ -151,7 +151,8 @@ export const badgeInactivo = {
 
 export const table = {
   width: "100%",
-  borderCollapse: "collapse"
+  borderCollapse: "collapse",
+  tableLayout: "fixed"
 };
 
 export const th = {
@@ -201,6 +202,58 @@ export const modalBox = {
 
 export const tableWrapper = {
   overflowX: "auto"
+};
+
+export const cabeceraCategorias = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: "10px 14px",
+  paddingLeft: "15px",
+  fontWeight: "700",
+  fontSize: "20px",
+  color: "#0f172a",
+  borderBottom: "1px solid #ddd"
+};
+
+export const cabeceraCategoriasNombre = {
+  display: "flex",
+  alignItems: "center"
+};
+
+export const bloqueCategoria = {
+  border: "1px solid #e2e8f0",
+  borderRadius: "10px",
+  marginBottom: "10px",
+  overflow: "hidden"
+};
+
+export const filaGrupo = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: "12px 14px",
+  cursor: "pointer",
+  backgroundColor: "#f1f5f9",
+  userSelect: "none"
+};
+
+export const nombreGrupo = {
+  fontWeight: "700",
+  fontSize: "15px",
+  color: "#0f172a"
+};
+
+export const flechaGrupo = {
+  display: "inline-block",
+  fontSize: "15px",
+  marginRight: "8px",
+  transition: "transform 0.15s ease"
+};
+
+export const contadorGrupo = {
+  fontWeight: "700",
+  color: "#0f172a"
 };
 
 export const modalTitulo = {
