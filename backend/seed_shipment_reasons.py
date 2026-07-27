@@ -33,6 +33,10 @@ SALIDAS = [
     (3, 10, 42, 10, "CONSUMO", "Refuerzo de estanterías del almacén"),
     (2, 8, 22, 15, "CONSUMO", "Reposición de cajones de oficina"),
     (1, 4, 4, 8, "CONSUMO", "Formación de nuevos operarios"),
+    (4, 1, 61, 196, "CONSUMO", "Consumo interno de perfil de marco en Centro 1"),
+    (4, 2, 62, 196, "CONSUMO", "Consumo interno de perfil de hoja en Centro 1"),
+    (5, 1, 181, 196, "CONSUMO", "Consumo interno de perfil de marco en Centro 2"),
+    (5, 2, 182, 197, "CONSUMO", "Consumo interno de perfil de hoja en Centro 2"),
 ]
 
 
@@ -51,7 +55,12 @@ def main() -> None:
         service = ShipmentService(db)
 
         for seccion_id, producto_id, ubicacion_id, cantidad, motivo, texto in SALIDAS:
-            marca = f"{SEED_MARK_PREFIX}:{motivo}:{producto_id}"
+            # La marca incluye ubicacion_id además de producto_id: varias
+            # entradas de CONSUMO reutilizan el mismo producto (marco/hoja)
+            # en ubicaciones distintas (Centro 1 y Centro 2), y sin la
+            # ubicación en la marca la detección de "ya existe" confundiría
+            # esas entradas entre sí.
+            marca = f"{SEED_MARK_PREFIX}:{motivo}:{producto_id}:{ubicacion_id}"
 
             ya_existe = (
                 db.query(Shipment)
