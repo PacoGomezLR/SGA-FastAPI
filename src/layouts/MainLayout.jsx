@@ -71,7 +71,10 @@ function MainLayout() {
             </h2>
 
             <p style={styles.logoSubtitle}>
-              Sistema de gestión de almacén
+              Sistema de gestión de almacén  
+              <br/>
+              <br/>
+              Paco Gómez 
             </p>
           </div>
 
