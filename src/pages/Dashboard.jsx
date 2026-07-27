@@ -159,7 +159,7 @@ function Dashboard() {
       {hayLayout && (
         <div style={{ ...styles.cardBase, marginBottom: "24px" }}>
           <div style={styles.mapaHeader}>
-            <h3 style={{ margin: 0 }}>Mapa 2D de secciones</h3>
+            <h3 style={{ margin: 0 }}>Mapa 2D del Almacén de Mecanizado</h3>
             <Link to="/secciones/mapa" style={styles.mapaLink}>
               Ver mapa completo
             </Link>
