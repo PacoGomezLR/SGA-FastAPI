@@ -28,6 +28,11 @@ SALIDAS = [
     (1, 3, 3, 5, "ROTURA", "Perfil dañado durante el corte"),
     (3, 9, 41, 4, "CONSUMO", "Uso interno en mantenimiento de estanterías"),
     (2, 7, 21, 2, "MUESTRA", "Muestra para cliente potencial"),
+    (1, 1, 1, 12, "CONSUMO", "Fabricación de expositor de tienda"),
+    (1, 2, 2, 10, "CONSUMO", "Prototipo interno de nueva ventana"),
+    (3, 10, 42, 10, "CONSUMO", "Refuerzo de estanterías del almacén"),
+    (2, 8, 22, 15, "CONSUMO", "Reposición de cajones de oficina"),
+    (1, 4, 4, 8, "CONSUMO", "Formación de nuevos operarios"),
 ]
 
 
