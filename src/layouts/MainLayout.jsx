@@ -74,7 +74,7 @@ function MainLayout() {
               Sistema de gestión de almacén  
               <br/>
               <br/>
-              Paco Gómez 
+              Paco Gómez
             </p>
           </div>
 

@@ -16,9 +16,14 @@ export const mapaHeader = {
 };
 
 export const mapaLink = {
+  display: "inline-block",
+  padding: "10px 18px",
+  borderRadius: "8px",
+  border: "1px solid #cbd5e1",
+  backgroundColor: "white",
+  color: "#0f172a",
   fontSize: "14px",
   fontWeight: "600",
-  color: "#2a78d6",
   textDecoration: "none"
 };
 
