@@ -29,6 +29,7 @@ function Columna({
   escala,
   stockPorUbicacion,
   ubicacionesCoincidentes,
+  hayBusquedaActiva,
   onSelectUbicacion,
   onHoverUbicacion,
   onMoveHoverUbicacion,
@@ -86,6 +87,7 @@ function Columna({
         const clicHabilitado = escala >= ESCALA_CLIC;
         const mostrarEtiqueta = escala >= ESCALA_ETIQUETA;
         const esCoincidencia = ubicacionesCoincidentes?.has(ubicacion.id);
+        const atenuada = hayBusquedaActiva && !esCoincidencia;
         const anchoCelda = CELL_WIDTH - 4;
         const altoCelda = CELL_HEIGHT - 4;
 
@@ -96,7 +98,11 @@ function Columna({
             onMouseEnter={(e) => onHoverUbicacion?.(ubicacion, stockUbicacion, e)}
             onMouseMove={(e) => onMoveHoverUbicacion?.(e)}
             onMouseLeave={() => onLeaveHoverUbicacion?.()}
-            style={{ cursor: clicHabilitado ? "pointer" : "default" }}
+            style={{
+              cursor: clicHabilitado ? "pointer" : "default",
+              opacity: atenuada ? 0.3 : 1,
+              transition: "opacity 0.15s ease"
+            }}
           >
             <rect
               x={x}
@@ -800,6 +806,7 @@ function SectionMap({ height = 480, interactivo = true }) {
                                 escala={escala}
                                 stockPorUbicacion={stockPorUbicacion}
                                 ubicacionesCoincidentes={ubicacionesCoincidentes}
+                                hayBusquedaActiva={busqueda.trim().length > 0}
                                 onSelectUbicacion={seleccionarUbicacion}
                                 onHoverUbicacion={(ubicacion, stockUbicacion, evento) => {
                                   if (modoEdicion) return;
