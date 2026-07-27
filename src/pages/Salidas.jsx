@@ -7,8 +7,6 @@ const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const MOTIVOS_LABEL = {
-  venta: "Venta",
-  merma: "Merma",
   rotura: "Rotura",
   consumo: "Consumo interno",
   muestra: "Muestra comercial",
@@ -32,7 +30,7 @@ function Salidas() {
     seccion_id: "",
     ubicacion_origen_id: "",
     cantidad: "",
-    motivo: "venta",
+    motivo: "rotura",
     observaciones: ""
   });
 
@@ -100,7 +98,7 @@ function Salidas() {
       seccion_id: "",
       ubicacion_origen_id: "",
       cantidad: "",
-      motivo: "venta",
+      motivo: "rotura",
       observaciones: ""
     });
   }
@@ -190,7 +188,7 @@ function Salidas() {
         seccion_id: "",
         ubicacion_origen_id: "",
         cantidad: "",
-        motivo: "venta",
+        motivo: "rotura",
         observaciones: ""
       });
 
