@@ -15,9 +15,25 @@ import {
 } from "./mapLayout";
 import * as styles from "./SectionMap.styles";
 
-const ESCALA_DETALLE = 1.4;
+const ESCALA_CLIC = 0.5;
+const ESCALA_ETIQUETA = 0.9;
+const PADDING_CARCASA = 10;
 
-function Columna({ columna, indice, numColumnas, numFilas, rotacion, espejo, escala, stockPorUbicacion, onSelectUbicacion }) {
+function Columna({
+  columna,
+  indice,
+  numColumnas,
+  numFilas,
+  rotacion,
+  espejo,
+  escala,
+  stockPorUbicacion,
+  ubicacionesCoincidentes,
+  onSelectUbicacion,
+  onHoverUbicacion,
+  onMoveHoverUbicacion,
+  onLeaveHoverUbicacion
+}) {
   // rotacion: cuartos de vuelta en sentido horario (0-3). Ninguno de los 4
   // casos toca la columna/fila real de ninguna ubicación, es puramente
   // visual:
@@ -67,30 +83,63 @@ function Columna({ columna, indice, numColumnas, numFilas, rotacion, espejo, esc
 
         const stockUbicacion = stockPorUbicacion.get(ubicacion.id) || [];
         const estado = estadoUbicacion(stockUbicacion);
-        const mostrarDetalle = escala >= ESCALA_DETALLE;
+        const clicHabilitado = escala >= ESCALA_CLIC;
+        const mostrarEtiqueta = escala >= ESCALA_ETIQUETA;
+        const esCoincidencia = ubicacionesCoincidentes?.has(ubicacion.id);
+        const anchoCelda = CELL_WIDTH - 4;
+        const altoCelda = CELL_HEIGHT - 4;
 
         return (
           <g
             key={ubicacion.id}
-            onClick={mostrarDetalle ? () => onSelectUbicacion(ubicacion, stockUbicacion) : undefined}
-            style={{ cursor: mostrarDetalle ? "pointer" : "default" }}
+            onClick={clicHabilitado ? () => onSelectUbicacion(ubicacion, stockUbicacion) : undefined}
+            onMouseEnter={(e) => onHoverUbicacion?.(ubicacion, stockUbicacion, e)}
+            onMouseMove={(e) => onMoveHoverUbicacion?.(e)}
+            onMouseLeave={() => onLeaveHoverUbicacion?.()}
+            style={{ cursor: clicHabilitado ? "pointer" : "default" }}
           >
             <rect
               x={x}
               y={y}
-              width={CELL_WIDTH - 4}
-              height={CELL_HEIGHT - 4}
+              width={anchoCelda}
+              height={altoCelda}
               rx={4}
-              fill={COLOR_POR_ESTADO[estado]}
+              fill={`url(#grad-${estado})`}
               stroke="#0f172a"
               strokeWidth={1}
               strokeOpacity={0.15}
             />
 
-            {mostrarDetalle && (
+            {/* Bisel: borde inferior y derecho más oscuros para dar
+                sensación de hueco físico en la estantería. */}
+            <path
+              d={`M ${x + 4} ${y + altoCelda} L ${x + anchoCelda} ${y + altoCelda} L ${x + anchoCelda} ${y + 4}`}
+              fill="none"
+              stroke="#0f172a"
+              strokeWidth={2}
+              strokeOpacity={0.18}
+              strokeLinecap="round"
+              style={{ pointerEvents: "none" }}
+            />
+
+            {esCoincidencia && (
+              <rect
+                x={x - 2}
+                y={y - 2}
+                width={anchoCelda + 4}
+                height={altoCelda + 4}
+                rx={6}
+                fill="none"
+                stroke="#2563eb"
+                strokeWidth={2.5}
+                style={{ pointerEvents: "none" }}
+              />
+            )}
+
+            {mostrarEtiqueta && (
               <text
-                x={x + (CELL_WIDTH - 4) / 2}
-                y={y + (CELL_HEIGHT - 4) / 2}
+                x={x + anchoCelda / 2}
+                y={y + altoCelda / 2}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fontSize="9"
@@ -120,8 +169,10 @@ function SectionMap({ height = 480, interactivo = true }) {
   const [escala, setEscala] = useState(1);
   const [seleccion, setSeleccion] = useState(null);
   const [anchoContenedor, setAnchoContenedor] = useState(null);
-  const [seccionHover, setSeccionHover] = useState(null);
-  const [posicionHover, setPosicionHover] = useState({ x: 0, y: 0 });
+  const [ubicacionHover, setUbicacionHover] = useState(null);
+  const [posicionHoverUbicacion, setPosicionHoverUbicacion] = useState({ x: 0, y: 0 });
+  const [busqueda, setBusqueda] = useState("");
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
   const frameRef = useRef(null);
   const transformRef = useRef(null);
   const observerRef = useRef(null);
@@ -179,6 +230,41 @@ function SectionMap({ height = 480, interactivo = true }) {
     return resultado;
   }, [layout]
   );
+
+  // Ubicaciones cuyo stock incluye un producto que coincide con la
+  // búsqueda, para resaltarlas en el mapa. Vacío si no hay texto de
+  // búsqueda, para no calcular ni pintar nada de más en el caso común.
+  const ubicacionesCoincidentes = useMemo(() => {
+    const texto = busqueda.trim().toLowerCase();
+    if (!texto) return new Set();
+
+    const coincidencias = new Set();
+    stockPorUbicacion.forEach((lineas, ubicacionId) => {
+      const hayCoincidencia = lineas.some((linea) =>
+        (linea.producto_nombre || "").toLowerCase().includes(texto)
+      );
+      if (hayCoincidencia) coincidencias.add(ubicacionId);
+    });
+    return coincidencias;
+  }, [busqueda, stockPorUbicacion]);
+
+  // Nombres de producto únicos que coinciden con el texto escrito, para la
+  // lista de sugerencias del buscador. Limitado a 8 para no desbordar el
+  // desplegable con catálogos grandes.
+  const sugerenciasProducto = useMemo(() => {
+    const texto = busqueda.trim().toLowerCase();
+    if (!texto) return [];
+
+    const nombres = new Set();
+    stockPorUbicacion.forEach((lineas) => {
+      lineas.forEach((linea) => {
+        if ((linea.producto_nombre || "").toLowerCase().includes(texto)) {
+          nombres.add(linea.producto_nombre);
+        }
+      });
+    });
+    return Array.from(nombres).sort().slice(0, 8);
+  }, [busqueda, stockPorUbicacion]);
 
   // Mientras se arrastra una sección en modo edición, el lienzo debe crecer
   // en tiempo real si esa sección se acerca o sobrepasa el borde derecho o
@@ -261,6 +347,14 @@ function SectionMap({ height = 480, interactivo = true }) {
   }
 
   function iniciarArrastre(clientX, clientY, grupo) {
+    // Si ya hay un arrastre en curso (p. ej. un evento de mousedown/
+    // touchstart fantasma disparado por el navegador sobre otra sección
+    // mientras el gesto original sigue activo), ignorar el nuevo inicio.
+    // Sin esto, la referencia se sobrescribe con el segundo seccionId sin
+    // terminar limpiamente el primero, y ambas posiciones a medio mover
+    // quedan guardadas en posicionesEditadas y se envían juntas al guardar.
+    if (arrastreRef.current) return;
+
     const pos = posicionActualDe(grupo.seccion.id, grupo.xInicio, grupo.yInicio);
 
     arrastreRef.current = {
@@ -297,11 +391,18 @@ function SectionMap({ height = 480, interactivo = true }) {
       const deltaX = (clientX - info.startClientX) / info.escala;
       const deltaY = (clientY - info.startClientY) / info.escala;
 
+      // Tope en el borde izquierdo/superior real del lienzo (x=0, y=0): el
+      // SVG no tiene viewBox, así que una posición negativa se recortaría o
+      // (peor) se guardaría como negativa y luego se forzaría a 0 al
+      // guardar, haciendo que la sección "salte" de vuelta al borde sin que
+      // el usuario lo viera venir durante el arrastre. Aplicar el mismo
+      // clamp aquí, en tiempo real, para que el límite se sienta al
+      // arrastrar en vez de sorprender al guardar.
       setPosicionesEditadas((prev) => ({
         ...prev,
         [info.seccionId]: {
-          x: snapToGrid(info.startX + deltaX),
-          y: snapToGrid(info.startY + deltaY)
+          x: Math.max(0, snapToGrid(info.startX + deltaX)),
+          y: Math.max(0, snapToGrid(info.startY + deltaY))
         }
       }));
     }
@@ -410,6 +511,44 @@ function SectionMap({ height = 480, interactivo = true }) {
           <button type="button" style={styles.secondaryButton} onClick={activarModoEdicion}>
             Editar disposición
           </button>
+          <div style={styles.buscadorWrapper}>
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              onFocus={() => setMostrarSugerencias(true)}
+              onBlur={() => setTimeout(() => setMostrarSugerencias(false), 150)}
+              placeholder="Buscar producto en el mapa..."
+              style={styles.buscadorInput}
+            />
+
+            {mostrarSugerencias && sugerenciasProducto.length > 0 && (
+              <div style={styles.sugerenciasLista}>
+                {sugerenciasProducto.map((nombre) => (
+                  <div
+                    key={nombre}
+                    style={styles.sugerenciaItem}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#f1f5f9"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "white"; }}
+                    onClick={() => {
+                      setBusqueda(nombre);
+                      setMostrarSugerencias(false);
+                    }}
+                  >
+                    {nombre}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {busqueda.trim() && (
+            <span style={styles.buscadorContador}>
+              {ubicacionesCoincidentes.size === 0
+                ? "Sin resultados"
+                : `${ubicacionesCoincidentes.size} ubicación${ubicacionesCoincidentes.size === 1 ? "" : "es"}`}
+            </span>
+          )}
         </div>
       )}
 
@@ -469,10 +608,36 @@ function SectionMap({ height = 480, interactivo = true }) {
                 height={modoEdicion ? svgHeight + COLCHON_EDICION * 2 : svgHeight}
                 style={styles.svg}
               >
+                <defs>
+                  <linearGradient id="grad-vacia" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#e2e8f0" />
+                    <stop offset="100%" stopColor="#b8c4d4" />
+                  </linearGradient>
+                  <linearGradient id="grad-ocupada" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#4ade80" />
+                    <stop offset="100%" stopColor="#16a34a" />
+                  </linearGradient>
+                  <linearGradient id="grad-bajo" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f87171" />
+                    <stop offset="100%" stopColor="#dc2626" />
+                  </linearGradient>
+                  <linearGradient id="grad-estanteria" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f1f5f9" />
+                    <stop offset="100%" stopColor="#dbe2ea" />
+                  </linearGradient>
+                  <filter id="sombra-seccion" x="-30%" y="-30%" width="160%" height="160%">
+                    <feDropShadow dx="0" dy="6" stdDeviation="6" floodColor="#0f172a" floodOpacity="0.25" />
+                  </filter>
+                </defs>
+
                 <g transform={modoEdicion ? `translate(${COLCHON_EDICION}, ${COLCHON_EDICION})` : undefined}>
                   {seccionesConPosicion.map((grupo) => {
                     const pos = posicionActualDe(grupo.seccion.id, grupo.xInicio, grupo.yInicio);
                     const seEstaArrastrando = arrastrando === grupo.seccion.id;
+                    const numColumnasVisual = (grupo.seccion.rotacion ?? 0) % 2 === 1
+                      ? grupo.columnas.reduce((max, col) => Math.max(max, col.ubicaciones.length), 1)
+                      : grupo.columnas.length;
+                    const anchoCarcasa = grupo.ancho / numColumnasVisual;
 
                     return (
                       <g
@@ -481,45 +646,72 @@ function SectionMap({ height = 480, interactivo = true }) {
                         transform={`translate(${pos.x}, ${pos.y})`}
                         onMouseDown={(e) => iniciarArrastreMouse(e, grupo)}
                         onTouchStart={(e) => iniciarArrastreTactil(e, grupo)}
-                        onMouseEnter={(e) => {
-                          if (modoEdicion) return;
-                          setSeccionHover(grupo.seccion);
-                          setPosicionHover({ x: e.clientX, y: e.clientY });
-                        }}
-                        onMouseMove={(e) => {
-                          if (modoEdicion) return;
-                          setPosicionHover({ x: e.clientX, y: e.clientY });
-                        }}
-                        onMouseLeave={() => {
-                          if (modoEdicion) return;
-                          setSeccionHover(null);
-                        }}
                         style={{
                           cursor: modoEdicion ? (seEstaArrastrando ? "grabbing" : "grab") : "default",
                           touchAction: modoEdicion ? "none" : undefined
                         }}
                       >
-                        {modoEdicion && (
+                        <g filter="url(#sombra-seccion)">
+                          {/* Carcasa de la estantería: marco de fondo con
+                              separadores verticales entre columnas, simulando
+                              la estructura física que sostiene las celdas.
+                              Las celdas se dibujan desplazadas PADDING_CARCASA
+                              a la derecha y abajo (ver el <g> de más abajo);
+                              la carcasa sobresale ese mismo margen en los 4
+                              lados para que el padding interno sea regular. */}
+                          <rect
+                            x={0}
+                            y={LABEL_HEIGHT}
+                            width={grupo.ancho + PADDING_CARCASA * 2 - 4}
+                            height={grupo.alto - LABEL_HEIGHT + PADDING_CARCASA * 2 - 4}
+                            rx={4}
+                            fill="url(#grad-estanteria)"
+                            stroke="#94a3b8"
+                            strokeWidth={1}
+                          />
+                          {Array.from({ length: numColumnasVisual - 1 }).map((_, i) => (
+                            <line
+                              key={i}
+                              x1={PADDING_CARCASA + (i + 1) * anchoCarcasa}
+                              y1={LABEL_HEIGHT + PADDING_CARCASA}
+                              x2={PADDING_CARCASA + (i + 1) * anchoCarcasa}
+                              y2={grupo.alto + PADDING_CARCASA * 2 - 4}
+                              stroke="#94a3b8"
+                              strokeWidth={1}
+                              strokeOpacity={0.6}
+                            />
+                          ))}
+                        </g>
+
+                        {modoEdicion && seEstaArrastrando && (
                           <rect
                             x={-8}
                             y={-8}
-                            width={grupo.ancho + 16}
-                            height={grupo.alto + 16}
+                            width={grupo.ancho + PADDING_CARCASA * 2 + 16}
+                            height={grupo.alto + PADDING_CARCASA + 16}
                             rx={8}
-                            fill={seEstaArrastrando ? "#e0f2fe" : "transparent"}
+                            fill="#e0f2fe"
                             stroke="#3b82f6"
-                            strokeWidth={seEstaArrastrando ? 2 : 1}
-                            strokeDasharray="6 4"
+                            strokeWidth={2}
                           />
                         )}
 
+                        <rect
+                          x={0}
+                          y={-4}
+                          width={grupo.ancho + PADDING_CARCASA * 2}
+                          height={28}
+                          rx={6}
+                          fill="#1e293b"
+                        />
                         <text
-                          x={grupo.ancho / 2}
-                          y={20}
+                          x={(grupo.ancho + PADDING_CARCASA * 2) / 2}
+                          y={14}
                           textAnchor="middle"
-                          fontSize="19"
+                          dominantBaseline="middle"
+                          fontSize="14"
                           fontWeight="700"
-                          fill="#0f172a"
+                          fill="white"
                           style={{ userSelect: "none" }}
                         >
                           {grupo.seccion.nombre}
@@ -548,7 +740,7 @@ function SectionMap({ height = 480, interactivo = true }) {
 
                         {modoEdicion && (
                           <g
-                            transform={`translate(${grupo.ancho / 2}, -24)`}
+                            transform={`translate(${(grupo.ancho + PADDING_CARCASA * 2) / 2}, -24)`}
                             onMouseDown={(e) => e.stopPropagation()}
                             onTouchStart={(e) => e.stopPropagation()}
                             onClick={() => voltearSeccion(grupo.seccion)}
@@ -569,7 +761,7 @@ function SectionMap({ height = 480, interactivo = true }) {
 
                         {modoEdicion && (
                           <g
-                            transform={`translate(${grupo.ancho - 16}, -24)`}
+                            transform={`translate(${grupo.ancho + PADDING_CARCASA * 2 - 16}, -24)`}
                             onMouseDown={(e) => e.stopPropagation()}
                             onTouchStart={(e) => e.stopPropagation()}
                             onClick={() => rotarSeccion(grupo.seccion, 1)}
@@ -588,7 +780,7 @@ function SectionMap({ height = 480, interactivo = true }) {
                           </g>
                         )}
 
-                        <g transform={`translate(0, ${LABEL_HEIGHT})`}>
+                        <g transform={`translate(${PADDING_CARCASA}, ${LABEL_HEIGHT + PADDING_CARCASA})`}>
                           {grupo.columnas.map((columna, indice) => {
                             const numColumnas = grupo.columnas.length;
                             const numFilas = grupo.columnas.reduce(
@@ -607,7 +799,21 @@ function SectionMap({ height = 480, interactivo = true }) {
                                 espejo={grupo.seccion.espejo}
                                 escala={escala}
                                 stockPorUbicacion={stockPorUbicacion}
+                                ubicacionesCoincidentes={ubicacionesCoincidentes}
                                 onSelectUbicacion={seleccionarUbicacion}
+                                onHoverUbicacion={(ubicacion, stockUbicacion, evento) => {
+                                  if (modoEdicion) return;
+                                  setUbicacionHover({ ubicacion, stockUbicacion });
+                                  setPosicionHoverUbicacion({ x: evento.clientX, y: evento.clientY });
+                                }}
+                                onMoveHoverUbicacion={(evento) => {
+                                  if (modoEdicion) return;
+                                  setPosicionHoverUbicacion({ x: evento.clientX, y: evento.clientY });
+                                }}
+                                onLeaveHoverUbicacion={() => {
+                                  if (modoEdicion) return;
+                                  setUbicacionHover(null);
+                                }}
                               />
                             );
                           })}
@@ -635,16 +841,26 @@ function SectionMap({ height = 480, interactivo = true }) {
             </span>
           </div>
 
-          {seccionHover && seccionHover.descripcion && (
+          {ubicacionHover && (
             <div
               style={{
                 ...styles.hoverCard,
-                left: posicionHover.x + 16,
-                top: posicionHover.y + 16
+                left: posicionHoverUbicacion.x + 16,
+                top: posicionHoverUbicacion.y + 16
               }}
             >
-              <div style={styles.hoverCardTitle}>{seccionHover.nombre}</div>
-              <div style={styles.hoverCardDescripcion}>{seccionHover.descripcion}</div>
+              <div style={styles.hoverCardTitle}>{ubicacionHover.ubicacion.codigo}</div>
+              {ubicacionHover.stockUbicacion.length === 0 ? (
+                <div style={styles.hoverCardDescripcion}>Ubicación vacía</div>
+              ) : (
+                <div style={styles.hoverCardDescripcion}>
+                  {ubicacionHover.stockUbicacion.map((linea) => (
+                    <div key={linea.producto_id}>
+                      {linea.producto_nombre || `Producto ${linea.producto_id}`}: {linea.cantidad}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

@@ -1,9 +1,21 @@
+// Textura de suelo de almacén: rejilla de losetas de hormigón. Dos
+// gradientes lineales (uno por eje) repetidos cada 40px sobre el color base,
+// con una línea ligeramente más oscura marcando cada junta.
+const suelo = (colorBase, colorJunta) => ({
+  backgroundColor: colorBase,
+  backgroundImage: `
+    linear-gradient(90deg, ${colorJunta} 1px, transparent 1px),
+    linear-gradient(${colorJunta} 1px, transparent 1px)
+  `,
+  backgroundSize: "40px 40px"
+});
+
 export const wrapper = {
   position: "relative",
   width: "100%",
   borderRadius: "14px",
   border: "1px solid #e5e7eb",
-  backgroundColor: "#f8fafc",
+  ...suelo("#f8fafc", "#e7ebf1"),
   overflow: "hidden"
 };
 
@@ -13,7 +25,7 @@ export const wrapperFullscreen = {
   boxSizing: "border-box",
   borderRadius: "10px",
   border: "1px solid #d1d5db",
-  backgroundColor: "#e2e8f0",
+  ...suelo("#e2e8f0", "#cbd5e1"),
   overflow: "hidden",
   zIndex: 1000,
   isolation: "isolate",
@@ -174,6 +186,51 @@ export const secondaryButton = {
 export const editHint = {
   fontSize: "13px",
   color: "#6b7280"
+};
+
+export const buscadorWrapper = {
+  position: "relative",
+  flex: "1 1 260px",
+  minWidth: "220px"
+};
+
+export const buscadorInput = {
+  width: "100%",
+  padding: "10px 14px",
+  borderRadius: "8px",
+  border: "1px solid #cbd5e1",
+  backgroundColor: "white",
+  outline: "none",
+  boxSizing: "border-box"
+};
+
+export const sugerenciasLista = {
+  position: "absolute",
+  top: "calc(100% + 4px)",
+  left: 0,
+  right: 0,
+  zIndex: 20,
+  backgroundColor: "white",
+  border: "1px solid #cbd5e1",
+  borderRadius: "8px",
+  boxShadow: "0 8px 20px rgba(15, 23, 42, 0.12)",
+  overflow: "hidden",
+  maxHeight: "260px",
+  overflowY: "auto"
+};
+
+export const sugerenciaItem = {
+  padding: "10px 14px",
+  cursor: "pointer",
+  fontSize: "14px",
+  color: "#0f172a",
+  borderBottom: "1px solid #f1f5f9"
+};
+
+export const buscadorContador = {
+  fontSize: "13px",
+  color: "#6b7280",
+  whiteSpace: "nowrap"
 };
 
 export const hoverCard = {
