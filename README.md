@@ -1,5 +1,7 @@
 # SGA — Sistema de Gestión de Almacén
 
+[![Backend tests](https://github.com/PacoGomezLR/SGA-FastAPI/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/PacoGomezLR/SGA-FastAPI/actions/workflows/backend-tests.yml)
+
 Aplicación web full-stack para la gestión integral de un almacén: control de stock por ubicación, recepciones, movimientos internos, salidas e inventarios con ajuste automático.
 
 ---
