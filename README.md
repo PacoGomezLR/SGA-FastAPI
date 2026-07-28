@@ -213,8 +213,8 @@ Documentación completa disponible en `/docs` (Swagger UI) con el servidor en ma
 - [x] Inventarios con ajuste automático
 - [x] Auditoría de operaciones
 - [x] Dashboard con KPIs en tiempo real
-- [x] 3 migraciones Alembic progresivas
-- [x] 30 tests automatizados con pytest (auth, categorías, productos, movimientos, health)
+- [x] 11 migraciones Alembic progresivas
+- [x] 57 tests automatizados con pytest (auth, categorías, productos, movimientos, health, secciones)
 - [x] Despliegue en producción (Vercel + Render + Neon)
 - [ ] Dockerización
 

@@ -90,32 +90,7 @@ Alternativas evaluadas y descartadas por ahora:
 
 ## Limitaciones actuales
 
-### 1. Duplicidad de backend
-
-Existe duplicación entre:
-
-- app/
-- backend/app/
-
-Problema:
-- puede generar confusión
-- riesgo de modificar código incorrecto
-
----
-
-### 2. Falta de tests automatizados
-
-Actualmente no hay:
-
-- tests unitarios
-- tests de integración
-
-Impacto:
-- menor confianza en cambios futuros
-
----
-
-### 3. Validaciones mejorables
+### 1. Validaciones mejorables
 
 Algunas validaciones pueden ampliarse:
 
@@ -125,7 +100,7 @@ Algunas validaciones pueden ampliarse:
 
 ---
 
-### 4. Frontend mejorable
+### 2. Frontend mejorable
 
 Aunque funcional:
 
@@ -135,7 +110,7 @@ Aunque funcional:
 
 ---
 
-### 5. Sin optimización avanzada
+### 3. Sin optimización avanzada
 
 No se han implementado:
 
@@ -149,7 +124,6 @@ No se han implementado:
 
 ### Prioridad alta
 
-- Eliminar duplicidad de backend
 - Añadir validaciones más estrictas
 - Mejorar control de errores
 
@@ -157,9 +131,8 @@ No se han implementado:
 
 ### Prioridad media
 
-- Implementar tests
 - Mejorar dashboard
-- Añadir exportaciones (CSV)
+- Ampliar exportaciones a otros módulos (movimientos, ocupación de secciones)
 
 ---
 
@@ -167,7 +140,6 @@ No se han implementado:
 
 - Gestión de incidencias
 - Devoluciones
-- Alertas de stock bajo
 - Permisos más finos por módulo
 
 ---
@@ -179,6 +151,7 @@ El sistema tiene una base sólida:
 - núcleo de stock correcto
 - arquitectura clara
 - módulos principales implementados
+- cobertura de tests automatizados (backend)
 
 Las mejoras futuras no requieren rehacer el sistema,
 sino evolucionarlo sobre la base existente.
