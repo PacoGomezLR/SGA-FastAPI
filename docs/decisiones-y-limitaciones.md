@@ -90,7 +90,39 @@ Alternativas evaluadas y descartadas por ahora:
 
 ## Limitaciones actuales
 
-### 1. Validaciones mejorables
+### 1. Seguridad y escalabilidad de cara a producción comercial
+
+Estas son decisiones válidas para un proyecto de portfolio, pero que un
+despliegue comercial real debería reconsiderar:
+
+**Token JWT en `localStorage`** (`src/context/AuthContext.jsx`,
+`src/api/api.js`). El token de acceso se guarda en `localStorage` y se envía
+manualmente en la cabecera `Authorization`. Es vulnerable a robo vía XSS
+(cualquier script que se ejecute en la página puede leerlo). La alternativa
+correcta para producción es una cookie `HttpOnly` + `Secure` +
+`SameSite=Strict`, que el JavaScript de la página no puede leer ni exfiltrar.
+
+**Sin refresh tokens.** El token expira a los 60 minutos
+(`access_token_expire_minutes` en `app/core/config.py`) y no hay forma de
+renovarlo sin volver a hacer login — no existe ningún endpoint ni lógica de
+refresh token en el backend. Aceptable para una demo; en producción se
+esperaría un refresh token de vida más larga (en cookie `HttpOnly`) que
+renueve el access token de forma transparente para el usuario.
+
+**Sin rate limiting.** Ningún endpoint (incluido `/auth/login`) limita el
+número de peticiones por IP/usuario. Esto deja la API expuesta a fuerza
+bruta sobre credenciales y a abuso general de la API sin coste para quien
+la ataca.
+
+**Sin paginación.** Los listados (`/products/`, `/stock/`, `/movements/`,
+etc.) devuelven siempre el conjunto completo de filas. Funciona con el
+volumen de datos actual, pero no escala: con miles de movimientos o
+productos, cada petición a esos endpoints crecería sin límite en tamaño de
+respuesta y tiempo de consulta.
+
+---
+
+### 2. Validaciones mejorables
 
 Algunas validaciones pueden ampliarse:
 
@@ -100,7 +132,7 @@ Algunas validaciones pueden ampliarse:
 
 ---
 
-### 2. Frontend mejorable
+### 3. Frontend mejorable
 
 Aunque funcional:
 
@@ -110,13 +142,15 @@ Aunque funcional:
 
 ---
 
-### 3. Sin optimización avanzada
+### 4. Sin optimización avanzada
 
 No se han implementado:
 
 - caché
-- paginación avanzada
 - optimización de queries
+
+(la paginación se detalla en el punto 1, junto al resto de limitaciones de
+cara a producción comercial)
 
 ---
 
@@ -124,6 +158,10 @@ No se han implementado:
 
 ### Prioridad alta
 
+- Migrar el JWT de `localStorage` a cookie `HttpOnly` + `Secure` + `SameSite=Strict`
+- Implementar refresh tokens
+- Añadir rate limiting (mínimo en `/auth/login`)
+- Añadir paginación a los listados (`/products/`, `/stock/`, `/movements/`, etc.)
 - Añadir validaciones más estrictas
 - Mejorar control de errores
 
